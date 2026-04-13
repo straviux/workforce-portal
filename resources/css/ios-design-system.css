@@ -1,0 +1,1347 @@
+/* ============================================
+   iOS/macOS Design System
+   - Consolidated styles for all iOS-themed components
+   - Ensure all design updates are made here for uniformity
+   ============================================ */
+
+/* ── Modal Structure ── */
+.ios-modal {
+	background: #f2f2f7;
+	border-radius: 14px;
+	max-height: 90vh;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+	overflow: hidden;
+	margin: 0 auto;
+}
+
+/* Disable PrimeVue's built-in Dialog scale transition — we handle animation ourselves */
+.ios-dialog-root.p-dialog-enter-active,
+.ios-dialog-root.p-dialog-leave-active {
+	transition: none !important;
+}
+.ios-dialog-root.p-dialog-enter-from,
+.ios-dialog-root.p-dialog-leave-to {
+	opacity: 1 !important;
+	transform: none !important;
+}
+
+/* Dialog Root Override */
+.ios-dialog-root.p-dialog {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	max-height: none !important;
+	overflow: visible !important;
+	width: auto !important;
+	border-radius: 14px !important;
+}
+
+.ios-dialog-mask {
+	background: rgba(0, 0, 0, 0.4) !important;
+	-webkit-backdrop-filter: blur(4px);
+	backdrop-filter: blur(4px);
+}
+
+.ios-dialog-root .p-dialog-content {
+	padding: 0 !important;
+	background: transparent !important;
+}
+
+/* ── Navigation Bar ── */
+.ios-nav-bar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	padding: 14px 16px;
+	background: #ffffff;
+	border-bottom: 0.5px solid #e5e5ea;
+	flex-shrink: 0;
+	cursor: grab;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.ios-nav-bar:active {
+	cursor: grabbing;
+}
+
+.ios-nav-title {
+	font-size: 17px;
+	font-weight: 600;
+	color: #000;
+	letter-spacing: -0.4px;
+}
+
+.ios-nav-btn {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	font-size: 17px;
+	cursor: pointer;
+	padding: 4px 8px;
+	border-radius: 8px;
+	transition: opacity 0.15s;
+}
+
+.ios-nav-btn:hover {
+	opacity: 0.6;
+}
+
+.ios-nav-cancel {
+	left: 16px;
+	color: #8e8e93;
+	font-size: 20px;
+}
+
+.ios-nav-action {
+	right: 16px;
+	color: #374151;
+	font-weight: 600;
+}
+
+.ios-nav-action:disabled {
+	color: #c7c7cc;
+	cursor: not-allowed;
+}
+
+.ios-nav-destructive {
+	color: #ff3b30 !important;
+}
+
+/* ── Body ── */
+.ios-body {
+	flex: 1;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 0 16px;
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+	transition: scrollbar-color 0.3s;
+}
+
+.ios-body:hover {
+	scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+.ios-body::-webkit-scrollbar {
+	width: 6px;
+}
+
+.ios-body::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.ios-body::-webkit-scrollbar-thumb {
+	background: transparent;
+	border-radius: 4px;
+}
+
+.ios-body:hover::-webkit-scrollbar-thumb {
+	background: rgba(156, 163, 175, 0.4);
+}
+
+/* ── Sections ── */
+.ios-section {
+	margin-top: 22px;
+}
+
+.ios-section:first-child {
+	margin-top: 16px;
+}
+
+.ios-section-label {
+	font-size: 13px;
+	font-weight: 500;
+	color: #8e8e93;
+	text-transform: uppercase;
+	letter-spacing: -0.08px;
+	padding: 0 16px 6px;
+	display: flex;
+	align-items: center;
+}
+
+.ios-section-footer {
+	font-size: 13px;
+	color: #6d6d72;
+	padding: 6px 16px 0;
+	line-height: 1.3;
+}
+
+.ios-error {
+	color: #ff3b30;
+}
+
+/* ── Cards & Rows ── */
+.ios-card {
+	background: #ffffff;
+	border-radius: 10px;
+	overflow: hidden;
+	border: 0.5px solid #e5e5ea;
+}
+
+/* ── Info Card & List Item ── */
+.ios-info-card {
+	background: #ffffff;
+	border-radius: 10px;
+	padding: 12px;
+	border: 0.5px solid #e5e5ea;
+}
+
+.ios-list-item {
+	background: #ffffff;
+	border-radius: 10px;
+	padding: 12px;
+	border: 0.5px solid #e5e5ea;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* ── Icon Buttons ── */
+.ios-icon-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 6px;
+	border-radius: 8px;
+	color: #007aff;
+	font-size: 14px;
+	transition: background 0.2s;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ios-icon-btn:hover {
+	background: rgba(0, 122, 255, 0.1);
+}
+
+.ios-icon-btn-danger {
+	color: #ff3b30;
+}
+
+.ios-icon-btn-danger:hover {
+	background: rgba(255, 59, 48, 0.1);
+}
+
+/* ── Form Components ── */
+.ios-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ios-label {
+	font-size: 13px;
+	font-weight: 500;
+	color: #3c3c43;
+	padding-left: 2px;
+}
+
+.ios-hint {
+	font-size: 11px;
+	color: #8e8e93;
+	padding-left: 2px;
+}
+
+.ios-file-input {
+	border: 2px dashed #c7c7cc;
+	border-radius: 10px;
+	padding: 12px;
+	background: #ffffff;
+	cursor: pointer;
+	transition: border-color 0.2s;
+}
+
+.ios-file-input:hover {
+	border-color: #007aff;
+}
+
+.ios-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 16px;
+	min-height: 36px;
+	border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+}
+
+.ios-row-last {
+	border-bottom: none;
+}
+
+.ios-row:last-child {
+	border-bottom: none;
+}
+
+.ios-row-label {
+	font-size: 14px;
+	color: #555;
+	letter-spacing: -0.4px;
+	font-weight: 500;
+}
+
+/* ── Segmented Control ── */
+.ios-segmented-control {
+	display: flex;
+	background: #ffffff;
+	border-radius: 9px;
+	padding: 2px;
+	gap: 0;
+	border: 0.5px solid #d1d1d6;
+}
+
+.ios-segment {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 7px 12px;
+	border-radius: 7px;
+	border: none;
+	background: transparent;
+	font-size: 13px;
+	font-weight: 500;
+	color: #000;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	letter-spacing: -0.08px;
+}
+
+.ios-segment-active {
+	color: #34c759;
+}
+
+.ios-segment-active .pi {
+	color: #34c759;
+	font-size: 13px;
+}
+
+.ios-segment .pi {
+	font-size: 13px;
+}
+
+/* ── Animations ── */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+	transition: all 0.2s ease;
+}
+
+.fade-scale-enter-from {
+	opacity: 0;
+	transform: scale(0.5);
+}
+
+.fade-scale-leave-to {
+	opacity: 0;
+	transform: scale(0.5);
+}
+
+/* ── PrimeVue input overrides inside ios-modal ── */
+.ios-modal .p-inputtext,
+.ios-modal .p-select,
+.ios-modal .p-datepicker,
+.ios-modal .p-inputnumber-input {
+	border-radius: 10px;
+}
+
+/* ── Date Input Override (Calendar Icon Clearance) ── */
+.ios-datepicker .p-inputtext {
+	padding-right: 40px !important;
+}
+
+/* ══════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ══════════════════════════════════════════ */
+
+/* Modal shell */
+.dark .ios-modal {
+	background: #222831;
+}
+
+/* Nav bar */
+.dark .ios-nav-bar {
+	background: #2a3040;
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-nav-title {
+	color: #d1d5db;
+}
+
+.dark .ios-nav-cancel {
+	color: #9ca3af;
+}
+
+.dark .ios-nav-action {
+	color: #d1d5db;
+}
+
+/* Body scrollbar */
+.dark .ios-body:hover {
+	scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.dark .ios-body:hover::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.15);
+}
+
+/* Section labels */
+.dark .ios-section-label {
+	color: #9ca3af;
+}
+
+.dark .ios-section-footer {
+	color: #6b7280;
+}
+
+/* Cards & Rows */
+.dark .ios-card {
+	background: #222831;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-row {
+	border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark .ios-row-label {
+	color: #d1d5db;
+}
+
+/* Segmented control */
+.dark .ios-segmented-control {
+	background: #2a3040;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-segment {
+	color: #d1d5db;
+}
+
+/* Icon button */
+.dark .ios-info-card {
+	background: #2a3040;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-list-item {
+	background: #2a3040;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-icon-btn {
+	color: #d1d5db;
+	background: rgba(255, 255, 255, 0.07);
+}
+
+.dark .ios-icon-btn:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .ios-nav-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-icon-btn-danger {
+	color: #ff6b6b;
+}
+
+.dark .ios-icon-btn-danger:hover {
+	background: rgba(255, 107, 107, 0.12);
+}
+
+/* DataTable dark mode surface */
+.dark .p-datatable {
+	--p-datatable-header-background: #1e242b;
+	--p-datatable-header-cell-background: #1e242b;
+	--p-datatable-header-cell-hover-background: #22272e;
+	--p-datatable-header-cell-color: #d7dbe0;
+	--p-datatable-header-cell-hover-color: #d7dbe0;
+	--p-datatable-footer-background: #1e242b;
+	--p-datatable-footer-cell-background: #1e242b;
+	--p-datatable-footer-cell-color: #d7dbe0;
+	--p-datatable-row-background: #272f38;
+	--p-datatable-row-hover-background: #22272e;
+	--p-datatable-row-striped-background: #222831;
+	--p-datatable-row-color: #d7dbe0;
+	--p-datatable-row-hover-color: #d7dbe0;
+	--p-datatable-border-color: rgba(255, 255, 255, 0.18);
+	border-color: rgba(255, 255, 255, 0.18);
+	color: #d7dbe0;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr > td,
+.dark .p-datatable .p-datatable-thead > tr > th,
+.dark .p-datatable .p-datatable-tfoot > tr > td {
+	color: #d7dbe0;
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dark .p-datatable .p-paginator {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Page headers / titles in dark mode */
+.dark .content-scroll h1,
+.dark .content-scroll h2 {
+	color: #e5e7eb;
+}
+
+/* PrimeVue Toolbar dark surface — matches the app's #222831 dark palette */
+.dark .p-toolbar {
+	--p-toolbar-background: #1e242b;
+	--p-toolbar-border-color: rgba(255, 255, 255, 0.08);
+	--p-toolbar-color: #d7dbe0;
+}
+
+/* PrimeVue Panel dark surface — matches ios-card dark bg */
+.dark .p-panel {
+	--p-panel-background: #222831;
+	--p-panel-border-color: rgba(255, 255, 255, 0.08);
+	--p-panel-color: #d7dbe0;
+}
+
+/* Page subtitle/description text in toolbars */
+.dark .p-toolbar p,
+.dark .content-scroll > div > div > p {
+	color: #9ca3af;
+}
+
+/* iOS modal inline-style overrides for dark mode
+   These use !important to override inline style="" attributes
+   that use hardcoded light-mode hex colors */
+.dark .ios-modal .ios-body [style*='color: #000'],
+.dark .ios-modal .ios-body [style*='color: #1c1c1e'],
+.dark .ios-modal .ios-body [style*='color: #3c3c43'],
+.dark .ios-modal .ios-body [style*='color: #333'] {
+	color: #d1d5db !important;
+}
+
+.dark .ios-modal .ios-body [style*='color: #8E8E93'],
+.dark .ios-modal .ios-body [style*='color: #8e8e93'],
+.dark .ios-modal .ios-body [style*='color: #6D6D72'],
+.dark .ios-modal .ios-body [style*='color: #6b7280'],
+.dark .ios-modal .ios-body [style*='color: #999'] {
+	color: #9ca3af !important;
+}
+
+.dark .ios-modal .ios-body [style*='color: #636366'],
+.dark .ios-modal .ios-body [style*='color: #555'] {
+	color: #b0b5bc !important;
+}
+
+.dark .ios-modal .ios-body [style*='background: #FFF2F2'],
+.dark .ios-modal .ios-body [style*='background: #fff1f2'] {
+	background: rgba(239, 68, 68, 0.12) !important;
+}
+
+.dark .ios-modal .ios-body [style*='background: #FFFBF0'],
+.dark .ios-modal .ios-body [style*='background: #fffbeb'] {
+	background: rgba(245, 158, 11, 0.12) !important;
+}
+
+.dark .ios-modal .ios-body [style*='background: #eff6ff'] {
+	background: rgba(59, 130, 246, 0.12) !important;
+}
+
+.dark .ios-modal .ios-body [style*='background: #f0fdf4'] {
+	background: rgba(34, 197, 94, 0.12) !important;
+}
+
+.dark .ios-modal .ios-body [style*='background: #fff'],
+.dark .ios-modal .ios-body [style*='background: #FFF'],
+.dark .ios-modal .ios-body [style*='background: #FFFFFF'] {
+	background: #2a3040 !important;
+}
+
+.dark .ios-modal .ios-body [style*='border: 1px solid #FFD2D2'],
+.dark .ios-modal .ios-body [style*='border: 2px solid #E5E5EA'] {
+	border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark-on-light accent colors that need lightening in dark mode */
+.dark .ios-modal .ios-body [style*='color: #166534'],
+.dark .ios-modal .ios-body [style*='color: #15803d'] {
+	color: #4ade80 !important;
+}
+
+.dark .ios-modal .ios-body [style*='color: #92400e'],
+.dark .ios-modal .ios-body [style*='color: #8B6914'] {
+	color: #fbbf24 !important;
+}
+
+/* Dark navy blue colors used in light-mode info cards */
+.dark .ios-modal .ios-body [style*='color: #1e3a5f'] {
+	color: #93c5fd !important;
+}
+
+.dark .ios-modal .ios-body [style*='color: #1d4ed8'] {
+	color: #93c5fd !important;
+}
+
+/* ============================================================
+   Global PrimeVue component styling — rounded inputs, selects,
+   InputGroups, DataTable borders & rounded corners.
+   Scoped to .content-scroll so they only affect page content,
+   NOT AdminLayout sidebar/navbar components.
+   ============================================================ */
+
+/* Rounded text inputs, selects, datepicker inputs */
+.content-scroll .p-inputtext {
+	border-radius: 1rem;
+}
+.content-scroll .p-select {
+	border-radius: 1rem;
+}
+.content-scroll .p-datepicker .p-inputtext {
+	border-radius: 1rem;
+}
+.content-scroll .p-iconfield .p-inputtext {
+	border-radius: 1rem;
+}
+
+/* InputGroup — single container border, children borderless */
+.content-scroll .p-inputgroup {
+	border-radius: 1rem;
+	overflow: hidden;
+	border: 1px solid var(--p-inputtext-border-color, #d1d5db);
+}
+.content-scroll .p-inputgroup:focus-within {
+	border-color: var(--p-inputtext-focus-border-color, #6366f1);
+}
+.content-scroll .p-inputgroup .p-inputgroupaddon {
+	border-radius: 0;
+	border: none;
+}
+.content-scroll .p-inputgroup .p-inputtext {
+	border-radius: 0;
+	border: none;
+}
+.content-scroll .p-inputgroup .p-datepicker {
+	border-radius: 0;
+	flex: 1;
+}
+.content-scroll .p-inputgroup .p-datepicker .p-inputtext {
+	border-radius: 0;
+	border: none;
+}
+.content-scroll .p-inputgroup .p-datepicker .p-datepicker-input-icon-container {
+	border-radius: 0;
+}
+
+/* Rounded DataTable with clean outer border */
+.content-scroll .p-datatable {
+	border-radius: 1.5rem;
+	overflow: hidden;
+	border: 1px solid var(--p-datatable-border-color, #e2e8f0);
+}
+.content-scroll .p-datatable .p-datatable-table-container {
+	border-radius: 0;
+	overflow: hidden;
+}
+
+/* Remove outer-edge cell borders to prevent double-border with container */
+.content-scroll .p-datatable .p-datatable-thead > tr > th:first-child,
+.content-scroll .p-datatable .p-datatable-tbody > tr > td:first-child {
+	border-left: none;
+}
+.content-scroll .p-datatable .p-datatable-thead > tr > th:last-child,
+.content-scroll .p-datatable .p-datatable-tbody > tr > td:last-child {
+	border-right: none;
+}
+.content-scroll .p-datatable .p-datatable-thead > tr:first-child > th {
+	border-top: none;
+}
+.content-scroll .p-datatable .p-datatable-tbody > tr:last-child > td {
+	border-bottom: none;
+}
+
+.content-scroll .p-datatable .p-paginator {
+	border-radius: 0;
+	border: none;
+	border-top: 1px solid var(--p-datatable-border-color, #e2e8f0);
+}
+.content-scroll .p-datatable .p-datatable-header {
+	border-radius: 0;
+}
+.content-scroll .p-datatable .p-datatable-footer {
+	border-radius: 0;
+}
+/* ══════════════════════════════════════════
+   VOUCHER WIZARD DARK MODE
+   ══════════════════════════════════════════ */
+
+/* Card backgrounds */
+.dark .ios-modal .ios-body .bg-white {
+	background-color: #2a3040 !important;
+}
+.dark .ios-modal .ios-body .bg-gray-50 {
+	background-color: #1e2535 !important;
+}
+.dark .ios-modal .ios-body .bg-gray-100 {
+	background-color: #374151 !important;
+}
+.dark .ios-modal .ios-body .bg-gray-200 {
+	background-color: #374151 !important;
+}
+
+/* Borders */
+.dark .ios-modal .ios-body .border-\[\#e5e5ea\] {
+	border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.dark .ios-modal .ios-body .border-gray-200 {
+	border-color: rgba(255, 255, 255, 0.1) !important;
+}
+.dark .ios-modal .ios-body .border-gray-300 {
+	border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Text — primary */
+.dark .ios-modal .ios-body .text-gray-900 {
+	color: #f3f4f6 !important;
+}
+.dark .ios-modal .ios-body .text-gray-800 {
+	color: #e5e7eb !important;
+}
+/* Text — secondary */
+.dark .ios-modal .ios-body .text-gray-700 {
+	color: #d1d5db !important;
+}
+.dark .ios-modal .ios-body .text-gray-600 {
+	color: #9ca3af !important;
+}
+.dark .ios-modal .ios-body .text-gray-500 {
+	color: #9ca3af !important;
+}
+.dark .ios-modal .ios-body .text-gray-400 {
+	color: #6b7280 !important;
+}
+
+/* Blue info banners */
+.dark .ios-modal .ios-body .bg-blue-50 {
+	background-color: rgba(30, 58, 138, 0.25) !important;
+}
+.dark .ios-modal .ios-body .border-blue-200 {
+	border-color: rgba(59, 130, 246, 0.3) !important;
+}
+.dark .ios-modal .ios-body .text-blue-900 {
+	color: #93c5fd !important;
+}
+.dark .ios-modal .ios-body .text-blue-700 {
+	color: #93c5fd !important;
+}
+.dark .ios-modal .ios-body .text-blue-800 {
+	color: #93c5fd !important;
+}
+.dark .ios-modal .ios-body .text-blue-500 {
+	color: #60a5fa !important;
+}
+
+/* Red error banners */
+.dark .ios-modal .ios-body .bg-red-50 {
+	background-color: rgba(127, 29, 29, 0.3) !important;
+}
+.dark .ios-modal .ios-body .border-red-200 {
+	border-color: rgba(239, 68, 68, 0.3) !important;
+}
+.dark .ios-modal .ios-body .text-red-700 {
+	color: #fca5a5 !important;
+}
+
+/* Green selected-scholar items */
+.dark .ios-modal .ios-body .bg-green-50 {
+	background-color: rgba(6, 78, 59, 0.3) !important;
+}
+.dark .ios-modal .ios-body .border-green-200 {
+	border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+/* Yellow notes banner */
+.dark .ios-modal .ios-body .bg-yellow-50 {
+	background-color: rgba(120, 53, 15, 0.25) !important;
+}
+.dark .ios-modal .ios-body .border-yellow-200 {
+	border-color: rgba(234, 179, 8, 0.3) !important;
+}
+.dark .ios-modal .ios-body .text-yellow-900 {
+	color: #fcd34d !important;
+}
+.dark .ios-modal .ios-body .text-yellow-800 {
+	color: #fde68a !important;
+}
+
+/* Total amount row in scholar breakdown */
+.dark .ios-modal .ios-body .border-blue-200 {
+	border-color: rgba(59, 130, 246, 0.25) !important;
+}
+.dark .ios-modal .ios-body .text-blue-900 {
+	color: #93c5fd !important;
+}
+
+/* Quill editor dark mode */
+.dark .ios-modal .ios-body .ql-toolbar {
+	background-color: #1e2535 !important;
+	border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .ios-modal .ios-body .ql-container {
+	background-color: #2a3040 !important;
+	border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .ios-modal .ios-body .ql-editor {
+	background-color: #2a3040 !important;
+	color: #e5e7eb !important;
+}
+
+.dark .ios-modal .ios-body .ql-editor::placeholder {
+	color: #9ca3af !important;
+}
+
+.dark .ios-modal .ios-body .ql-editor.ql-blank::before {
+	color: #9ca3af !important;
+}
+
+/* Quill toolbar buttons and controls in dark mode */
+.dark .ios-modal .ios-body .ql-toolbar button,
+.dark .ios-modal .ios-body .ql-toolbar button:hover,
+.dark .ios-modal .ios-body .ql-toolbar button.ql-active,
+.dark .ios-modal .ios-body .ql-toolbar button:focus,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button:hover,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button.ql-active {
+	color: #d1d5db !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button:hover::after,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button.ql-active::after {
+	background-color: #9ca3af !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow .ql-stroke {
+	stroke: #d1d5db !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow .ql-fill,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow .ql-stroke.ql-fill {
+	fill: #d1d5db !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button:hover .ql-stroke {
+	stroke: #f3f4f6 !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button:hover .ql-fill,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button:hover .ql-stroke.ql-fill {
+	fill: #f3f4f6 !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button.ql-active .ql-stroke {
+	stroke: #93c5fd !important;
+}
+
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button.ql-active .ql-fill,
+.dark .ios-modal .ios-body .ql-toolbar.ql-snow button.ql-active .ql-stroke.ql-fill {
+	fill: #93c5fd !important;
+}
+
+/* Quill list markers and text styling in dark mode */
+.dark .ios-modal .ios-body .ql-editor ol li,
+.dark .ios-modal .ios-body .ql-editor ul li {
+	color: #e5e7eb !important;
+}
+
+.dark .ios-modal .ios-body .ql-editor strong {
+	color: #f3f4f6 !important;
+}
+
+.dark .ios-modal .ios-body .ql-editor em {
+	color: #d1d5db !important;
+}
+
+/* ══════════════════════════════════════════
+   iOS MODAL EXTENDED COMPONENTS
+   (Footer, Row Controls, Steps, Selectable rows, etc.)
+   ══════════════════════════════════════════ */
+
+/* ── Full-height modal variant ── */
+.ios-modal-full {
+	max-height: 90vh;
+}
+
+/* ── Nav Actions Area (multiple icon buttons) ── */
+.ios-nav-actions {
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	gap: 6px;
+}
+
+/* ── Footer Bar ── */
+.ios-footer {
+	flex-shrink: 0;
+	padding: 8px 16px;
+	padding-bottom: max(8px, env(safe-area-inset-bottom));
+	border-top: 0.5px solid rgba(60, 60, 67, 0.12);
+	background: rgba(242, 242, 247, 0.95);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* ── Row Control (right-side input area) ── */
+.ios-row-control {
+	flex: 0 0 200px;
+	width: 200px;
+	display: flex;
+	justify-content: flex-end;
+	overflow: hidden;
+}
+
+.ios-row-control > * {
+	width: 100%;
+	min-width: 0;
+}
+
+/* ── Dual Date Row ── */
+.ios-row-dates {
+	gap: 4px;
+}
+
+.ios-row-dates .ios-row-control {
+	flex: 0 0 150px;
+	width: 150px;
+}
+
+.ios-date-separator {
+	color: #8e8e93;
+	font-size: 14px;
+	flex-shrink: 0;
+}
+
+/* ── Destructive Button ── */
+.ios-destructive-btn {
+	display: block;
+	width: 100%;
+	background: #ffffff;
+	border: 0.5px solid #e5e5ea;
+	border-radius: 10px;
+	padding: 8px;
+	text-align: center;
+	font-size: 13px;
+	color: #ff3b30;
+	cursor: pointer;
+	letter-spacing: -0.4px;
+	transition: background 0.15s;
+}
+
+.ios-destructive-btn:hover {
+	background: #f2f2f7;
+}
+
+/* ── Selectable Rows ── */
+.ios-row-selectable {
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.ios-row-selectable:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.ios-row-selected {
+	background: rgba(0, 122, 255, 0.05) !important;
+}
+
+/* ── Step Indicator (dot-style) ── */
+.step-indicator {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 10px 0 2px;
+	background: #f2f2f7;
+}
+
+.step-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #d1d1d6;
+	transition: all 0.3s ease;
+}
+
+.step-dot-active {
+	background: #007aff;
+	width: 24px;
+	border-radius: 4px;
+}
+
+.step-dot-done {
+	background: #34c759;
+}
+
+.status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* ── PrimeVue overrides inside iOS card ── */
+.ios-select .p-select {
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	font-size: 13px;
+	color: #8e8e93;
+	text-align: left;
+	padding: 0;
+	width: 100%;
+	max-width: 100%;
+	min-height: unset;
+}
+
+.ios-select .p-select-label {
+	color: #8e8e93 !important;
+	text-align: left;
+	padding: 4px 2px 4px 8px;
+	font-size: 13px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ios-select .p-select-dropdown {
+	color: #c7c7cc !important;
+}
+
+.ios-datepicker .p-datepicker {
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.ios-datepicker .p-inputtext {
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	text-align: right;
+	color: #8e8e93;
+	font-size: 13px;
+	padding: 4px 24px 4px 8px;
+}
+
+.ios-modal .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
+	background: #34c759 !important;
+}
+
+/* ── Dark Mode: Extended Components ── */
+.dark .ios-footer {
+	background: #2a3040;
+	border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Modal Maximized State ── */
+.ios-modal-maximized {
+	max-height: 100vh !important;
+	border-radius: 0 !important;
+}
+
+/* ── Nav Right Side (step counter + maximize button) ── */
+.ios-nav-right {
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.ios-nav-step-text {
+	font-size: 12px;
+	color: #8e8e93;
+	font-weight: 500;
+}
+
+.ios-nav-maximize {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 4px 6px;
+	border-radius: 6px;
+	color: #8e8e93;
+	transition: opacity 0.15s;
+	display: inline-flex;
+	align-items: center;
+}
+
+.ios-nav-maximize:hover {
+	opacity: 0.6;
+}
+
+/* ── Wizard Step Buttons ── */
+.ios-step-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 8px 20px;
+	background: #e5e5ea;
+	border: none;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #8e8e93;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+	min-width: 80px;
+	letter-spacing: -0.2px;
+}
+
+.ios-step-btn i {
+	font-size: 16px;
+}
+
+.ios-step-active {
+	background: #007aff;
+	color: #ffffff;
+}
+
+.ios-step-disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.ios-step-separator {
+	flex: 1;
+	height: 1px;
+	background: #d1d1d6;
+	align-self: center;
+}
+
+/* ── Footer Navigation Buttons ── */
+.ios-footer-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 20px;
+	border: none;
+	border-radius: 10px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: opacity 0.15s, background 0.15s;
+	letter-spacing: -0.3px;
+}
+
+.ios-footer-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.ios-footer-back {
+	background: #e5e5ea;
+	color: #374151;
+}
+
+.ios-footer-back:hover:not(:disabled) {
+	background: #d1d1d6;
+}
+
+.ios-footer-next {
+	background: #007aff;
+	color: #ffffff;
+}
+
+.ios-footer-next:hover:not(:disabled) {
+	opacity: 0.85;
+}
+
+.ios-footer-submit {
+	background: #34c759;
+	color: #ffffff;
+}
+
+.ios-footer-submit:hover:not(:disabled) {
+	opacity: 0.85;
+}
+
+/* ── Dark Mode: Wizard Steps & Footer Buttons ── */
+.dark .ios-step-btn {
+	background: #374151;
+	color: #9ca3af;
+}
+
+.dark .ios-step-active {
+	background: #1d4ed8;
+	color: #ffffff;
+}
+
+.dark .ios-step-separator {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .ios-footer-back {
+	background: #374151;
+	color: #d1d5db;
+}
+
+.dark .ios-footer-back:hover:not(:disabled) {
+	background: #4b5563;
+}
+
+.dark .ios-nav-step-text {
+	color: #9ca3af;
+}
+
+.dark .ios-nav-maximize {
+	color: #9ca3af;
+}
+
+.dark .ios-body {
+	color: #d1d5db;
+}
+
+.dark .ios-destructive-btn {
+	background: #1e2433;
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .ios-destructive-btn:hover {
+	background: #252d3d;
+}
+
+.dark .ios-row-selectable:hover {
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.dark .ios-row-selected {
+	background: rgba(96, 165, 250, 0.08) !important;
+}
+
+.dark .ios-label {
+	color: #d1d5db;
+}
+
+.dark .ios-hint {
+	color: #6b7280;
+}
+
+.dark .ios-file-input {
+	background: #1e2433;
+	border-color: rgba(255, 255, 255, 0.12);
+	color: #d1d5db;
+}
+
+.dark .ios-file-input:hover {
+	border-color: rgba(96, 165, 250, 0.5);
+}
+
+/* ── Row input (CourseModal) ── */
+.dark .ios-row-input {
+	color: #d1d5db;
+}
+
+/* ── Segment active ── */
+.dark .ios-segment-active {
+	background: #2a3040;
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Preview body (report modals) ── */
+.dark .ios-preview-body {
+	background: #1a1e27;
+}
+
+/* ── Report header ── */
+.dark .ios-report-header h1 {
+	color: #d1d5db;
+}
+.dark .ios-report-header p {
+	color: #9ca3af;
+}
+
+/* ── Report group header / count ── */
+.dark .ios-group-header {
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+	color: #d1d5db;
+}
+.dark .ios-group-count {
+	color: #9ca3af;
+	background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Report table ── */
+.dark .ios-table-wrap {
+	background: #1e2433;
+	box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+.dark .ios-table thead tr {
+	background: rgba(255, 255, 255, 0.04);
+}
+.dark .ios-table th {
+	color: #9ca3af;
+	border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.dark .ios-table td {
+	color: #d1d5db;
+	border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Summary card ── */
+.dark .ios-summary-card {
+	background: #1e2433;
+}
+.dark .ios-summary-card-title {
+	color: #9ca3af;
+}
+.dark .ios-summary-row {
+	color: #d1d5db;
+	border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Total banner ── */
+.dark .ios-total-banner {
+	background: #1e2433;
+	color: #d1d5db;
+}
+
+/* ── Empty state ── */
+.dark .ios-empty-state {
+	color: #9ca3af;
+}
+
+.dark .step-indicator {
+	background: #222831;
+}
+
+.dark .step-dot {
+	background: #4b5563;
+}
+
+/* ── PrimeVue filled variant overrides (global) ── */
+.p-inputtext.p-variant-filled,
+.p-textarea.p-variant-filled,
+.p-select.p-variant-filled .p-select-label,
+.p-datepicker.p-variant-filled .p-datepicker-input {
+	background-color: #ffffff !important;
+}
+
+.dark .p-inputtext.p-variant-filled,
+.dark .p-textarea.p-variant-filled,
+.dark .p-select.p-variant-filled .p-select-label,
+.dark .p-datepicker.p-variant-filled .p-datepicker-input {
+	background-color: #1a1e27 !important;
+	color: #d1d5db !important;
+}
