@@ -146,14 +146,14 @@ em     { font-style: italic; }
 `;
 
 export const PAPER_SIZES = {
-    a4: { w: 794, h: 1123, cssSize: 'A4', label: 'A4 — 210 × 297 mm' },
-    long: { w: 816, h: 1248, cssSize: '8.5in 13in', label: 'Long — 8.5 × 13 in' },
-    landscape: { w: 1248, h: 816, cssSize: '13in 8.5in', label: 'Long Landscape — 13 × 8.5 in' },
+	a4: { w: 794, h: 1123, cssSize: 'A4', label: 'A4 — 210 × 297 mm' },
+	long: { w: 816, h: 1248, cssSize: '8.5in 13in', label: 'Long — 8.5 × 13 in' },
+	landscape: { w: 1248, h: 816, cssSize: '13in 8.5in', label: 'Long Landscape — 13 × 8.5 in' },
 };
 
 export const getPdfCss = (paperSize = 'a4') => {
-    const size = PAPER_SIZES[paperSize]?.cssSize ?? PAPER_SIZES.a4.cssSize;
-    return PDF_CSS.replace('{{PAGE_SIZE}}', size);
+	const size = PAPER_SIZES[paperSize]?.cssSize ?? PAPER_SIZES.a4.cssSize;
+	return PDF_CSS.replace('{{PAGE_SIZE}}', size);
 };
 
 export default getPdfCss('a4');
