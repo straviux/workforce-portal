@@ -15,10 +15,12 @@ class EmployeeFundTransaction extends Model
     protected $fillable = [
         'transaction_id',
         'employee_type',
+        'employee_record_id',
         'payee_name',
         'payee_address',
         'office',
         'responsibility_center',
+        'particulars_id',
         'account_code',
         'particulars_name',
         'particulars_description',
@@ -30,6 +32,8 @@ class EmployeeFundTransaction extends Model
         'obr_no',
         'dv_no',
         'date_obligated',
+        'date_from',
+        'date_to',
         'transaction_status',
         'remarks',
         'upload_token',
@@ -42,6 +46,7 @@ class EmployeeFundTransaction extends Model
         'deduction_sss',
         'deduction_philhealth',
         'deduction_hdmf',
+        'obr_status',
         'created_by',
         'updated_by',
     ];
@@ -55,6 +60,8 @@ class EmployeeFundTransaction extends Model
         'deduction_hdmf' => 'decimal:2',
         'upload_token_expires_at' => 'datetime',
         'date_obligated' => 'date',
+        'date_from'      => 'date',
+        'date_to'        => 'date',
     ];
 
     protected static function boot(): void
@@ -74,6 +81,16 @@ class EmployeeFundTransaction extends Model
     public function responsibilityCenter()
     {
         return $this->belongsTo(ResponsibilityCenter::class, 'responsibility_center', 'id');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(FundTransactionEmployee::class, 'fund_transaction_id');
+    }
+
+    public function employeeRecord()
+    {
+        return $this->belongsTo(Employee::class, 'employee_record_id');
     }
 
     public function creator()

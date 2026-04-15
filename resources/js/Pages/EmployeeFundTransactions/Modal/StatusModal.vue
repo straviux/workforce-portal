@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Cancel
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">Update Status</span>
                     <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving">
@@ -18,23 +18,25 @@
 
                     <div class="ios-section" v-if="modelValue">
                         <p class="text-xs text-surface-400 uppercase tracking-wide mb-1">
-                            Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id }}</span>
+                            Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id
+                                }}</span>
                         </p>
                         <p class="text-xs text-surface-400">
                             Current status:
-                            <Tag :value="modelValue.transaction_status" :severity="statusSeverity(modelValue.transaction_status)" class="capitalize ml-1" />
+                            <Tag :value="modelValue.transaction_status"
+                                :severity="statusSeverity(modelValue.transaction_status)" class="capitalize ml-1" />
                         </p>
                     </div>
 
                     <div class="ios-section">
                         <label class="text-xs text-surface-400 uppercase tracking-wide mb-2 block">New Status</label>
-                        <Select v-model="selectedStatus" :options="statusOptions" optionLabel="label" optionValue="value"
-                            placeholder="Select status" class="w-full" />
+                        <Select v-model="selectedStatus" :options="statusOptions" optionLabel="label"
+                            optionValue="value" placeholder="Select status" class="w-full" />
                     </div>
 
                     <div class="ios-section">
-                        <Button label="Update Status" icon="pi pi-check" class="w-full rounded"
-                            :loading="isSaving" :disabled="isSaving || !selectedStatus" @click="handleSave" />
+                        <Button label="Update Status" icon="pi pi-check" class="w-full rounded" :loading="isSaving"
+                            :disabled="isSaving || !selectedStatus" @click="handleSave" />
                     </div>
 
                 </div>

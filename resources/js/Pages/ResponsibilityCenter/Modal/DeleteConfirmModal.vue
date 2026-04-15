@@ -6,9 +6,9 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <i class="pi pi-times"></i> Cancel
                     </button>
-                    <span class="ios-nav-title">Delete Transaction</span>
+                    <span class="ios-nav-title">Confirm Delete</span>
                 </div>
 
                 <div class="ios-body">
@@ -20,15 +20,19 @@
                                     <i class="pi pi-trash text-2xl text-red-500"></i>
                                 </div>
                             </div>
-                            <h3 class="text-base font-semibold mb-1">Delete Transaction?</h3>
+                            <h3 class="text-base font-semibold mb-1">
+                                {{ type === 'rc' ? `Delete Responsibility Center?` : `Delete Particular?` }}
+                            </h3>
                             <p class="text-sm text-surface-400 mb-3">
-                                This action cannot be undone. The following transaction will be permanently removed.
+                                {{ type === 'rc'
+                                    ? `All particulars under this responsibility center will also be deleted. This action
+                                cannot be undone.`
+                                    : `This particular will be permanently removed. This action cannot be undone.` }}
                             </p>
-                            <div class="bg-surface-100 dark:bg-surface-700 rounded-xl p-3 text-left space-y-1 text-sm">
-                                <p><span class="text-surface-400">ID:</span> <span class="font-mono font-semibold">{{
-                                        transactionId }}</span></p>
-                                <p v-if="payeeName"><span class="text-surface-400">Payee:</span> {{ payeeName }}</p>
-                                <p v-if="date"><span class="text-surface-400">Date:</span> {{ date }}</p>
+                            <div v-if="targetName"
+                                class="bg-surface-100 dark:bg-surface-700 rounded-xl p-3 text-left text-sm">
+                                <p><span class="text-surface-400">Name:</span> <span class="font-semibold">{{ targetName
+                                        }}</span></p>
                             </div>
                         </div>
                     </div>
@@ -36,9 +40,9 @@
                     <div class="ios-section">
                         <div class="flex gap-3">
                             <Button label="Cancel" severity="secondary" class="flex-1 rounded" outlined
-                                :disabled="isDeleting" @click="emit('update:show', false)" />
-                            <Button label="Delete" severity="danger" class="flex-1 rounded" :loading="isDeleting"
-                                :disabled="isDeleting" @click="emit('confirm-delete')" />
+                                :disabled="deleting" @click="emit('update:show', false)" />
+                            <Button label="Delete" severity="danger" class="flex-1 rounded" :loading="deleting"
+                                :disabled="deleting" @click="emit('confirm')" />
                         </div>
                     </div>
                 </div>
@@ -53,13 +57,12 @@ import { ref, computed } from 'vue';
 
 defineProps({
     show: Boolean,
-    transactionId: { type: String, default: '' },
-    payeeName: { type: String, default: '' },
-    date: { type: String, default: '' },
-    isDeleting: { type: Boolean, default: false },
+    type: { type: String, default: 'rc' }, // 'rc' | 'particular'
+    targetName: { type: String, default: '' },
+    deleting: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:show', 'confirm-delete']);
+const emit = defineEmits(['update:show', 'confirm']);
 
 const elModal = ref(null);
 const dragOffset = ref({ x: 0, y: 0 });

@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Close
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">Tracking History</span>
                 </div>
@@ -17,7 +17,8 @@
                     <div class="ios-section" v-if="hasHistory">
                         <div class="relative">
                             <!-- Vertical line -->
-                            <div class="absolute left-3.5 top-4 bottom-4 w-0.5 bg-surface-200 dark:bg-surface-600"></div>
+                            <div class="absolute left-3.5 top-4 bottom-4 w-0.5 bg-surface-200 dark:bg-surface-600">
+                            </div>
 
                             <div v-for="(entry, index) in trackingData.tracking_information" :key="index"
                                 class="relative flex gap-4 pb-6 last:pb-0">
@@ -39,7 +40,8 @@
                                         </span>
                                     </p>
                                     <p v-if="entry.status" class="mt-1">
-                                        <Tag :value="entry.status" :severity="statusSeverity(entry.status)" class="capitalize" />
+                                        <Tag :value="entry.status" :severity="statusSeverity(entry.status)"
+                                            class="capitalize" />
                                     </p>
                                 </div>
                             </div>

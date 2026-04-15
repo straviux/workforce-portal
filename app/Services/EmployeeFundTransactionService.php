@@ -37,6 +37,9 @@ class EmployeeFundTransactionService
     public function create(array $data): EmployeeFundTransaction
     {
         return DB::transaction(function () use ($data) {
+            $employees = $data['employees'] ?? [];
+            unset($data['employees']);
+
             $data['transaction_id'] = $this->generateTransactionId();
 
             if (empty($data['transaction_status'])) {
@@ -45,13 +48,18 @@ class EmployeeFundTransactionService
 
             $record = EmployeeFundTransaction::create($data);
 
+            foreach ($employees as $empData) {
+                $record->employees()->create($empData);
+            }
+
             Log::info('employee_fund_transaction_created', [
-                'id' => $record->id,
-                'transaction_id' => $record->transaction_id,
-                'created_by' => $record->created_by,
+                'id'               => $record->id,
+                'transaction_id'   => $record->transaction_id,
+                'employees_count'  => count($employees),
+                'created_by'       => $record->created_by,
             ]);
 
-            return $record;
+            return $record->load('employees');
         });
     }
 
@@ -60,10 +68,19 @@ class EmployeeFundTransactionService
      */
     public function update(EmployeeFundTransaction $record, array $data): EmployeeFundTransaction
     {
-        $record->update($data);
-        $record->refresh();
+        $employees = array_key_exists('employees', $data) ? $data['employees'] : null;
+        unset($data['employees']);
 
-        return $record;
+        $record->update($data);
+
+        if ($employees !== null) {
+            $record->employees()->delete();
+            foreach ($employees as $empData) {
+                $record->employees()->create($empData);
+            }
+        }
+
+        return $record->refresh()->load('employees');
     }
 
     /**

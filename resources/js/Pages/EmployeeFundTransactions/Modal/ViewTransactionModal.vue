@@ -6,22 +6,23 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Close
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">Transaction Details</span>
                 </div>
 
-                <div class="ios-body" v-if="transaction">
+                <div class="ios-body py-4!" v-if="transaction">
 
                     <!-- Status badge -->
                     <div class="flex items-center gap-2 mb-4">
-                        <Tag :value="transaction.transaction_status" :severity="statusSeverity(transaction.transaction_status)" class="capitalize" />
+                        <Tag :value="transaction.transaction_status"
+                            :severity="statusSeverity(transaction.transaction_status)" class="capitalize" />
                         <Tag :value="formatEmployeeType(transaction.employee_type)" severity="secondary" />
                     </div>
 
                     <!-- Common Fields -->
                     <div class="ios-section">
-                        <div class="ios-card">
+                        <div class="ios-card p-4">
                             <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                                 <div>
                                     <p class="text-xs text-surface-400 uppercase tracking-wide">Transaction ID</p>
@@ -40,8 +41,10 @@
                                     <p>{{ transaction.payee_address || '—' }}</p>
                                 </div>
                                 <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Responsibility Center</p>
-                                    <p>{{ transaction.responsibility_center?.name || transaction.responsibility_center || '—' }}</p>
+                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Responsibility Center
+                                    </p>
+                                    <p>{{ transaction.responsibility_center?.name || transaction.responsibility_center
+                                        || '—' }}</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-surface-400 uppercase tracking-wide">Account Code</p>
@@ -92,57 +95,17 @@
                     </div>
 
                     <!-- Particulars Description -->
-                    <div class="ios-section" v-if="transaction.particulars_description">
-                        <p class="text-xs text-surface-400 uppercase tracking-wide mb-2">Particulars Description</p>
-                        <div class="ios-card prose prose-sm max-w-none" v-html="transaction.particulars_description"></div>
-                    </div>
-
-                    <!-- COS Fields -->
-                    <div class="ios-section" v-if="transaction.employee_type === 'contract_of_service'">
-                        <p class="text-xs font-semibold uppercase tracking-wide mb-2 text-primary-400">Contract of Service Details</p>
-                        <div class="ios-card">
-                            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Employee ID</p>
-                                    <p>{{ transaction.employee_id || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Contract Ref No.</p>
-                                    <p>{{ transaction.contract_ref_no || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">ATM Account No.</p>
-                                    <p>{{ transaction.atm_account_no || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Monthly Compensation</p>
-                                    <p class="font-semibold">{{ money(transaction.monthly_compensation) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Deduction — SSS</p>
-                                    <p>{{ money(transaction.deduction_sss) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Deduction — PhilHealth</p>
-                                    <p>{{ money(transaction.deduction_philhealth) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Deduction — HDMF</p>
-                                    <p>{{ money(transaction.deduction_hdmf) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">SWA</p>
-                                    <Tag v-if="transaction.swa" value="SWA" severity="info" />
-                                    <span v-else class="text-surface-400">No</span>
-                                </div>
-                            </div>
+                    <div class="ios-section pb-4" v-if="transaction.particulars_description">
+                        <p class="ios-section-label">Particulars Description</p>
+                        <div class="ios-card prose prose-sm max-w-none p-4"
+                            v-html="transaction.particulars_description">
                         </div>
                     </div>
 
                     <!-- Remarks -->
-                    <div class="ios-section" v-if="transaction.remarks">
-                        <p class="text-xs text-surface-400 uppercase tracking-wide mb-2">Remarks</p>
-                        <div class="ios-card prose prose-sm max-w-none" v-html="transaction.remarks"></div>
+                    <div class="ios-section pb-4" v-if="transaction.remarks">
+                        <p class="ios-section-label">Remarks</p>
+                        <div class="ios-card prose prose-sm max-w-none p-4" v-html="transaction.remarks"></div>
                     </div>
 
                 </div>

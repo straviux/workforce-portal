@@ -25,7 +25,7 @@ class EmployeeFundTransactionController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = EmployeeFundTransaction::with(['creator', 'responsibilityCenter'])->latest();
+            $query = EmployeeFundTransaction::with(['creator', 'responsibilityCenter', 'employeeRecord', 'employees'])->latest();
 
             if ($search = $request->get('search')) {
                 $query->where(function ($q) use ($search) {
@@ -52,6 +52,14 @@ class EmployeeFundTransactionController extends Controller
 
             if ($employeeType = $request->get('employee_type')) {
                 $query->where('employee_type', $employeeType);
+            }
+
+            if ($obrStatus = $request->get('obr_status')) {
+                $query->where('obr_status', $obrStatus);
+            }
+
+            if ($obrType = $request->get('obr_type')) {
+                $query->where('obr_type', $obrType);
             }
 
             $perPage = (int) $request->get('per_page', 10);
@@ -111,7 +119,7 @@ class EmployeeFundTransactionController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $record = EmployeeFundTransaction::with(['creator', 'updater', 'responsibilityCenter'])
+            $record = EmployeeFundTransaction::with(['creator', 'updater', 'responsibilityCenter', 'employees'])
                 ->findOrFail($id);
 
             return response()->json([
@@ -246,5 +254,38 @@ class EmployeeFundTransactionController extends Controller
             'success' => true,
             'data'    => $record,
         ]);
+    }
+
+    /**
+     * Update OBR tracking info (fiscal_year, obr_no, date_obligated, dv_no, obr_status).
+     */
+    public function updateObr(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'fiscal_year'    => 'nullable|integer|min:2000|max:2100',
+            'obr_no'         => 'nullable|string|max:100',
+            'date_obligated' => 'nullable|date',
+            'dv_no'          => 'nullable|string|max:100',
+            'obr_status'     => 'nullable|string|in:No OBR,LOA,Irregular,Transferred,Claimed,Paid,On Process,Denied',
+        ]);
+
+        try {
+            $record = EmployeeFundTransaction::findOrFail($id);
+            $record->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'OBR info updated successfully',
+                'data'    => $record,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error updating OBR info for employee fund transaction ' . $id, ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating OBR info',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 }

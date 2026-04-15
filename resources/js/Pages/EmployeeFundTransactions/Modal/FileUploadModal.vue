@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Close
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">{{ title || 'Upload Files' }}</span>
                 </div>

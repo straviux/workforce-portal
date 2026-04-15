@@ -12,6 +12,7 @@ body {
   color: #000;
   background: #fff;
   padding: 6mm 5mm;
+  min-width: {{BODY_MIN_WIDTH}};
 }
 
 @page { size: {{PAGE_SIZE}}; margin: 6mm 5mm; }
@@ -151,9 +152,17 @@ export const PAPER_SIZES = {
 	landscape: { w: 1248, h: 816, cssSize: '13in 8.5in', label: 'Long Landscape — 13 × 8.5 in' },
 };
 
+// Body min-width so the screen preview matches the paper width (margins: 5mm×2 = 10mm)
+const BODY_MIN_WIDTHS = {
+	a4: 'calc(210mm - 10mm)',
+	long: 'calc(8.5in - 10mm)',
+	landscape: 'calc(13in - 10mm)',
+};
+
 export const getPdfCss = (paperSize = 'a4') => {
 	const size = PAPER_SIZES[paperSize]?.cssSize ?? PAPER_SIZES.a4.cssSize;
-	return PDF_CSS.replace('{{PAGE_SIZE}}', size);
+	const minWidth = BODY_MIN_WIDTHS[paperSize] ?? BODY_MIN_WIDTHS.a4;
+	return PDF_CSS.replace('{{PAGE_SIZE}}', size).replace('{{BODY_MIN_WIDTH}}', minWidth);
 };
 
 export default getPdfCss('a4');

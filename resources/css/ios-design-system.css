@@ -174,7 +174,7 @@
 }
 
 .ios-error {
-	color: #ff3b30;
+	color: #ff3b30 !important;
 }
 
 /* ── Cards & Rows ── */
@@ -1104,7 +1104,9 @@
 	font-weight: 500;
 	color: #8e8e93;
 	cursor: pointer;
-	transition: background 0.15s, color 0.15s;
+	transition:
+		background 0.15s,
+		color 0.15s;
 	min-width: 80px;
 	letter-spacing: -0.2px;
 }
@@ -1141,7 +1143,9 @@
 	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
-	transition: opacity 0.15s, background 0.15s;
+	transition:
+		opacity 0.15s,
+		background 0.15s;
 	letter-spacing: -0.3px;
 }
 
@@ -1256,7 +1260,9 @@
 /* ── Segment active ── */
 .dark .ios-segment-active {
 	background: #2a3040;
-	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
+	box-shadow:
+		0 3px 8px rgba(0, 0, 0, 0.3),
+		0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 /* ── Preview body (report modals) ── */

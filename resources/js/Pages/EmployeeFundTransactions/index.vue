@@ -1,5 +1,6 @@
 <template>
     <WorkforceLayout>
+
         <Head title="Employee Fund Transactions" />
 
         <!-- Page Header -->
@@ -18,25 +19,28 @@
         <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
             <IconField class="flex-1 min-w-50">
                 <InputIcon class="pi pi-search" />
-                <InputText v-model="filters.search" placeholder="Search ID, payee, DV no…"
-                    class="w-full" @keyup.enter="fetchTransactions(1)" />
+                <InputText v-model="filters.search" placeholder="Search ID, payee, DV no…" class="w-full"
+                    @keyup.enter="fetchTransactions(1)" />
             </IconField>
             <Select v-model="filters.status" :options="statusOptions" optionLabel="label" optionValue="value"
                 placeholder="All statuses" class="w-40" showClear @change="fetchTransactions(1)" />
-            <Select v-model="filters.employee_type" :options="employeeTypeOptions" optionLabel="label" optionValue="value"
-                placeholder="All types" class="w-44" showClear @change="fetchTransactions(1)" />
+            <Select v-model="filters.employee_type" :options="employeeTypeOptions" optionLabel="label"
+                optionValue="value" placeholder="All types" class="w-44" showClear @change="fetchTransactions(1)" />
             <InputText v-model="filters.fiscal_year" placeholder="Fiscal year" class="w-28"
                 @keyup.enter="fetchTransactions(1)" />
-            <Button icon="pi pi-filter-slash" severity="secondary" class="rounded" outlined
-                v-tooltip="'Reset filters'" @click="resetFilters" />
+            <Select v-model="filters.obr_status" :options="obrStatusOptions" optionLabel="label" optionValue="value"
+                placeholder="OBR Status" class="w-40" showClear @change="fetchTransactions(1)" />
+            <Select v-model="filters.obr_type" :options="obrTypeOptions" optionLabel="label" optionValue="value"
+                placeholder="OBR Type" class="w-44" showClear @change="fetchTransactions(1)" />
+            <Button icon="pi pi-filter-slash" severity="secondary" class="rounded" outlined v-tooltip="'Reset filters'"
+                @click="resetFilters" />
         </div>
 
         <!-- DataTable -->
         <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
-            <DataTable :value="transactions" :loading="loading" showGridlines stripedRows scrollable
-                lazy :totalRecords="pagination.filtered_total" :rows="pagination.per_page"
-                :first="paginatorFirst" paginator @page="onPage"
-                :rowsPerPageOptions="[10, 25, 50]"
+            <DataTable :value="transactions" :loading="loading" showGridlines stripedRows scrollable lazy
+                :totalRecords="pagination.filtered_total" :rows="pagination.per_page" :first="paginatorFirst" paginator
+                @page="onPage" :rowsPerPageOptions="[10, 25, 50]"
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
                 :pt="{
                     root: { style: 'border-radius:0;border:none;' },
@@ -76,6 +80,12 @@
                     </template>
                 </Column>
 
+                <Column field="obr_status" header="OBR Status" style="min-width:120px;">
+                    <template #body="{ data }">
+                        <Tag :value="data.obr_status || 'No OBR'" :severity="obrStatusSeverity(data.obr_status)" />
+                    </template>
+                </Column>
+
                 <Column field="transaction_status" header="Status" style="min-width:110px;">
                     <template #body="{ data }">
                         <Tag :value="data.transaction_status" :severity="statusSeverity(data.transaction_status)"
@@ -110,259 +120,33 @@
         <!-- ── Modals ── -->
         <ViewTransactionModal v-model:show="modals.view" :transaction="selectedTransaction" />
 
-        <DeleteConfirmModal v-model:show="modals.delete"
-            :transaction-id="selectedTransaction?.transaction_id"
+        <DeleteConfirmModal v-model:show="modals.delete" :transaction-id="selectedTransaction?.transaction_id"
             :payee-name="selectedTransaction?.payee_name"
-            :date="selectedTransaction ? formatDate(selectedTransaction.created_at) : ''"
-            :is-deleting="isDeleting"
+            :date="selectedTransaction ? formatDate(selectedTransaction.created_at) : ''" :is-deleting="isDeleting"
             @confirm-delete="handleDelete" />
 
-        <RemarksModal v-model:show="modals.remarks"
-            :model-value="selectedTransaction"
-            :is-saving="isSaving"
+        <RemarksModal v-model:show="modals.remarks" :model-value="selectedTransaction" :is-saving="isSaving"
             @save="handleSaveRemarks" />
 
-        <StatusModal v-model:show="modals.status"
-            :model-value="selectedTransaction"
-            :is-saving="isSaving"
+        <StatusModal v-model:show="modals.status" :model-value="selectedTransaction" :is-saving="isSaving"
             @save="handleSaveStatus" />
 
-        <QrCodeModal v-model:show="modals.qrCode"
-            :model-value="qrData"
-            :countdown="qrCountdown" />
+        <QrCodeModal v-model:show="modals.qrCode" :model-value="qrData" :countdown="qrCountdown" />
 
-        <TrackingHistoryModal v-model:show="modals.tracking"
-            :tracking-data="selectedTransaction" />
+        <TrackingHistoryModal v-model:show="modals.tracking" :tracking-data="selectedTransaction" />
 
-        <!-- ── Create / Edit Drawer ── -->
-        <FloatingDrawer v-model:visible="drawerVisible" position="right" :style="{ width: '32rem' }"
-            @hide="resetForm">
-            <template #header>
-                <span class="font-semibold text-base">
-                    {{ editingId ? 'Edit Transaction' : 'New Transaction' }}
-                </span>
-            </template>
+        <!-- ── Create / Edit Wizard ── -->
+        <TransactionWizard v-model:show="wizardShow" :mode="wizardMode" :transaction="wizardTransaction"
+            @saved="onWizardSaved" />
 
-            <div class="space-y-4 p-1">
+        <ObrTrackingModal v-model:show="modals.obrTracking" :model-value="selectedTransaction" :is-saving="isSaving"
+            :is-complete="obrTrackingComplete" @save="handleSaveObrTracking" />
 
-                <!-- Employee Type -->
-                <div>
-                    <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                        Employee Type <span class="text-red-400">*</span>
-                    </label>
-                    <Select v-model="form.employee_type" :options="employeeTypeOptions"
-                        optionLabel="label" optionValue="value" class="w-full" />
-                </div>
+        <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
+            :title="pdfPreview.title" />
 
-                <!-- Basic Info -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Payee Name <span class="text-red-400">*</span>
-                        </label>
-                        <InputText v-model="form.payee_name" class="w-full" placeholder="Full name" />
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Payee Address <span class="text-red-400">*</span>
-                        </label>
-                        <InputText v-model="form.payee_address" class="w-full" placeholder="Address" />
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Office / Unit <span class="text-red-400">*</span>
-                        </label>
-                        <InputText v-model="form.office" class="w-full" placeholder="Office or unit" />
-                    </div>
-                </div>
-
-                <!-- Responsibility Center + Particulars -->
-                <div>
-                    <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                        Responsibility Center <span class="text-red-400">*</span>
-                    </label>
-                    <ResponsibilityCenterSelect v-model="form.responsibility_center"
-                        :fiscal-year="form.fiscal_year"
-                        @change="onRcChange" />
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                        Particular
-                    </label>
-                    <ParticularsSelect v-model="form.particulars_id"
-                        :responsibility-center-id="form.responsibility_center"
-                        @change="onParticularChange" />
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Account Code
-                        </label>
-                        <InputText v-model="form.account_code" class="w-full" placeholder="Auto-filled" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Particulars Name
-                        </label>
-                        <InputText v-model="form.particulars_name" class="w-full" />
-                    </div>
-                </div>
-
-                <!-- Particulars Description -->
-                <div>
-                    <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                        Particulars Description
-                    </label>
-                    <Editor v-model="form.particulars_description" editorStyle="height: 120px">
-                        <template #toolbar>
-                            <span class="ql-formats">
-                                <button class="ql-bold"></button>
-                                <button class="ql-italic"></button>
-                                <button class="ql-underline"></button>
-                            </span>
-                            <span class="ql-formats">
-                                <button class="ql-list" value="ordered"></button>
-                                <button class="ql-list" value="bullet"></button>
-                            </span>
-                            <span class="ql-formats">
-                                <button class="ql-clean"></button>
-                            </span>
-                        </template>
-                    </Editor>
-                </div>
-
-                <!-- Amount + Fiscal Year -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Amount <span class="text-red-400">*</span>
-                        </label>
-                        <InputNumber v-model="form.amount" mode="currency" currency="PHP" locale="en-PH"
-                            class="w-full" :min="0" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Fiscal Year
-                        </label>
-                        <InputText v-model="form.fiscal_year" class="w-full" placeholder="e.g. 2024" />
-                    </div>
-                </div>
-
-                <!-- OBR / DV Info -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Disbursement Type
-                        </label>
-                        <InputText v-model="form.disbursement_type" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            OBR Type
-                        </label>
-                        <InputText v-model="form.obr_type" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            OBR No.
-                        </label>
-                        <InputText v-model="form.obr_no" class="w-full" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            DV No.
-                        </label>
-                        <InputText v-model="form.dv_no" class="w-full" />
-                    </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                            Date Obligated
-                        </label>
-                        <DatePicker v-model="form.date_obligated" class="w-full" dateFormat="yy-mm-dd" showIcon iconDisplay="input" />
-                    </div>
-                </div>
-
-                <!-- Explanation -->
-                <div>
-                    <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                        Explanation
-                    </label>
-                    <Textarea v-model="form.explanation" rows="2" class="w-full" autoResize />
-                </div>
-
-                <!-- ── COS Fields ── -->
-                <template v-if="form.employee_type === 'contract_of_service'">
-                    <div class="border-t border-surface-200 dark:border-surface-700 pt-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-primary-400 mb-3">
-                            Contract of Service Details
-                        </p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                Employee ID <span class="text-red-400">*</span>
-                            </label>
-                            <InputText v-model="form.employee_id" class="w-full" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                Contract Ref No.
-                            </label>
-                            <InputText v-model="form.contract_ref_no" class="w-full" />
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                ATM Account No.
-                            </label>
-                            <InputText v-model="form.atm_account_no" class="w-full" />
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                Monthly Compensation <span class="text-red-400">*</span>
-                            </label>
-                            <InputNumber v-model="form.monthly_compensation" mode="currency" currency="PHP"
-                                locale="en-PH" class="w-full" :min="0" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                SSS Deduction
-                            </label>
-                            <InputNumber v-model="form.deduction_sss" mode="currency" currency="PHP"
-                                locale="en-PH" class="w-full" :min="0" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                PhilHealth Deduction
-                            </label>
-                            <InputNumber v-model="form.deduction_philhealth" mode="currency" currency="PHP"
-                                locale="en-PH" class="w-full" :min="0" />
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-surface-400 uppercase tracking-wide mb-1">
-                                HDMF Deduction
-                            </label>
-                            <InputNumber v-model="form.deduction_hdmf" mode="currency" currency="PHP"
-                                locale="en-PH" class="w-full" :min="0" />
-                        </div>
-                        <div class="flex items-center gap-3 pt-1">
-                            <ToggleSwitch v-model="form.swa" size="small" inputId="swa-toggle" />
-                            <label for="swa-toggle" class="text-sm cursor-pointer">SWA</label>
-                        </div>
-                    </div>
-                </template>
-
-            </div>
-
-            <!-- Drawer Footer -->
-            <template #footer>
-                <div class="flex gap-3">
-                    <Button label="Cancel" severity="secondary" class="flex-1 rounded" outlined
-                        :disabled="isSaving" @click="drawerVisible = false" />
-                    <Button :label="editingId ? 'Update' : 'Save'" icon="pi pi-check" class="flex-1 rounded"
-                        :loading="isSaving" :disabled="isSaving" @click="handleSaveForm" />
-                </div>
-            </template>
-        </FloatingDrawer>
+        <OfficeHeadSelectModal v-model:show="modals.officeHeadSelect"
+            :options="pendingPrint.signatories.filter(s => s.part === 'A')" @select="onOfficeHeadSelected" />
 
     </WorkforceLayout>
 </template>
@@ -374,9 +158,9 @@ import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
-import FloatingDrawer from '@/Components/FloatingDrawer.vue';
-import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
-import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
+import TransactionWizard from './Modal/TransactionWizard.vue';
+import ObrTrackingModal from './Modal/ObrTrackingModal.vue';
+import PdfPreviewModal from './Modal/PdfPreviewModal.vue';
 
 import ViewTransactionModal from './Modal/ViewTransactionModal.vue';
 import DeleteConfirmModal from './Modal/DeleteConfirmModal.vue';
@@ -385,10 +169,11 @@ import RemarksModal from './Modal/RemarksModal.vue';
 import StatusModal from './Modal/StatusModal.vue';
 import QrCodeModal from './Modal/QrCodeModal.vue';
 import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
+import OfficeHeadSelectModal from './Modal/OfficeHeadSelectModal.vue';
 
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
-import DvTemplate from './Pdf/DvTemplate.vue';
+import CwaTemplate from './Pdf/CwaTemplate.vue';
 import PayrollTemplate from './Pdf/PayrollTemplate.vue';
 
 // ── Auth ──
@@ -397,7 +182,7 @@ const props = defineProps({
 });
 
 const toast = useToast();
-const { printHtml } = usePdfPrint();
+const { printHtml, buildHtmlDoc } = usePdfPrint();
 
 // ── State ──
 const transactions = ref([]);
@@ -405,8 +190,9 @@ const loading = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const selectedTransaction = ref(null);
-const editingId = ref(null);
-const drawerVisible = ref(false);
+const wizardShow = ref(false);
+const wizardMode = ref('create');
+const wizardTransaction = ref(null);
 const contextMenuRef = ref(null);
 const paginatorFirst = ref(0);
 const myCount = ref(0);
@@ -423,6 +209,8 @@ const filters = reactive({
     status: null,
     employee_type: null,
     fiscal_year: '',
+    obr_status: null,
+    obr_type: null,
 });
 
 const modals = reactive({
@@ -433,42 +221,18 @@ const modals = reactive({
     qrCode: false,
     tracking: false,
     upload: false,
+    obrTracking: false,
+    officeHeadSelect: false,
 });
+
+const pendingPrint = reactive({ type: '', signatories: [] });
+
+const obrTrackingComplete = ref(false);
+const pdfPreview = reactive({ show: false, html: '', title: '', size: 'a4' });
 
 const qrData = ref(null);
 const qrCountdown = ref('');
 
-// ── Form ──
-const defaultForm = () => ({
-    employee_type: 'contract_of_service',
-    payee_name: '',
-    payee_address: '',
-    office: '',
-    responsibility_center: null,
-    particulars_id: null,
-    account_code: '',
-    particulars_name: '',
-    particulars_description: '',
-    amount: null,
-    fiscal_year: new Date().getFullYear().toString(),
-    disbursement_type: '',
-    explanation: '',
-    obr_type: '',
-    obr_no: '',
-    dv_no: '',
-    date_obligated: null,
-    // COS
-    employee_id: '',
-    contract_ref_no: '',
-    swa: false,
-    atm_account_no: '',
-    monthly_compensation: null,
-    deduction_sss: null,
-    deduction_philhealth: null,
-    deduction_hdmf: null,
-});
-
-const form = ref(defaultForm());
 
 // ── Options ──
 const statusOptions = [
@@ -482,6 +246,23 @@ const statusOptions = [
 const employeeTypeOptions = [
     { label: 'Contract of Service', value: 'contract_of_service' },
     { label: 'Project-Based', value: 'project_based' },
+];
+
+const obrStatusOptions = [
+    { label: 'No OBR', value: 'No OBR' },
+    { label: 'On Process', value: 'On Process' },
+    { label: 'LOA', value: 'LOA' },
+    { label: 'Irregular', value: 'Irregular' },
+    { label: 'Transferred', value: 'Transferred' },
+    { label: 'Claimed', value: 'Claimed' },
+    { label: 'Paid', value: 'Paid' },
+    { label: 'Denied', value: 'Denied' },
+];
+
+const obrTypeOptions = [
+    { label: 'Regular', value: 'REGULAR' },
+    { label: 'Financial Assistance', value: 'FINANCIAL ASSISTANCE' },
+    { label: 'Reimbursement', value: 'REIMBURSEMENT' },
 ];
 
 // ── Context Menu ──
@@ -509,6 +290,11 @@ const menuItems = computed(() => {
             command: () => { modals.status = true; },
         },
         {
+            label: 'Update OBR Info',
+            icon: 'pi pi-pencil',
+            command: () => { obrTrackingComplete.value = false; modals.obrTracking = true; },
+        },
+        {
             label: 'Add Remarks',
             icon: 'pi pi-comment',
             command: () => { modals.remarks = true; },
@@ -525,9 +311,9 @@ const menuItems = computed(() => {
             command: () => printPdf('obr'),
         },
         {
-            label: 'Print DV',
+            label: 'Print CWA',
             icon: 'pi pi-print',
-            command: () => printPdf('dv'),
+            command: () => printPdf('cwa'),
         },
         {
             label: 'Print Payroll',
@@ -569,6 +355,8 @@ async function fetchTransactions(page = pagination.current_page) {
         if (filters.status) params.status = filters.status;
         if (filters.employee_type) params.employee_type = filters.employee_type;
         if (filters.fiscal_year) params.fiscal_year = filters.fiscal_year;
+        if (filters.obr_status) params.obr_status = filters.obr_status;
+        if (filters.obr_type) params.obr_type = filters.obr_type;
 
         const res = await axios.get('/api/employee-fund-transactions', { params });
         transactions.value = res.data.data;
@@ -595,51 +383,22 @@ function resetFilters() {
     filters.status = null;
     filters.employee_type = null;
     filters.fiscal_year = '';
+    filters.obr_status = null;
+    filters.obr_type = null;
     fetchTransactions(1);
 }
 
 // ── Open / Close ──
 function openCreate() {
-    editingId.value = null;
-    form.value = defaultForm();
-    drawerVisible.value = true;
+    wizardMode.value = 'create';
+    wizardTransaction.value = null;
+    wizardShow.value = true;
 }
 
 function openEdit(transaction) {
-    editingId.value = transaction.id;
-    form.value = {
-        employee_type: transaction.employee_type,
-        payee_name: transaction.payee_name,
-        payee_address: transaction.payee_address,
-        office: transaction.office,
-        responsibility_center: transaction.responsibility_center,
-        particulars_id: null,
-        account_code: transaction.account_code || '',
-        particulars_name: transaction.particulars_name || '',
-        particulars_description: transaction.particulars_description || '',
-        amount: transaction.amount ? Number(transaction.amount) : null,
-        fiscal_year: transaction.fiscal_year || '',
-        disbursement_type: transaction.disbursement_type || '',
-        explanation: transaction.explanation || '',
-        obr_type: transaction.obr_type || '',
-        obr_no: transaction.obr_no || '',
-        dv_no: transaction.dv_no || '',
-        date_obligated: transaction.date_obligated ? new Date(transaction.date_obligated) : null,
-        employee_id: transaction.employee_id || '',
-        contract_ref_no: transaction.contract_ref_no || '',
-        swa: transaction.swa ?? false,
-        atm_account_no: transaction.atm_account_no || '',
-        monthly_compensation: transaction.monthly_compensation ? Number(transaction.monthly_compensation) : null,
-        deduction_sss: transaction.deduction_sss ? Number(transaction.deduction_sss) : null,
-        deduction_philhealth: transaction.deduction_philhealth ? Number(transaction.deduction_philhealth) : null,
-        deduction_hdmf: transaction.deduction_hdmf ? Number(transaction.deduction_hdmf) : null,
-    };
-    drawerVisible.value = true;
-}
-
-function resetForm() {
-    editingId.value = null;
-    form.value = defaultForm();
+    wizardMode.value = 'edit';
+    wizardTransaction.value = transaction;
+    wizardShow.value = true;
 }
 
 function openMenu(event, transaction) {
@@ -647,50 +406,10 @@ function openMenu(event, transaction) {
     contextMenuRef.value.toggle(event);
 }
 
-// ── Select callbacks ──
-function onRcChange(rc) {
-    // Reset particular when RC changes
-    form.value.particulars_id = null;
-    form.value.account_code = '';
-    form.value.particulars_name = '';
-}
-
-function onParticularChange(particular) {
-    if (particular) {
-        form.value.account_code = particular.account_code || '';
-        form.value.particulars_name = particular.name || '';
-    }
-}
-
-// ── Save Form ──
-async function handleSaveForm() {
-    isSaving.value = true;
-    try {
-        const payload = { ...form.value };
-        // Remove internal UI-only field
-        delete payload.particulars_id;
-
-        // Format date if Date object
-        if (payload.date_obligated instanceof Date) {
-            payload.date_obligated = payload.date_obligated.toISOString().slice(0, 10);
-        }
-
-        if (editingId.value) {
-            await axios.put(`/api/employee-fund-transactions/${editingId.value}`, payload);
-            toast.add({ severity: 'success', summary: 'Updated', detail: 'Transaction updated.', life: 3000 });
-        } else {
-            await axios.post('/api/employee-fund-transactions', payload);
-            toast.add({ severity: 'success', summary: 'Created', detail: 'Transaction created.', life: 3000 });
-        }
-
-        drawerVisible.value = false;
-        fetchTransactions(editingId.value ? pagination.current_page : 1);
-    } catch (err) {
-        const detail = err.response?.data?.message || 'Failed to save transaction.';
-        toast.add({ severity: 'error', summary: 'Error', detail, life: 5000 });
-    } finally {
-        isSaving.value = false;
-    }
+// ── Wizard saved ──
+function onWizardSaved() {
+    wizardShow.value = false;
+    fetchTransactions(wizardMode.value === 'edit' ? pagination.current_page : 1);
 }
 
 // ── Modal Saves ──
@@ -756,28 +475,75 @@ async function openQrCode(transaction) {
 }
 
 // ── PDF ──
-function printPdf(type) {
-    const voucher = selectedTransaction.value;
-    if (!voucher) return;
-
+function renderAndShow(type, voucher, signatories) {
     let html, title, size;
     if (type === 'obr') {
         html = renderVueTemplate(ObrTemplate, { voucher });
         title = `OBR-${voucher.obr_no || voucher.transaction_id}`;
         size = 'a4';
-    } else if (type === 'dv') {
-        html = renderVueTemplate(DvTemplate, { voucher });
-        title = `DV-${voucher.dv_no || voucher.transaction_id}`;
-        size = 'a4';
+    } else if (type === 'cwa') {
+        html = renderVueTemplate(CwaTemplate, { voucher, employees: voucher.employees ?? [], signatories });
+        title = `CWA-${voucher.fiscal_year || voucher.transaction_id}`;
+        size = 'landscape';
     } else {
-        html = renderVueTemplate(PayrollTemplate, { voucher });
+        html = renderVueTemplate(PayrollTemplate, { voucher, signatories });
         title = `Payroll-${voucher.payee_name || voucher.transaction_id}`;
         size = 'landscape';
     }
-    printHtml(html, title, size);
+    pdfPreview.html = buildHtmlDoc(html, title, size);
+    pdfPreview.title = title;
+    pdfPreview.size = size;
+    pdfPreview.show = true;
+}
+
+async function printPdf(type) {
+    const voucher = selectedTransaction.value;
+    if (!voucher) return;
+
+    let signatories = [];
+    try {
+        const res = await axios.get('/api/signatories');
+        signatories = res.data.data ?? [];
+    } catch { /* non-critical — fall back to empty */ }
+
+    if (type !== 'obr') {
+        const partA = signatories.filter((s) => s.part === 'A');
+        if (partA.length > 1) {
+            pendingPrint.type = type;
+            pendingPrint.signatories = signatories;
+            modals.officeHeadSelect = true;
+            return;
+        }
+    }
+
+    renderAndShow(type, voucher, signatories);
+}
+
+function onOfficeHeadSelected(chosen) {
+    const voucher = selectedTransaction.value;
+    if (!voucher) return;
+    const signatories = [
+        ...pendingPrint.signatories.filter((s) => s.part !== 'A'),
+        { ...chosen, part: 'A' },
+    ];
+    renderAndShow(pendingPrint.type, voucher, signatories);
 }
 
 // ── Helpers ──
+async function handleSaveObrTracking(data) {
+    isSaving.value = true;
+    try {
+        await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-obr`, data);
+        obrTrackingComplete.value = true;
+        fetchTransactions(pagination.current_page);
+        toast.add({ severity: 'success', summary: 'Saved', detail: 'OBR info updated.', life: 3000 });
+    } catch {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update OBR info.', life: 3000 });
+    } finally {
+        isSaving.value = false;
+    }
+}
+
 function formatDate(val) {
     if (!val) return '—';
     return new Date(val).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -790,6 +556,19 @@ function money(val) {
 
 function statusSeverity(status) {
     return { pending: 'warn', approved: 'success', active: 'info', denied: 'danger', suspended: 'secondary' }[status] || 'secondary';
+}
+
+function obrStatusSeverity(status) {
+    return {
+        'No OBR': 'secondary',
+        'On Process': 'warn',
+        'LOA': 'info',
+        'Irregular': 'danger',
+        'Transferred': 'secondary',
+        'Claimed': 'success',
+        'Paid': 'success',
+        'Denied': 'danger',
+    }[status] || 'secondary';
 }
 
 function formatType(type) {
