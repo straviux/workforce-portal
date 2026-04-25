@@ -9,6 +9,7 @@ class UserSharedResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $roles = $this->getRoleNames()->values()->toArray();
         $permissions = $this->roles()
             ->with('permissions')
             ->get()
@@ -23,7 +24,8 @@ class UserSharedResource extends JsonResource
             'name'                => $this->name,
             'username'            => $this->username,
             'office_designation'  => $this->office_designation,
-            'roles'               => $this->getRoleNames(),
+            'roles'               => $roles,
+            'primary_role'        => $roles[0] ?? null,
             'permissions'         => $permissions,
             'profile_photo_url'   => $this->profile_photo_url,
             'has_profile_photo'   => $this->hasProfilePhoto(),

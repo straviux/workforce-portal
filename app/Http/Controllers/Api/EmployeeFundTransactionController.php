@@ -191,10 +191,10 @@ class EmployeeFundTransactionController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (!$user->hasRole('administrator')) {
+        if (!$user->hasPermission('employee_fund_transactions.delete')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only administrators can delete transactions',
+                'message' => 'You do not have permission to delete transactions',
             ], 403);
         }
 

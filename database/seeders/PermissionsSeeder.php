@@ -22,6 +22,17 @@ class PermissionsSeeder extends Seeder
             'employee_fund_transactions.manage',
             'employee_fund_transactions.delete',
             'employee_fund_transactions.export',
+            'employees.view',
+            'employees.manage',
+            'employees.delete',
+            'responsibility_centers.view',
+            'responsibility_centers.manage',
+            'responsibility_centers.delete',
+            'certifications.view',
+            'certifications.manage',
+            'swa.view',
+            'signatories.view',
+            'signatories.manage',
             'users.view',
             'users.manage',
             'roles.view',
@@ -44,6 +55,9 @@ class PermissionsSeeder extends Seeder
             'employee_fund_transactions.view',
             'employee_fund_transactions.manage',
             'employee_fund_transactions.export',
+            'employees.view',
+            'responsibility_centers.view',
+            'signatories.view',
         ]);
 
         $this->command->info('Permissions and roles seeded successfully.');

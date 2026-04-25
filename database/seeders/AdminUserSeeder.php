@@ -18,13 +18,13 @@ class AdminUserSeeder extends Seeder
             [
                 'name'     => 'Administrator',
                 'username' => 'admin',
-                'password' => Hash::make('Admin@1234'),
+                'password' => Hash::make('admin0511'),
             ],
         );
 
-        $admin->assignRole('admin');
+        $admin->syncRoles(['admin']);
 
-        $this->command->info("Admin user ready: username=admin / Admin@1234");
+        $this->command->info("Admin user ready: username=admin / admin0511");
         $this->command->warn("Change the default password after first login.");
     }
 }

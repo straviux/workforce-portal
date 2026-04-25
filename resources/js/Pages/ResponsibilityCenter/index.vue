@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
+import ContextMenu from 'primevue/contextmenu';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
@@ -13,10 +14,17 @@ defineOptions({
 });
 
 const toast = useToast();
+const page = usePage();
 
 const responsibilityCenters = ref([]);
 const loading = ref(false);
 const deleting = ref(false);
+const contextMenuRef = ref(null);
+const contextMenuItems = ref([]);
+const contextMenuParticular = ref(null);
+const userPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
+const canManageResponsibilityCenters = computed(() => userPermissions.value.includes('responsibility_centers.manage'));
+const canDeleteResponsibilityCenters = computed(() => userPermissions.value.includes('responsibility_centers.delete'));
 
 // RC Modal
 const showRCModal = ref(false);
@@ -62,6 +70,82 @@ const confirmDeleteParticular = (rcId, particular) => {
     deleteTargetId.value = particular.id;
     deleteTargetName.value = particular.name;
     showDeleteModal.value = true;
+};
+
+const showContextMenu = (mouseEvent) => {
+    if (typeof contextMenuRef.value?.show === 'function') {
+        contextMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    contextMenuRef.value?.toggle(mouseEvent);
+};
+
+const openRCContextMenu = (event, rc) => {
+    const items = [];
+
+    if (canManageResponsibilityCenters.value) {
+        items.push(
+            { label: 'Add Particular', icon: 'pi pi-plus', command: () => openParticularsModal(rc) },
+            { label: 'Edit Responsibility Center', icon: 'pi pi-pencil', command: () => openRCModal(rc) },
+        );
+    }
+
+    if (canDeleteResponsibilityCenters.value) {
+        if (items.length > 0) {
+            items.push({ separator: true });
+        }
+
+        items.push({
+            label: 'Delete Responsibility Center',
+            icon: 'pi pi-trash',
+            class: 'text-red-500',
+            command: () => deleteRC(rc),
+        });
+    }
+
+    if (items.length === 0) {
+        return;
+    }
+
+    contextMenuItems.value = items;
+    showContextMenu(event);
+};
+
+const openParticularContextMenu = (event, rc) => {
+    const particular = event.data;
+    const items = [];
+
+    contextMenuParticular.value = particular;
+
+    if (canManageResponsibilityCenters.value) {
+        items.push({
+            label: 'Edit Particular',
+            icon: 'pi pi-pencil',
+            command: () => openParticularsModal(rc, particular),
+        });
+    }
+
+    if (canDeleteResponsibilityCenters.value) {
+        if (items.length > 0) {
+            items.push({ separator: true });
+        }
+
+        items.push({
+            label: 'Delete Particular',
+            icon: 'pi pi-trash',
+            class: 'text-red-500',
+            command: () => confirmDeleteParticular(rc.id, particular),
+        });
+    }
+
+    if (items.length === 0) {
+        return;
+    }
+
+    event.originalEvent.preventDefault();
+    contextMenuItems.value = items;
+    showContextMenu(event.originalEvent);
 };
 
 const handleDeleteConfirm = async () => {
@@ -117,8 +201,8 @@ onMounted(fetchResponsibilityCenters);
                 </div>
             </template>
             <template #end>
-                <Button icon="pi pi-plus" severity="success" rounded outlined @click="openRCModal()"
-                    v-tooltip.bottom="`Add Responsibility Center`" />
+                <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" severity="success" rounded outlined
+                    @click="openRCModal()" v-tooltip.bottom="`Add Responsibility Center`" />
             </template>
         </Toolbar>
 
@@ -132,8 +216,8 @@ onMounted(fetchResponsibilityCenters);
             <div class="flex flex-col items-center justify-center py-16 text-gray-400">
                 <i class="pi pi-inbox text-5xl mb-4"></i>
                 <p class="text-base">No responsibility centers yet</p>
-                <Button icon="pi pi-plus" label="Add Responsibility Center" severity="secondary" outlined rounded
-                    class="mt-4" @click="openRCModal()" />
+                <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" label="Add Responsibility Center"
+                    severity="secondary" outlined rounded class="mt-4" @click="openRCModal()" />
             </div>
         </Panel>
 
@@ -142,35 +226,37 @@ onMounted(fetchResponsibilityCenters);
             <Panel v-for="rc in responsibilityCenters" :key="rc.id" class="!rounded-4xl overflow-hidden">
 
                 <!-- RC Info Bar -->
-                <div
-                    class="flex items-center justify-between gap-4 mb-4 p-3 bg-gray-50 dark:bg-[#1e242b] rounded-4xl -mt-2">
+                <div class="flex items-center justify-between gap-4 mb-4 p-3 bg-gray-50 dark:bg-[#1e242b] rounded-4xl -mt-2"
+                    @contextmenu.prevent="openRCContextMenu($event, rc)">
                     <div class="flex items-center gap-3">
                         <i class="pi pi-building text-blue-500 text-xl"></i>
                         <div>
                             <h3 class="font-bold text-gray-700 dark:text-gray-100">{{ rc.name }}</h3>
                             <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
                                 <span>Code: <span class="font-mono font-semibold text-gray-700 dark:text-gray-300">{{
-                                        rc.code
-                                        }}</span></span>
+                                    rc.code
+                                }}</span></span>
                                 <span v-if="rc.fiscal_year">FY: <span class="font-medium">{{ rc.fiscal_year
-                                        }}</span></span>
+                                }}</span></span>
                                 <span class="text-gray-400">{{ rc.particulars?.length ?? 0 }} particular(s)</span>
                             </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button icon="pi pi-plus" size="small" severity="success" rounded text
-                            @click="openParticularsModal(rc)" v-tooltip.bottom="`Add Particular`" />
-                        <Button icon="pi pi-pencil" severity="secondary" text rounded size="small"
-                            @click="openRCModal(rc)" v-tooltip.bottom="`Edit RC`" />
-                        <Button icon="pi pi-trash" severity="danger" text rounded size="small" @click="deleteRC(rc)"
-                            v-tooltip.bottom="`Delete RC`" />
+                        <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" size="small" severity="success"
+                            rounded text @click="openParticularsModal(rc)" v-tooltip.bottom="`Add Particular`" />
+                        <Button v-if="canManageResponsibilityCenters" icon="pi pi-pencil" severity="secondary" text
+                            rounded size="small" @click="openRCModal(rc)" v-tooltip.bottom="`Edit RC`" />
+                        <Button v-if="canDeleteResponsibilityCenters" icon="pi pi-trash" severity="danger" text rounded
+                            size="small" @click="deleteRC(rc)" v-tooltip.bottom="`Delete RC`" />
                     </div>
                 </div>
 
                 <!-- Particulars DataTable -->
-                <DataTable v-if="rc.particulars && rc.particulars.length > 0" :value="rc.particulars" showGridlines
-                    stripedRows scrollable class="text-sm">
+                <DataTable v-if="rc.particulars && rc.particulars.length > 0"
+                    v-model:contextMenuSelection="contextMenuParticular" :value="rc.particulars" contextMenu
+                    showGridlines stripedRows scrollable class="text-sm"
+                    @row-contextmenu="(event) => openParticularContextMenu(event, rc)">
                     <Column field="name" header="Particular" style="min-width: 200px">
                         <template #body="{ data }">
                             <span class="font-medium text-gray-800 dark:text-gray-100">{{ data.name }}</span>
@@ -204,13 +290,16 @@ onMounted(fetchResponsibilityCenters);
                             <span v-else class="text-xs text-gray-400">—</span>
                         </template>
                     </Column>
-                    <Column header="" style="width: 90px">
+                    <Column v-if="canManageResponsibilityCenters || canDeleteResponsibilityCenters" header=""
+                        style="width: 90px">
                         <template #body="{ data }">
                             <div class="flex items-center gap-1 justify-end">
-                                <Button icon="pi pi-pencil" severity="secondary" text rounded size="small"
-                                    @click="openParticularsModal(rc, data)" v-tooltip.top="`Edit`" />
-                                <Button icon="pi pi-trash" severity="danger" text rounded size="small"
-                                    @click="confirmDeleteParticular(rc.id, data)" v-tooltip.top="`Delete`" />
+                                <Button v-if="canManageResponsibilityCenters" icon="pi pi-pencil" severity="secondary"
+                                    text rounded size="small" @click="openParticularsModal(rc, data)"
+                                    v-tooltip.top="`Edit`" />
+                                <Button v-if="canDeleteResponsibilityCenters" icon="pi pi-trash" severity="danger" text
+                                    rounded size="small" @click="confirmDeleteParticular(rc.id, data)"
+                                    v-tooltip.top="`Delete`" />
                             </div>
                         </template>
                     </Column>
@@ -234,6 +323,8 @@ onMounted(fetchResponsibilityCenters);
         <!-- Delete Confirm Modal -->
         <DeleteConfirmModal v-model:show="showDeleteModal" :type="deleteType" :target-name="deleteTargetName"
             :deleting="deleting" @confirm="handleDeleteConfirm" />
+
+        <ContextMenu ref="contextMenuRef" :model="contextMenuItems" @hide="contextMenuParticular = null" />
     </div>
 </template>
 

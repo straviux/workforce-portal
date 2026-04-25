@@ -38,7 +38,8 @@
 
         <!-- DataTable -->
         <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
-            <DataTable :value="transactions" :loading="loading" showGridlines stripedRows scrollable lazy
+            <DataTable v-model:contextMenuSelection="contextMenuTransaction" :value="transactions" :loading="loading"
+                contextMenu showGridlines stripedRows scrollable lazy @row-contextmenu="openRowContextMenu"
                 :totalRecords="pagination.filtered_total" :rows="pagination.per_page" :first="paginatorFirst" paginator
                 @page="onPage" :rowsPerPageOptions="[10, 25, 50]"
                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
@@ -115,7 +116,7 @@
         </div>
 
         <!-- Context Menu -->
-        <Menu ref="contextMenuRef" :model="menuItems" popup />
+        <ContextMenu ref="contextMenuRef" :model="menuItems" @hide="contextMenuTransaction = null" />
 
         <!-- ── Modals ── -->
         <ViewTransactionModal v-model:show="modals.view" :transaction="selectedTransaction" />
@@ -154,6 +155,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { Head } from '@inertiajs/vue3';
+import ContextMenu from 'primevue/contextmenu';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
@@ -194,6 +196,7 @@ const wizardShow = ref(false);
 const wizardMode = ref('create');
 const wizardTransaction = ref(null);
 const contextMenuRef = ref(null);
+const contextMenuTransaction = ref(null);
 const paginatorFirst = ref(0);
 const myCount = ref(0);
 
@@ -401,9 +404,26 @@ function openEdit(transaction) {
     wizardShow.value = true;
 }
 
+function showContextMenu(mouseEvent) {
+    if (typeof contextMenuRef.value?.show === 'function') {
+        contextMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    contextMenuRef.value?.toggle(mouseEvent);
+}
+
 function openMenu(event, transaction) {
     selectedTransaction.value = transaction;
-    contextMenuRef.value.toggle(event);
+    contextMenuTransaction.value = transaction;
+    showContextMenu(event);
+}
+
+function openRowContextMenu(event) {
+    event.originalEvent.preventDefault();
+    selectedTransaction.value = event.data;
+    contextMenuTransaction.value = event.data;
+    showContextMenu(event.originalEvent);
 }
 
 // ── Wizard saved ──

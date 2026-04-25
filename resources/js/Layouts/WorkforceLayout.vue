@@ -10,13 +10,41 @@ const sidebarMinimized = ref(localStorage.getItem('sidebarMinimized') === 'true'
 const isDark = ref(document.documentElement.classList.contains('dark'));
 
 const user = computed(() => page.props.auth?.user);
+const permissions = computed(() => user.value?.permissions ?? []);
+const normalizedRoles = computed(() => {
+    const roles = user.value?.roles;
+
+    if (Array.isArray(roles)) {
+        return roles;
+    }
+
+    if (roles && typeof roles === 'object') {
+        return Object.values(roles);
+    }
+
+    return [];
+});
+
+function humanizeRole(roleName) {
+    if (!roleName) {
+        return 'User';
+    }
+
+    return roleName
+        .split(/[_-]/g)
+        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(' ');
+}
 
 const userRole = computed(() => {
-    const roles = user.value?.roles;
-    if (Array.isArray(roles) && roles.length > 0) {
-        return roles[0]?.name ?? roles[0];
+    if (typeof user.value?.primary_role === 'string' && user.value.primary_role.length > 0) {
+        return humanizeRole(user.value.primary_role);
     }
-    return 'Staff';
+
+    const [firstRole] = normalizedRoles.value;
+    const roleName = typeof firstRole === 'string' ? firstRole : firstRole?.name;
+
+    return humanizeRole(roleName);
 });
 
 function toggleSidebarMinimized() {
@@ -47,6 +75,10 @@ function isActive(routeName) {
     } catch {
         return false;
     }
+}
+
+function hasPermission(permission) {
+    return permissions.value.includes(permission);
 }
 </script>
 
@@ -104,23 +136,45 @@ function isActive(routeName) {
                         <i class="pi pi-home mr-3 text-base"></i>
                         <span class="text-sm font-medium">Dashboard</span>
                     </SidebarLink>
-                    <SidebarLink :href="route('employees.index')" :active="isActive('employees')">
+                    <SidebarLink v-if="hasPermission('employees.view')" :href="route('employees.index')"
+                        :active="isActive('employees')">
                         <i class="pi pi-id-card mr-3 text-base"></i>
                         <span class="text-sm font-medium">Employees</span>
                     </SidebarLink>
-                    <SidebarLink :href="route('employee_fund_transactions.index')"
+                    <SidebarLink v-if="hasPermission('employee_fund_transactions.view')"
+                        :href="route('employee_fund_transactions.index')"
                         :active="isActive('employee_fund_transactions')">
                         <i class="pi pi-file-edit mr-3 text-base"></i>
                         <span class="text-sm font-medium">Fund Transactions</span>
                     </SidebarLink>
-                    <SidebarLink :href="route('responsibility_centers.index')"
-                        :active="isActive('responsibility_centers')">
+                    <SidebarLink v-if="hasPermission('responsibility_centers.view')"
+                        :href="route('responsibility_centers.index')" :active="isActive('responsibility_centers')">
                         <i class="pi pi-building mr-3 text-base"></i>
-                        <span class="text-sm font-medium">Responsibility Centers</span>
+                        <span class="text-sm font-medium">Resp Centers</span>
                     </SidebarLink>
-                    <SidebarLink :href="route('settings.signatories')" :active="isActive('settings')">
+                    <SidebarLink v-if="hasPermission('certifications.view')" :href="route('certifications.index')"
+                        :active="isActive('certifications')">
+                        <i class="pi pi-check-circle mr-3 text-base"></i>
+                        <span class="text-sm font-medium">Certifications</span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
+                        <i class="pi pi-briefcase mr-3 text-base"></i>
+                        <span class="text-sm font-medium">SWA</span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
+                        :active="isActive('settings.signatories')">
                         <i class="pi pi-pen-to-square mr-3 text-base"></i>
                         <span class="text-sm font-medium">Signatories</span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('users.view')" :href="route('settings.users.index')"
+                        :active="isActive('settings.users')">
+                        <i class="pi pi-users mr-3 text-base"></i>
+                        <span class="text-sm font-medium">User Management</span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('roles.view')" :href="route('settings.roles.index')"
+                        :active="isActive('settings.roles')">
+                        <i class="pi pi-shield mr-3 text-base"></i>
+                        <span class="text-sm font-medium">Access Roles</span>
                     </SidebarLink>
                 </nav>
 
@@ -131,26 +185,52 @@ function isActive(routeName) {
                             <i class="pi pi-home text-xl"></i>
                         </span>
                     </SidebarLink>
-                    <SidebarLink :href="route('employees.index')" :active="isActive('employees')">
+                    <SidebarLink v-if="hasPermission('employees.view')" :href="route('employees.index')"
+                        :active="isActive('employees')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-id-card text-xl"></i>
                         </span>
                     </SidebarLink>
-                    <SidebarLink :href="route('employee_fund_transactions.index')"
+                    <SidebarLink v-if="hasPermission('employee_fund_transactions.view')"
+                        :href="route('employee_fund_transactions.index')"
                         :active="isActive('employee_fund_transactions')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-file-edit text-xl"></i>
                         </span>
                     </SidebarLink>
-                    <SidebarLink :href="route('responsibility_centers.index')"
-                        :active="isActive('responsibility_centers')">
+                    <SidebarLink v-if="hasPermission('responsibility_centers.view')"
+                        :href="route('responsibility_centers.index')" :active="isActive('responsibility_centers')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-building text-xl"></i>
                         </span>
                     </SidebarLink>
-                    <SidebarLink :href="route('settings.signatories')" :active="isActive('settings')">
+                    <SidebarLink v-if="hasPermission('certifications.view')" :href="route('certifications.index')"
+                        :active="isActive('certifications')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-check-circle text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-briefcase text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
+                        :active="isActive('settings.signatories')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-pen-to-square text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('users.view')" :href="route('settings.users.index')"
+                        :active="isActive('settings.users')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-users text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('roles.view')" :href="route('settings.roles.index')"
+                        :active="isActive('settings.roles')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-shield text-xl"></i>
                         </span>
                     </SidebarLink>
                 </nav>

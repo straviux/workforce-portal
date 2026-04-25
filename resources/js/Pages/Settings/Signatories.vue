@@ -19,7 +19,8 @@
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
                         Part A — Office Head (Prepared by / Verified)
                     </p>
-                    <Button icon="pi pi-plus" label="Add" class="rounded" size="small" @click="openAddOh" />
+                    <Button v-if="canManageSignatories" icon="pi pi-plus" label="Add" class="rounded" size="small"
+                        @click="openAddOh" />
                 </div>
 
                 <div v-if="officeHeads.length" class="space-y-2">
@@ -33,9 +34,9 @@
                                     }}</span>
                             </div>
                         </div>
-                        <Button icon="pi pi-pencil" severity="secondary" text rounded size="small"
+                        <Button v-if="canManageSignatories" icon="pi pi-pencil" severity="secondary" text rounded size="small"
                             @click="openEditOh(oh)" />
-                        <Button icon="pi pi-trash" severity="danger" text rounded size="small"
+                        <Button v-if="canManageSignatories" icon="pi pi-trash" severity="danger" text rounded size="small"
                             :loading="deletingId === oh.id" @click="removeOfficeHead(oh)" />
                     </div>
                 </div>
@@ -60,7 +61,7 @@
                                     }}</span>
                             </div>
                         </div>
-                        <Button icon="pi pi-pencil" severity="secondary" text rounded size="small"
+                        <Button v-if="canManageSignatories" icon="pi pi-pencil" severity="secondary" text rounded size="small"
                             @click="openEditPart(row)" />
                     </div>
                 </div>
@@ -149,14 +150,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { computed, ref, reactive, onMounted } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 
 const toast = useToast();
+const page = usePage();
 const deletingId = ref(null);
+const userPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
+const canManageSignatories = computed(() => userPermissions.value.includes('signatories.manage'));
 
 const partLabels = {
     B: 'Part B — Accountant (Certified correct)',

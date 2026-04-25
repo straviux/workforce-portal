@@ -10,7 +10,7 @@
                 {{ pagination.filtered_total }} record{{ pagination.filtered_total !== 1 ? 's' : '' }}
             </p>
         </div>
-        <Button icon="pi pi-plus" label="New Employee" class="rounded" @click="openCreate" />
+        <Button v-if="canManageEmployees" icon="pi pi-plus" label="New Employee" class="rounded" @click="openCreate" />
     </div>
 
     <!-- Filter Toolbar -->
@@ -30,7 +30,8 @@
 
     <!-- DataTable -->
     <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
-        <DataTable :value="employees" :loading="loading" showGridlines stripedRows scrollable lazy
+        <DataTable v-model:contextMenuSelection="contextMenuEmployee" :value="employees" :loading="loading" contextMenu
+            showGridlines stripedRows scrollable lazy @row-contextmenu="openRowContextMenu"
             :totalRecords="pagination.filtered_total" :rows="pagination.per_page" :first="paginatorFirst" paginator
             @page="onPage" :rowsPerPageOptions="[15, 25, 50]"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown" :pt="{
@@ -118,7 +119,7 @@
     </div>
 
     <!-- Row context menu -->
-    <Menu ref="rowMenuRef" :model="rowMenuItems" popup />
+    <ContextMenu ref="rowMenuRef" :model="rowMenuItems" @hide="contextMenuEmployee = null" />
 
     <!-- Modals -->
     <CreateEditModal v-model:show="showCreateEdit" :employee="selectedEmployee" :mode="modalMode" @saved="onSaved" />
@@ -129,7 +130,8 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
+import ContextMenu from 'primevue/contextmenu';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import CreateEditModal from './Modal/CreateEditModal.vue';
 import ViewModal from './Modal/ViewModal.vue';
@@ -140,6 +142,7 @@ import axios from 'axios';
 defineOptions({ layout: WorkforceLayout });
 
 const toast = useToast();
+const page = usePage();
 
 // ── State ────────────────────────────────────────────────
 const employees = ref([]);
@@ -173,26 +176,64 @@ const showView = ref(false);
 const showDelete = ref(false);
 const selectedEmployee = ref(null);
 const modalMode = ref('create');
+const contextMenuEmployee = ref(null);
 
 // ── Row menu ──────────────────────────────────────────────
 const rowMenuRef = ref(null);
 const rowMenuItems = ref([]);
+const userPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
+const canManageEmployees = computed(() => userPermissions.value.includes('employees.manage'));
+const canDeleteEmployees = computed(() => userPermissions.value.includes('employees.delete'));
+
+function setRowMenuItems(emp) {
+    selectedEmployee.value = emp;
+    contextMenuEmployee.value = emp;
+
+    const items = [
+        { label: 'View Details', icon: 'pi pi-eye', command: () => { showView.value = true; } },
+    ];
+
+    if (canManageEmployees.value) {
+        items.push(
+            { label: 'Edit', icon: 'pi pi-pencil', command: () => openEdit(emp) },
+            { separator: true },
+            {
+                label: emp.is_active ? 'Deactivate' : 'Activate',
+                icon: emp.is_active ? 'pi pi-ban' : 'pi pi-check-circle',
+                command: () => toggleActive(emp),
+            },
+        );
+    }
+
+    if (canDeleteEmployees.value) {
+        if (items[items.length - 1]?.separator !== true) {
+            items.push({ separator: true });
+        }
+
+        items.push({ label: 'Delete', icon: 'pi pi-trash', class: 'text-red-500', command: () => { showDelete.value = true; } });
+    }
+
+    rowMenuItems.value = items;
+}
+
+function showRowMenu(mouseEvent) {
+    if (typeof rowMenuRef.value?.show === 'function') {
+        rowMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    rowMenuRef.value?.toggle(mouseEvent);
+}
 
 function openRowMenu(event, emp) {
-    selectedEmployee.value = emp;
-    rowMenuItems.value = [
-        { label: 'View Details', icon: 'pi pi-eye', command: () => { showView.value = true; } },
-        { label: 'Edit', icon: 'pi pi-pencil', command: () => openEdit(emp) },
-        { separator: true },
-        {
-            label: emp.is_active ? 'Deactivate' : 'Activate',
-            icon: emp.is_active ? 'pi pi-ban' : 'pi pi-check-circle',
-            command: () => toggleActive(emp),
-        },
-        { separator: true },
-        { label: 'Delete', icon: 'pi pi-trash', class: 'text-red-500', command: () => { showDelete.value = true; } },
-    ];
-    rowMenuRef.value.toggle(event);
+    setRowMenuItems(emp);
+    showRowMenu(event);
+}
+
+function openRowContextMenu(event) {
+    event.originalEvent.preventDefault();
+    setRowMenuItems(event.data);
+    showRowMenu(event.originalEvent);
 }
 
 // ── Fetch ─────────────────────────────────────────────────

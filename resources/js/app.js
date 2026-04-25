@@ -13,6 +13,7 @@ import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import PrimeVue from 'primevue/config';
+import Tooltip from 'primevue/tooltip';
 import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import { definePreset } from '@primevue/themes';
@@ -194,6 +195,7 @@ createInertiaApp({
 		app.component('ResponsibilityCenterSelect', ResponsibilityCenterSelect);
 		app.component('ParticularsSelect', ParticularsSelect);
 
+		app.directive('tooltip', Tooltip);
 		app.directive('safe-html', safeHtmlDirective);
 
 		return app.mount(el);
