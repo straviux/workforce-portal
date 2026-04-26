@@ -11,7 +11,7 @@
                     <span class="ios-nav-title">Tracking History</span>
                 </div>
 
-                <div class="ios-body">
+                <div class="ios-body !py-6">
 
                     <!-- Timeline -->
                     <div class="ios-section" v-if="hasHistory">

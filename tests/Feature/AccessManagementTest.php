@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CalendarEvent;
 use App\Models\Certification;
 use App\Models\Signatory;
 use App\Models\User;
@@ -63,7 +64,7 @@ class AccessManagementTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_admin_can_access_certifications_and_swa_pages(): void
+    public function test_admin_can_access_certifications_calendar_and_swa_pages(): void
     {
         $admin = $this->makeAdminUser();
 
@@ -72,11 +73,15 @@ class AccessManagementTest extends TestCase
             ->assertOk();
 
         $this->actingAs($admin)
+            ->get('/calendar')
+            ->assertOk();
+
+        $this->actingAs($admin)
             ->get('/swa')
             ->assertOk();
     }
 
-    public function test_staff_cannot_access_certifications_and_swa_pages_by_default(): void
+    public function test_staff_cannot_access_certifications_calendar_and_swa_pages_by_default(): void
     {
         $staff = $this->makeStaffUser('staff-blank-modules');
 
@@ -85,8 +90,41 @@ class AccessManagementTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($staff)
+            ->get('/calendar')
+            ->assertForbidden();
+
+        $this->actingAs($staff)
             ->get('/swa')
             ->assertForbidden();
+    }
+
+    public function test_admin_can_create_and_list_calendar_events(): void
+    {
+        $admin = $this->makeAdminUser();
+
+        $this->actingAs($admin)
+            ->postJson('/api/calendar', [
+                'event_date' => '2026-07-01',
+                'title' => 'City Charter Day',
+                'event_type' => 'local_holiday',
+                'description' => 'Declared local holiday for city charter celebration.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.title', 'City Charter Day')
+            ->assertJsonPath('data.event_type', 'local_holiday');
+
+        $this->actingAs($admin)
+            ->getJson('/api/calendar?search=Charter')
+            ->assertOk()
+            ->assertJsonPath('filtered_total', 1)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'City Charter Day');
+
+        $savedEvent = CalendarEvent::query()->sole();
+
+        $this->assertSame('City Charter Day', $savedEvent->title);
+        $this->assertSame('local_holiday', $savedEvent->event_type);
+        $this->assertSame('2026-07-01', $savedEvent->event_date?->toDateString());
     }
 
     public function test_admin_can_create_and_list_non_ros_certification_records(): void

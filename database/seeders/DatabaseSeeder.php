@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionsSeeder::class,
+            CalendarEventSeeder::class,
             AdminUserSeeder::class,
         ]);
     }

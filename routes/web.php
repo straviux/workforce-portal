@@ -39,6 +39,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('check.permission:certifications.view')
         ->name('certifications.index');
 
+    Route::get('/calendar', fn() => inertia('Calendar/index'))
+        ->middleware('check.permission:calendar.view')
+        ->name('calendar.index');
+
     Route::get('/swa', fn() => inertia('Swa/index'))
         ->middleware('check.permission:swa.view')
         ->name('swa.index');

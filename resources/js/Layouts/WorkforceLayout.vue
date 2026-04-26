@@ -85,7 +85,7 @@ function hasPermission(permission) {
 <template>
     <Toast position="top-right" :life="3500" />
 
-    <div class="w-full h-full flex">
+    <div class="w-full h-full flex content-bg ">
         <!-- Mobile Backdrop -->
         <div v-if="toggleMenu" @click="toggleMenu = false" class="fixed inset-0 bg-black/50 z-20 md:hidden" />
 
@@ -157,6 +157,11 @@ function hasPermission(permission) {
                         <i class="pi pi-check-circle mr-3 text-base"></i>
                         <span class="text-sm font-medium">Certifications</span>
                     </SidebarLink>
+                    <SidebarLink v-if="hasPermission('calendar.view')" :href="route('calendar.index')"
+                        :active="isActive('calendar')">
+                        <i class="pi pi-calendar mr-3 text-base"></i>
+                        <span class="text-sm font-medium">Calendar</span>
+                    </SidebarLink>
                     <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
                         <i class="pi pi-briefcase mr-3 text-base"></i>
                         <span class="text-sm font-medium">SWA</span>
@@ -208,6 +213,12 @@ function hasPermission(permission) {
                         :active="isActive('certifications')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-check-circle text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('calendar.view')" :href="route('calendar.index')"
+                        :active="isActive('calendar')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-calendar text-xl"></i>
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
@@ -291,7 +302,7 @@ function hasPermission(permission) {
             </div>
 
             <!-- Scrollable page content -->
-            <div class="flex-1 overflow-y-auto px-4 md:px-6 pt-6 pb-10 content-bg transition-[margin-left] duration-300"
+            <div class="flex-1 overflow-y-auto px-4 md:px-6 pt-6 pb-10 transition-[margin-left] duration-300"
                 :class="sidebarMinimized ? 'md:ml-[130px]' : 'md:ml-[240px]'">
                 <slot />
             </div>

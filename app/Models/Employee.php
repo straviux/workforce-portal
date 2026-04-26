@@ -80,4 +80,14 @@ class Employee extends Model
     {
         return $this->belongsTo(User::class, 'updated_by')->select(['id', 'name']);
     }
+
+    public function swaTasks()
+    {
+        return $this->morphMany(SwaTask::class, 'subject')->orderBy('sort_order');
+    }
+
+    public function swaReports()
+    {
+        return $this->morphMany(SwaReport::class, 'subject')->latest();
+    }
 }

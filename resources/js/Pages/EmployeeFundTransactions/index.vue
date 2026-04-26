@@ -132,8 +132,6 @@
         <StatusModal v-model:show="modals.status" :model-value="selectedTransaction" :is-saving="isSaving"
             @save="handleSaveStatus" />
 
-        <QrCodeModal v-model:show="modals.qrCode" :model-value="qrData" :countdown="qrCountdown" />
-
         <TrackingHistoryModal v-model:show="modals.tracking" :tracking-data="selectedTransaction" />
 
         <!-- ── Create / Edit Wizard ── -->
@@ -166,10 +164,8 @@ import PdfPreviewModal from './Modal/PdfPreviewModal.vue';
 
 import ViewTransactionModal from './Modal/ViewTransactionModal.vue';
 import DeleteConfirmModal from './Modal/DeleteConfirmModal.vue';
-import FileUploadModal from './Modal/FileUploadModal.vue';
 import RemarksModal from './Modal/RemarksModal.vue';
 import StatusModal from './Modal/StatusModal.vue';
-import QrCodeModal from './Modal/QrCodeModal.vue';
 import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
 import OfficeHeadSelectModal from './Modal/OfficeHeadSelectModal.vue';
 
@@ -221,9 +217,7 @@ const modals = reactive({
     delete: false,
     remarks: false,
     status: false,
-    qrCode: false,
     tracking: false,
-    upload: false,
     obrTracking: false,
     officeHeadSelect: false,
 });
@@ -233,8 +227,6 @@ const pendingPrint = reactive({ type: '', signatories: [] });
 const obrTrackingComplete = ref(false);
 const pdfPreview = reactive({ show: false, html: '', title: '', size: 'a4' });
 
-const qrData = ref(null);
-const qrCountdown = ref('');
 
 
 // ── Options ──
@@ -302,11 +294,6 @@ const menuItems = computed(() => {
             icon: 'pi pi-comment',
             command: () => { modals.remarks = true; },
         },
-        {
-            label: 'Upload Files',
-            icon: 'pi pi-upload',
-            command: () => { modals.upload = true; },
-        },
         { separator: true },
         {
             label: 'Print OBR',
@@ -324,11 +311,6 @@ const menuItems = computed(() => {
             command: () => printPdf('payroll'),
         },
         { separator: true },
-        {
-            label: 'QR Code',
-            icon: 'pi pi-qrcode',
-            command: () => openQrCode(t),
-        },
         {
             label: 'Tracking History',
             icon: 'pi pi-history',
@@ -480,19 +462,7 @@ async function handleDelete() {
     }
 }
 
-// ── QR Code ──
-async function openQrCode(transaction) {
-    qrData.value = null;
-    qrCountdown.value = '';
-    modals.qrCode = true;
-    try {
-        const res = await axios.get(`/api/employee-fund-transactions/${transaction.id}/obr-pdf`);
-        qrData.value = res.data?.data ?? res.data;
-    } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Could not load QR code.', life: 3000 });
-        modals.qrCode = false;
-    }
-}
+
 
 // ── PDF ──
 function renderAndShow(type, voucher, signatories) {

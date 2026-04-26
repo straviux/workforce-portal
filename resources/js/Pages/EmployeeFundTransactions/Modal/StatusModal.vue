@@ -14,12 +14,12 @@
                     </button>
                 </div>
 
-                <div class="ios-body">
+                <div class="ios-body !pb-8">
 
                     <div class="ios-section" v-if="modelValue">
                         <p class="text-xs text-surface-400 uppercase tracking-wide mb-1">
                             Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id
-                                }}</span>
+                            }}</span>
                         </p>
                         <p class="text-xs text-surface-400">
                             Current status:
@@ -34,10 +34,6 @@
                             optionValue="value" placeholder="Select status" class="w-full" />
                     </div>
 
-                    <div class="ios-section">
-                        <Button label="Update Status" icon="pi pi-check" class="w-full rounded" :loading="isSaving"
-                            :disabled="isSaving || !selectedStatus" @click="handleSave" />
-                    </div>
 
                 </div>
 
@@ -55,10 +51,9 @@ const props = defineProps({
     statusOptions: {
         type: Array,
         default: () => [
-            { label: 'Pending', value: 'pending' },
-            { label: 'Approved', value: 'approved' },
-            { label: 'Active', value: 'active' },
-            { label: 'Denied', value: 'denied' },
+            { label: 'On Process', value: 'on_process' },
+            { label: 'Claimed', value: 'claimed' },
+            { label: 'Cancelled', value: 'cancelled' },
             { label: 'Suspended', value: 'suspended' },
         ],
     },

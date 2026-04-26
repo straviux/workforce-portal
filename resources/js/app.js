@@ -19,6 +19,7 @@ import ConfirmationService from 'primevue/confirmationservice';
 import { definePreset } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css';
+import dayjs from 'dayjs';
 
 // PrimeVue Components
 import Button from 'primevue/button';
@@ -151,6 +152,8 @@ createInertiaApp({
 			.use(ToastService)
 			.use(ConfirmationService);
 
+		// Day.js for date handling across the app
+		app.config.globalProperties.$dayjs = dayjs;
 		// PrimeVue components
 		app.component('Button', Button);
 		app.component('Card', Card);

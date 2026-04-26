@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Api\CertificationController;
+use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeFundTransactionController;
 use App\Http\Controllers\Api\ResponsibilityCenterController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SignatoryController;
+use App\Http\Controllers\Api\SwaController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +65,32 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:certifications.manage');
     Route::put('/certifications/non-ros/{id}', [CertificationController::class, 'updateNonRos'])
         ->middleware('check.permission:certifications.manage');
+
+    // Calendar
+    Route::get('/calendar', [CalendarController::class, 'index'])
+        ->middleware('check.permission:calendar.view');
+    Route::post('/calendar', [CalendarController::class, 'store'])
+        ->middleware('check.permission:calendar.manage');
+    Route::put('/calendar/{id}', [CalendarController::class, 'update'])
+        ->middleware('check.permission:calendar.manage');
+    Route::delete('/calendar/{id}', [CalendarController::class, 'destroy'])
+        ->middleware('check.permission:calendar.manage');
+
+    // SWA
+    Route::get('/swa/personal', [SwaController::class, 'personal'])
+        ->middleware('check.permission:swa.view');
+    Route::put('/swa/personal/tasks', [SwaController::class, 'syncPersonalTasks'])
+        ->middleware('check.permission:swa.manage');
+    Route::post('/swa/personal/reports', [SwaController::class, 'storePersonalReport'])
+        ->middleware('check.permission:swa.manage');
+    Route::get('/swa/employees', [SwaController::class, 'employees'])
+        ->middleware('check.permission:swa.view');
+    Route::get('/swa/employees/{id}', [SwaController::class, 'employee'])
+        ->middleware('check.permission:swa.view');
+    Route::put('/swa/employees/{id}/tasks', [SwaController::class, 'syncEmployeeTasks'])
+        ->middleware('check.permission:swa.manage');
+    Route::post('/swa/employees/{id}/reports', [SwaController::class, 'storeEmployeeReport'])
+        ->middleware('check.permission:swa.manage');
 
     // Signatories
     Route::get('/signatories', [SignatoryController::class, 'index'])

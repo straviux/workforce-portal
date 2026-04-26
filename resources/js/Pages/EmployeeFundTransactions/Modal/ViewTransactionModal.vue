@@ -2,7 +2,7 @@
     <Dialog :visible="show" @update:visible="val => emit('update:show', val)" modal
         :pt="{ root: { class: 'ios-dialog-root' }, mask: { class: 'ios-dialog-mask' } }">
         <template #container>
-            <div ref="elModal" class="ios-modal w-175 max-w-[95vw]" :style="modalStyle">
+            <div ref="elModal" class="ios-modal w-240 max-w-[95vw]" :style="modalStyle">
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
@@ -11,7 +11,7 @@
                     <span class="ios-nav-title">Transaction Details</span>
                 </div>
 
-                <div class="ios-body py-4!" v-if="transaction">
+                <div class="ios-body !py-4" v-if="transaction">
 
                     <!-- Status badge -->
                     <div class="flex items-center gap-2 mb-4">
@@ -22,80 +22,93 @@
 
                     <!-- Common Fields -->
                     <div class="ios-section">
-                        <div class="ios-card p-4">
-                            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Transaction ID</p>
-                                    <p class="font-semibold">{{ transaction.transaction_id }}</p>
+                        <div class="flex gap-4">
+                            <div class="ios-card p-4 w-3/4">
+                                <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Transaction ID</p>
+                                        <p class="font-semibold">{{ transaction.transaction_id }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Payee Name</p>
+                                        <p class="font-semibold">{{ transaction.payee_name }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Office / Unit</p>
+                                        <p>{{ transaction.office || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Payee Address</p>
+                                        <p>{{ transaction.payee_address || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Responsibility
+                                            Center
+                                        </p>
+                                        <p>{{ transaction.responsibility_center?.name ||
+                                            transaction.responsibility_center
+                                            || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Account Code</p>
+                                        <p>{{ transaction.account_code || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Particulars</p>
+                                        <p>{{ transaction.particulars_name || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Amount</p>
+                                        <p class="font-semibold">{{ money(transaction.amount) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Disbursement Type
+                                        </p>
+                                        <p class="capitalize">{{ transaction.disbursement_type || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">OBR Type</p>
+                                        <p class="capitalize">{{ transaction.obr_type || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">OBR No.</p>
+                                        <p>{{ transaction.obr_no || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">DV No.</p>
+                                        <p>{{ transaction.dv_no || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Date Obligated</p>
+                                        <p>{{ formatDate(transaction.date_obligated) }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Fiscal Year</p>
+                                        <p>{{ transaction.fiscal_year || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Created By</p>
+                                        <p>{{ transaction.created_by?.name || '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-surface-400 uppercase tracking-wide">Created At</p>
+                                        <p>{{ formatDate(transaction.created_at) }}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Payee Name</p>
-                                    <p class="font-semibold">{{ transaction.payee_name }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Office / Unit</p>
-                                    <p>{{ transaction.office || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Payee Address</p>
-                                    <p>{{ transaction.payee_address || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Responsibility Center
-                                    </p>
-                                    <p>{{ transaction.responsibility_center?.name || transaction.responsibility_center
-                                        || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Account Code</p>
-                                    <p>{{ transaction.account_code || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Particulars</p>
-                                    <p>{{ transaction.particulars_name || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Amount</p>
-                                    <p class="font-semibold">{{ money(transaction.amount) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Disbursement Type</p>
-                                    <p class="capitalize">{{ transaction.disbursement_type || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">OBR Type</p>
-                                    <p class="capitalize">{{ transaction.obr_type || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">OBR No.</p>
-                                    <p>{{ transaction.obr_no || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">DV No.</p>
-                                    <p>{{ transaction.dv_no || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Date Obligated</p>
-                                    <p>{{ formatDate(transaction.date_obligated) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Fiscal Year</p>
-                                    <p>{{ transaction.fiscal_year || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Created By</p>
-                                    <p>{{ transaction.created_by?.name || '—' }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-surface-400 uppercase tracking-wide">Created At</p>
-                                    <p>{{ formatDate(transaction.created_at) }}</p>
-                                </div>
+                            </div>
+                            <div class="ios-card p-4 flex-1">
+                                <p class="text-xs text-surface-400 uppercase tracking-wide pb-2">Payee</p>
+                                <!-- <p>{{ transaction.employees || '—' }}</p> -->
+                                <p v-for="(emp, idx) in transaction.employees" :key="`emp_` + emp.id"
+                                    class="text-xs py-1 font-semibold">{{
+                                        idx + 1 }}. {{
+                                        emp.payee_name }}</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Particulars Description -->
-                    <div class="ios-section pb-4" v-if="transaction.particulars_description">
+                    <div class="ios-section pb-4">
                         <p class="ios-section-label">Particulars Description</p>
                         <div class="ios-card prose prose-sm max-w-none p-4"
                             v-html="transaction.particulars_description">

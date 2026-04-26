@@ -235,9 +235,9 @@ onMounted(fetchResponsibilityCenters);
                             <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
                                 <span>Code: <span class="font-mono font-semibold text-gray-700 dark:text-gray-300">{{
                                     rc.code
-                                }}</span></span>
+                                        }}</span></span>
                                 <span v-if="rc.fiscal_year">FY: <span class="font-medium">{{ rc.fiscal_year
-                                }}</span></span>
+                                        }}</span></span>
                                 <span class="text-gray-400">{{ rc.particulars?.length ?? 0 }} particular(s)</span>
                             </div>
                         </div>
@@ -279,14 +279,15 @@ onMounted(fetchResponsibilityCenters);
                     <Column header="Date Approved" style="min-width: 140px">
                         <template #body="{ data }">
                             <span v-if="data.date_approved" class="text-xs text-gray-600 dark:text-gray-400">{{
-                                data.date_approved }}</span>
+                                $dayjs(data.date_approved).format("MMMM D, YYYY")
+                            }}</span>
                             <span v-else class="text-xs text-gray-400">—</span>
                         </template>
                     </Column>
                     <Column header="Date Expired" style="min-width: 140px">
                         <template #body="{ data }">
                             <span v-if="data.date_expired" class="text-xs text-gray-600 dark:text-gray-400">{{
-                                data.date_expired }}</span>
+                                $dayjs(data.date_expired).format("MMMM D, YYYY") }}</span>
                             <span v-else class="text-xs text-gray-400">—</span>
                         </template>
                     </Column>

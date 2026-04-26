@@ -45,7 +45,7 @@
                                     <InputText v-model="form.subject_name" placeholder="e.g. Juan Santos"
                                         class="w-full" />
                                     <span v-if="errors.subject_name" class="ios-hint ios-error">{{ errors.subject_name
-                                    }}</span>
+                                        }}</span>
                                 </div>
                             </div>
 
@@ -55,7 +55,7 @@
                                     <InputText v-model="form.designation" placeholder="e.g. Administrative Aide VI"
                                         class="w-full" />
                                     <span v-if="errors.designation" class="ios-hint ios-error">{{ errors.designation
-                                    }}</span>
+                                        }}</span>
                                 </div>
 
                                 <div class="ios-form-group">
@@ -68,11 +68,11 @@
 
                             <div class="grid md:grid-cols-2 gap-3">
                                 <div class="ios-form-group">
-                                    <label class="ios-label">Issued Date <span class="text-red-500">*</span></label>
+                                    <label class="ios-label">Date Issued <span class="text-red-500">*</span></label>
                                     <DatePicker v-model="form.issued_date" class="w-full" showIcon fluid
                                         dateFormat="MM d, yy" />
                                     <span v-if="errors.issued_date" class="ios-hint ios-error">{{ errors.issued_date
-                                    }}</span>
+                                        }}</span>
                                 </div>
 
                                 <div class="ios-form-group">

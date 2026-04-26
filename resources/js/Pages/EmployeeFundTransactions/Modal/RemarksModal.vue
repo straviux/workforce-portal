@@ -14,11 +14,12 @@
                     </button>
                 </div>
 
-                <div class="ios-body">
+                <div class="ios-body !pb-6">
 
                     <div class="ios-section" v-if="modelValue">
                         <p class="text-xs text-surface-400 uppercase tracking-wide mb-1">
-                            Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id }}</span>
+                            Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id
+                                }}</span>
                         </p>
                     </div>
 
@@ -40,11 +41,6 @@
                                 </span>
                             </template>
                         </Editor>
-                    </div>
-
-                    <div class="ios-section">
-                        <Button label="Save Remarks" icon="pi pi-check" class="w-full rounded"
-                            :loading="isSaving" :disabled="isSaving" @click="handleSave" />
                     </div>
 
                 </div>

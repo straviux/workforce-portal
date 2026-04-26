@@ -70,4 +70,19 @@ class User extends Authenticatable
     {
         return false;
     }
+
+    public function swaTasks()
+    {
+        return $this->morphMany(SwaTask::class, 'subject')->orderBy('sort_order');
+    }
+
+    public function swaReports()
+    {
+        return $this->morphMany(SwaReport::class, 'subject')->latest();
+    }
+
+    public function generatedSwaReports()
+    {
+        return $this->hasMany(SwaReport::class, 'generated_by')->latest();
+    }
 }
