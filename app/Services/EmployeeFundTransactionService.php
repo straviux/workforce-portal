@@ -59,7 +59,7 @@ class EmployeeFundTransactionService
                 'created_by'       => $record->created_by,
             ]);
 
-            return $record->load('employees');
+            return $record->load('employees.employeeRecord');
         });
     }
 
@@ -80,7 +80,7 @@ class EmployeeFundTransactionService
             }
         }
 
-        return $record->refresh()->load('employees');
+        return $record->refresh()->load('employees.employeeRecord');
     }
 
     /**

@@ -20,9 +20,11 @@
                     </div>
 
                     <SwaWorkspace v-else module-type="personal" :subject="subject" :tasks="tasks" :reports="reports"
-                        :calendar-events="calendarEvents" :can-manage="canManageSwa" :is-saving-tasks="savingTasks"
-                        :is-saving-report="savingReport" @save-tasks="handleSaveTasks"
-                        @save-report="handleSaveReport" />
+                        :calendar-events="calendarEvents" :office-heads="officeHeads" :can-manage="canManageSwa"
+                        :is-saving-tasks="savingTasks" :is-saving-report="savingReport"
+                        :is-deleting-report="deletingReport" @save-tasks="handleSaveTasks"
+                        @save-report="handleSaveReport" @update-report="handleUpdateReport"
+                        @delete-report="handleDeleteReport" />
                 </div>
             </div>
         </template>
@@ -50,10 +52,12 @@ const dragStart = ref(null);
 const loadingSetup = ref(false);
 const savingTasks = ref(false);
 const savingReport = ref(false);
+const deletingReport = ref(false);
 const subject = ref(null);
 const tasks = ref([]);
 const reports = ref([]);
 const calendarEvents = ref([]);
+const officeHeads = ref([]);
 
 const currentPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageSwa = computed(() => currentPermissions.value.includes('swa.manage'));
@@ -78,6 +82,7 @@ async function fetchSetup() {
         tasks.value = data.tasks ?? [];
         reports.value = data.reports ?? [];
         calendarEvents.value = data.calendar_events ?? [];
+        officeHeads.value = data.office_heads ?? [];
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -141,6 +146,58 @@ async function handleSaveReport(payload) {
         });
     } finally {
         savingReport.value = false;
+    }
+}
+
+async function handleUpdateReport(payload, callbacks = {}) {
+    if (!canManageSwa.value) return;
+
+    savingReport.value = true;
+
+    try {
+        const { report_id: reportId, ...reportPayload } = payload;
+
+        await axios.put(`/api/swa/personal/reports/${reportId}`, reportPayload);
+        await fetchSetup();
+
+        toast.add({ severity: 'success', summary: 'Updated', detail: 'Personal SWA updated.', life: 3000 });
+        callbacks.onSuccess?.();
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: extractErrorMessage(error, 'Could not update personal SWA.'),
+            life: 4000,
+        });
+        callbacks.onError?.(error);
+    } finally {
+        savingReport.value = false;
+    }
+}
+
+async function handleDeleteReport(payload, callbacks = {}) {
+    if (!canManageSwa.value) return;
+
+    deletingReport.value = true;
+
+    try {
+        const reportId = payload?.report_id ?? payload;
+
+        await axios.delete(`/api/swa/personal/reports/${reportId}`);
+        await fetchSetup();
+
+        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Personal SWA deleted.', life: 3000 });
+        callbacks.onSuccess?.();
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: extractErrorMessage(error, 'Could not delete personal SWA.'),
+            life: 4000,
+        });
+        callbacks.onError?.(error);
+    } finally {
+        deletingReport.value = false;
     }
 }
 

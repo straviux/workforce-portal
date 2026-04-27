@@ -25,7 +25,7 @@ class EmployeeFundTransactionController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = EmployeeFundTransaction::with(['creator', 'responsibilityCenter', 'employeeRecord', 'employees'])->latest();
+            $query = EmployeeFundTransaction::with(['creator', 'responsibilityCenter', 'employeeRecord', 'employees.employeeRecord'])->latest();
 
             if ($search = $request->get('search')) {
                 $query->where(function ($q) use ($search) {
@@ -119,7 +119,7 @@ class EmployeeFundTransactionController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $record = EmployeeFundTransaction::with(['creator', 'updater', 'responsibilityCenter', 'employees'])
+            $record = EmployeeFundTransaction::with(['creator', 'updater', 'responsibilityCenter', 'employees.employeeRecord'])
                 ->findOrFail($id);
 
             return response()->json([

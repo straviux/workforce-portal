@@ -14,6 +14,8 @@ class ManagedUserResource extends JsonResource
             'name' => $this->name,
             'username' => $this->username,
             'email' => $this->email,
+            'office' => $this->office,
+            'designation' => $this->designation,
             'roles' => $this->roles->map(fn($role) => [
                 'id' => $role->id,
                 'name' => $role->name,

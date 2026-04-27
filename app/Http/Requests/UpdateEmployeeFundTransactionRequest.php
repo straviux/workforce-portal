@@ -21,6 +21,7 @@ class UpdateEmployeeFundTransactionRequest extends FormRequest
             'employee_record_id'       => ['sometimes', 'nullable', 'integer', 'exists:employees,id'],
             'payee_name'               => ['sometimes', 'required', 'string', 'max:255'],
             'payee_address'            => ['nullable', 'string', 'max:255'],
+            'agency'                   => ['nullable', 'string', 'max:255'],
             'office'                   => ['nullable', 'string', 'max:255'],
             'responsibility_center'    => ['sometimes', 'required', 'integer', 'exists:responsibility_centers,id'],
             'particulars_id'           => ['nullable', 'integer', 'exists:particulars,id'],
@@ -56,6 +57,7 @@ class UpdateEmployeeFundTransactionRequest extends FormRequest
             'employees.*.payee_name'             => ['required_with:employees', 'string', 'max:255'],
             'employees.*.payee_address'          => ['nullable', 'string', 'max:255'],
             'employees.*.office'                 => ['nullable', 'string', 'max:255'],
+            'employees.*.amount'                 => ['nullable', 'numeric', 'min:0'],
             'employees.*.employee_id'            => ['nullable', 'string', 'max:100'],
             'employees.*.contract_ref_no'        => ['nullable', 'string', 'max:100'],
             'employees.*.swa'                    => ['nullable', 'boolean'],
@@ -64,6 +66,7 @@ class UpdateEmployeeFundTransactionRequest extends FormRequest
             'employees.*.deduction_sss'          => ['nullable', 'numeric', 'min:0'],
             'employees.*.deduction_philhealth'   => ['nullable', 'numeric', 'min:0'],
             'employees.*.deduction_hdmf'         => ['nullable', 'numeric', 'min:0'],
+            'employees.*.lost_hour_minutes'      => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

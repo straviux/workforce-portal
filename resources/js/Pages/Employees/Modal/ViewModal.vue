@@ -14,7 +14,7 @@
                     </button>
                 </div>
 
-                <div class="ios-body" v-if="employee">
+                <div class="ios-body !py-6" v-if="employee">
 
                     <!-- Status badges -->
                     <div class="flex items-center gap-2 mt-4 mb-2">

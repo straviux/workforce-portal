@@ -143,16 +143,22 @@
                 <!-- ── Step 2: Transaction Details ── -->
                 <div v-show="step === 2" class="ios-body text-xs">
 
-                    <!-- Card 2: Payee + Payee Address + Office (edit mode only) -->
-                    <div v-if="mode === 'edit'" class="ios-section">
+                    <!-- Card 2: Payee + payroll header details -->
+                    <div class="ios-section">
                         <div class="ios-card p-4">
-                            <div class="grid grid-cols-3 gap-4">
+                            <div class="grid gap-4" :class="isProjectBased ? 'grid-cols-4' : 'grid-cols-3'">
                                 <div class="ios-form-group">
                                     <label class="ios-label">Payee <span class="text-red-500">*</span></label>
                                     <InputText v-model="form.payee_name" class="w-full" size="small"
                                         placeholder="Payee name…" />
                                     <span v-if="errors.payee_name" class="ios-hint ios-error">{{ errors.payee_name
-                                        }}</span>
+                                    }}</span>
+                                </div>
+
+                                <div v-if="isProjectBased" class="ios-form-group">
+                                    <label class="ios-label">Implementing Agency</label>
+                                    <InputText v-model="form.agency" class="w-full" size="small"
+                                        placeholder="Implementing agency for payroll…" />
                                 </div>
 
                                 <div class="ios-form-group">
@@ -166,6 +172,11 @@
                                         placeholder="Enter payee address…" />
                                 </div>
                             </div>
+
+                            <p v-if="isProjectBased" class="mt-3 text-xs text-surface-400">
+                                Implementing agency and office are used only in payroll generation for project-based
+                                transactions.
+                            </p>
                         </div>
                     </div>
 
@@ -182,7 +193,7 @@
                                         :fiscal-year="form.fiscal_year" @change="onRcChange" />
                                     <span v-if="errors.responsibility_center" class="ios-hint ios-error">{{
                                         errors.responsibility_center
-                                    }}</span>
+                                        }}</span>
                                 </div>
                                 <div class="ios-form-group">
                                     <label class="ios-label">Particulars</label>
@@ -213,14 +224,28 @@
                                 <div v-else
                                     class="flex flex-col divide-y divide-surface-100 dark:divide-surface-700 overflow-y-auto">
                                     <div v-for="emp in selectedEmployees" :key="emp.id"
-                                        class="flex items-center gap-2 py-1.5">
-                                        <span
-                                            class="flex-1 text-xs font-semibold text-primary-600 dark:text-primary-400 truncate uppercase">{{
-                                                emp.full_name || emp.payee_name }}</span>
-                                        <span v-if="emp.monthly_compensation"
-                                            class="text-xs text-surface-400 flex-shrink-0">
-                                            {{ money(emp.monthly_compensation) }}/mo
-                                        </span>
+                                        class="flex items-center gap-3 py-2">
+                                        <div class="min-w-0 flex-1">
+                                            <span
+                                                class="block text-xs font-semibold text-primary-600 dark:text-primary-400 truncate uppercase">{{
+                                                    emp.full_name || emp.payee_name }}</span>
+                                            <span v-if="!isProjectBased && emp.monthly_compensation"
+                                                class="text-xs text-surface-400 flex-shrink-0">
+                                                {{ money(emp.monthly_compensation) }}/mo
+                                            </span>
+                                            <span
+                                                v-else-if="isProjectBased && resolveSelectedEmployeeAmount(emp) !== null"
+                                                class="text-xs text-surface-400 flex-shrink-0">
+                                                {{ money(resolveSelectedEmployeeAmount(emp)) }}
+                                            </span>
+                                        </div>
+                                        <div v-if="!isProjectBased" class="flex items-center gap-2 flex-shrink-0">
+                                            <label class="text-[11px] text-surface-500 whitespace-nowrap">Lost
+                                                Hour</label>
+                                            <InputNumber v-model="emp.lost_hour_minutes" inputId="lost-hour-minutes"
+                                                :min="0" :useGrouping="false" size="small" placeholder="Minutes"
+                                                class="w-28" inputClass="w-full text-right" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -346,6 +371,7 @@ const transactionStatusOptions = [
 
 const wizardTitle = computed(() => `${props.mode === 'edit' ? 'Edit' : 'Create'} — ${step.value === 1 ? 'Select Employees' : 'Obligation & Employees'}`);;
 const stepLabel = computed(() => step.value === 1 ? 'Select Employee' : 'Obligation & Employee');
+const isProjectBased = computed(() => form.employee_type === 'project_based');
 
 const filteredEmployees = computed(() => {
     const q = employeeSearch.value.trim().toLowerCase();
@@ -379,9 +405,53 @@ async function fetchEmployees(type) {
 
 function setEmployeeType(type) {
     form.employee_type = type;
+    form.payee_name = '';
+    form.payee_address = '';
+    form.office = '';
+    form.agency = '';
     selectedEmployees.value = [];
     employeeSearch.value = '';
     fetchEmployees(type);
+}
+
+function normalizeLostHourMinutes(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    if (Number.isNaN(parsed) || parsed < 0) {
+        return null;
+    }
+
+    return parsed;
+}
+
+function normalizeAmount(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const parsed = Number.parseFloat(value);
+
+    if (Number.isNaN(parsed) || parsed < 0) {
+        return null;
+    }
+
+    return parsed;
+}
+
+function resolveSelectedEmployeeAmount(emp) {
+    return normalizeAmount(emp.amount ?? emp.employee_record?.amount ?? emp.employeeRecord?.amount);
+}
+
+function normalizeSelectedEmployee(emp) {
+    return {
+        ...emp,
+        amount: resolveSelectedEmployeeAmount(emp),
+        lost_hour_minutes: normalizeLostHourMinutes(emp.lost_hour_minutes ?? emp.lostHour),
+    };
 }
 
 function isSelected(emp) {
@@ -393,13 +463,38 @@ function toggleEmployee(emp) {
     if (idx >= 0) {
         selectedEmployees.value.splice(idx, 1);
     } else {
-        selectedEmployees.value.push(emp);
+        selectedEmployees.value.push(normalizeSelectedEmployee(emp));
     }
 }
 
 function goNext() {
     if (selectedEmployees.value.length === 0) return;
+    applySelectedEmployeeDefaults();
     step.value = 2;
+}
+
+function applySelectedEmployeeDefaults() {
+    if (props.mode === 'edit') return;
+
+    const first = selectedEmployees.value[0];
+
+    if (!first) return;
+
+    if (!String(form.payee_name ?? '').trim()) {
+        form.payee_name = first.full_name || first.payee_name || '';
+    }
+
+    if (!String(form.payee_address ?? '').trim()) {
+        form.payee_address = first.address || first.payee_address || '';
+    }
+
+    if (!String(form.office ?? '').trim()) {
+        form.office = first.office || '';
+    }
+
+    if (isProjectBased.value && !String(form.agency ?? '').trim()) {
+        form.agency = first.agency || '';
+    }
 }
 
 // ── Form ──
@@ -408,6 +503,7 @@ const defaultForm = () => ({
     employee_record_id: null,
     payee_name: '',
     payee_address: '',
+    agency: '',
     office: '',
     responsibility_center: null,
     particulars_id: null,
@@ -450,6 +546,7 @@ watch(() => props.show, (val) => {
                 employee_record_id: t.employee_record_id ?? null,
                 payee_name: t.payee_name || '',
                 payee_address: t.payee_address || '',
+                agency: t.agency || '',
                 office: t.office || '',
                 responsibility_center: t.responsibility_center?.id ?? t.responsibility_center ?? null,
                 particulars_id: t.particulars_id ?? null,
@@ -477,9 +574,9 @@ watch(() => props.show, (val) => {
             });
             // In edit mode, restore selected employees from transaction.employees
             if (t.employees?.length) {
-                selectedEmployees.value = t.employees;
+                selectedEmployees.value = t.employees.map(normalizeSelectedEmployee);
             } else if (t.employee_record) {
-                selectedEmployees.value = [t.employee_record];
+                selectedEmployees.value = [normalizeSelectedEmployee(t.employee_record)];
             } else {
                 selectedEmployees.value = [];
             }
@@ -557,13 +654,27 @@ function buildMainPayload() {
     if (props.mode !== 'edit') {
         const first = selectedEmployees.value[0];
         if (first) {
-            payload.payee_name = first.full_name || first.payee_name || payload.payee_name;
-            payload.payee_address = first.address || first.payee_address || payload.payee_address;
-            payload.office = first.office || payload.office;
+            payload.payee_name = payload.payee_name || first.full_name || first.payee_name || '';
+            payload.payee_address = payload.payee_address || first.address || first.payee_address || '';
+            payload.office = payload.office || first.office || '';
+            payload.agency = payload.agency || first.agency || '';
             if (!payload.amount) {
-                const mc = first.monthly_compensation;
-                if (mc) payload.amount = parseFloat(mc);
+                const defaultAmount = isProjectBased.value
+                    ? resolveSelectedEmployeeAmount(first)
+                    : normalizeAmount(first.monthly_compensation);
+
+                if (defaultAmount !== null) payload.amount = defaultAmount;
             }
+        }
+    }
+
+    if (isProjectBased.value) {
+        const totalSelectedAmount = selectedEmployees.value.reduce((sum, employee) => {
+            return sum + (resolveSelectedEmployeeAmount(employee) ?? 0);
+        }, 0);
+
+        if (totalSelectedAmount > 0) {
+            payload.amount = totalSelectedAmount;
         }
     }
 
@@ -583,6 +694,7 @@ function buildEmployeeItem(emp) {
         payee_name: emp.full_name || emp.payee_name || '',
         payee_address: emp.address || emp.payee_address || '',
         office: emp.office || '',
+        amount: resolveSelectedEmployeeAmount(emp),
         employee_id: emp.employee_no || emp.employee_id || '',
         contract_ref_no: emp.contract_ref_no || '',
         swa: emp.swa || false,
@@ -591,6 +703,7 @@ function buildEmployeeItem(emp) {
         deduction_sss: emp.deduction_sss ? parseFloat(emp.deduction_sss) : null,
         deduction_philhealth: emp.deduction_philhealth ? parseFloat(emp.deduction_philhealth) : null,
         deduction_hdmf: emp.deduction_hdmf ? parseFloat(emp.deduction_hdmf) : null,
+        lost_hour_minutes: normalizeLostHourMinutes(emp.lost_hour_minutes),
     };
 }
 

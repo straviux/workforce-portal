@@ -13,6 +13,7 @@ body {
   background: #fff;
   padding: 6mm 5mm;
   min-width: {{BODY_MIN_WIDTH}};
+  --pdf-page-height: {{PAGE_HEIGHT}};
 }
 
 @page { size: {{PAGE_SIZE}}; margin: 6mm 5mm; }
@@ -127,9 +128,31 @@ em     { font-style: italic; }
 .obr-all    { grid-column: 1 / 7; }
 
 /* ── Page Break ──────────────────────────────── */
-.break-after  { page-break-after:  always; }
+.pdf-page {
+  position: relative;
+  min-height: var(--pdf-page-height);
+}
+
+.break-after  {
+  break-after: page;
+  page-break-after: always;
+}
 .break-before { page-break-before: always; }
 .no-break     { page-break-inside: avoid;  }
+
+@media screen {
+  body {
+    background: #ececf1;
+  }
+
+  .pdf-page {
+    background: #fff;
+  }
+
+  .pdf-page.break-after {
+    margin-bottom: 12mm;
+  }
+}
 
 /* ── DV row system ────────────────────────────── */
 .dv-row {
@@ -159,10 +182,19 @@ const BODY_MIN_WIDTHS = {
 	landscape: 'calc(13in - 10mm)',
 };
 
+const PAGE_HEIGHTS = {
+	a4: 'calc(297mm - 12mm)',
+	long: 'calc(13in - 12mm)',
+	landscape: 'calc(8.5in - 12mm)',
+};
+
 export const getPdfCss = (paperSize = 'a4') => {
 	const size = PAPER_SIZES[paperSize]?.cssSize ?? PAPER_SIZES.a4.cssSize;
 	const minWidth = BODY_MIN_WIDTHS[paperSize] ?? BODY_MIN_WIDTHS.a4;
-	return PDF_CSS.replace('{{PAGE_SIZE}}', size).replace('{{BODY_MIN_WIDTH}}', minWidth);
+	const pageHeight = PAGE_HEIGHTS[paperSize] ?? PAGE_HEIGHTS.a4;
+	return PDF_CSS.replace('{{PAGE_SIZE}}', size)
+		.replace('{{BODY_MIN_WIDTH}}', minWidth)
+		.replace('{{PAGE_HEIGHT}}', pageHeight);
 };
 
 export default getPdfCss('a4');

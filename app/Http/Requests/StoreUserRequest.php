@@ -16,6 +16,8 @@ class StoreUserRequest extends FormRequest
     {
         $this->merge([
             'email' => filled($this->input('email')) ? $this->input('email') : null,
+            'office' => filled($this->input('office')) ? $this->input('office') : null,
+            'designation' => filled($this->input('designation')) ? $this->input('designation') : null,
         ]);
     }
 
@@ -25,6 +27,8 @@ class StoreUserRequest extends FormRequest
             'name'       => ['required', 'string', 'max:255'],
             'username'   => ['required', 'string', 'max:100', Rule::unique('users', 'username')],
             'email'      => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
+            'office'     => ['nullable', 'string', 'max:255'],
+            'designation' => ['nullable', 'string', 'max:255'],
             'password'   => ['required', 'string', 'min:8', 'confirmed'],
             'role_names' => ['required', 'array', 'min:1'],
             'role_names.*' => ['string', Rule::exists('roles', 'name')->where('guard_name', 'web')],

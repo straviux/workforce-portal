@@ -41,7 +41,7 @@
                 <div class="t-9"
                     style="width:70pt;border-right:1pt solid #000;display:flex;align-items:center;padding:2pt;">Office:
                 </div>
-                <div class="t-11" style="flex:1;display:flex;align-items:center;padding:2pt;">
+                <div class="t-11 bold" style="flex:1;display:flex;align-items:center;padding:2pt;">
                     {{ voucher.office || ph }}
                 </div>
             </div>

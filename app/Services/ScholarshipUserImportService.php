@@ -14,6 +14,8 @@ class ScholarshipUserImportService
         $connection = DB::connection('scholarship');
         $schema = $connection->getSchemaBuilder();
         $targetSchema = User::query()->getConnection()->getSchemaBuilder();
+        $targetHasOffice = $targetSchema->hasColumn('users', 'office');
+        $targetHasDesignation = $targetSchema->hasColumn('users', 'designation');
         $targetHasOfficeDesignation = $targetSchema->hasColumn('users', 'office_designation');
 
         if (!$schema->hasTable('users')) {
@@ -47,7 +49,7 @@ class ScholarshipUserImportService
             'email_conflicts' => 0,
         ];
 
-        DB::transaction(function () use ($sourceUsers, $targetHasOfficeDesignation, &$summary): void {
+        DB::transaction(function () use ($sourceUsers, $targetHasOffice, $targetHasDesignation, $targetHasOfficeDesignation, &$summary): void {
             foreach ($sourceUsers as $sourceUser) {
                 $roleName = $sourceUser->username === 'admin' ? 'admin' : 'staff';
                 $summary[$roleName === 'admin' ? 'admin_assigned' : 'staff_assigned']++;
@@ -72,8 +74,20 @@ class ScholarshipUserImportService
                     'password' => $sourceUser->password,
                 ];
 
+                $legacyOfficeDesignation = filled($sourceUser->office_designation)
+                    ? trim((string) $sourceUser->office_designation)
+                    : null;
+
+                if ($targetHasOffice) {
+                    $attributes['office'] = $legacyOfficeDesignation;
+                }
+
+                if ($targetHasDesignation) {
+                    $attributes['designation'] = $legacyOfficeDesignation;
+                }
+
                 if ($targetHasOfficeDesignation) {
-                    $attributes['office_designation'] = $sourceUser->office_designation;
+                    $attributes['office_designation'] = $legacyOfficeDesignation;
                 }
 
                 $user->forceFill($attributes);

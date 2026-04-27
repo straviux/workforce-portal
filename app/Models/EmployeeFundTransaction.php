@@ -18,6 +18,7 @@ class EmployeeFundTransaction extends Model
         'employee_record_id',
         'payee_name',
         'payee_address',
+        'agency',
         'office',
         'responsibility_center',
         'particulars_id',

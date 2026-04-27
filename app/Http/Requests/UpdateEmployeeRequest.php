@@ -26,6 +26,8 @@ class UpdateEmployeeRequest extends FormRequest
             'address'              => ['nullable', 'string', 'max:255'],
             'office'               => ['nullable', 'string', 'max:255'],
             'employee_type'        => ['required', 'in:contract_of_service,project_based'],
+            'agency'               => [$isCos ? 'nullable' : 'required', 'string', 'max:255'],
+            'amount'               => [$isCos ? 'nullable' : 'required', 'numeric', 'min:0'],
             'contract_ref_no'      => ['nullable', 'string', 'max:100'],
             'atm_account_no'       => ['nullable', 'string', 'max:100'],
             'monthly_compensation' => [$isCos ? 'required' : 'nullable', 'numeric', 'min:0'],

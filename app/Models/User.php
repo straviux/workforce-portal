@@ -16,6 +16,8 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'office',
+        'designation',
         'office_designation',
         'profile_photo',
     ];
@@ -35,6 +37,20 @@ class User extends Authenticatable
     public function getProfilePhotoUrlAttribute(): ?string
     {
         return $this->profile_photo ? asset('storage/' . $this->profile_photo) : null;
+    }
+
+    public function getOfficeDesignationAttribute($value): ?string
+    {
+        if (filled($value)) {
+            return $value;
+        }
+
+        $parts = array_values(array_filter([
+            $this->office,
+            $this->designation,
+        ]));
+
+        return $parts !== [] ? implode(' - ', $parts) : null;
     }
 
     public function hasProfilePhoto(): bool

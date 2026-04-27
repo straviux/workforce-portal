@@ -83,6 +83,12 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:swa.manage');
     Route::post('/swa/personal/reports', [SwaController::class, 'storePersonalReport'])
         ->middleware('check.permission:swa.manage');
+    Route::get('/swa/personal/reports/{id}', [SwaController::class, 'personalReport'])
+        ->middleware('check.permission:swa.view');
+    Route::put('/swa/personal/reports/{id}', [SwaController::class, 'updatePersonalReport'])
+        ->middleware('check.permission:swa.manage');
+    Route::delete('/swa/personal/reports/{id}', [SwaController::class, 'deletePersonalReport'])
+        ->middleware('check.permission:swa.manage');
     Route::get('/swa/employees', [SwaController::class, 'employees'])
         ->middleware('check.permission:swa.view');
     Route::get('/swa/employees/{id}', [SwaController::class, 'employee'])
@@ -90,6 +96,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/swa/employees/{id}/tasks', [SwaController::class, 'syncEmployeeTasks'])
         ->middleware('check.permission:swa.manage');
     Route::post('/swa/employees/{id}/reports', [SwaController::class, 'storeEmployeeReport'])
+        ->middleware('check.permission:swa.manage');
+    Route::get('/swa/employees/{id}/reports/{reportId}', [SwaController::class, 'employeeReport'])
+        ->middleware('check.permission:swa.view');
+    Route::put('/swa/employees/{id}/reports/{reportId}', [SwaController::class, 'updateEmployeeReport'])
+        ->middleware('check.permission:swa.manage');
+    Route::delete('/swa/employees/{id}/reports/{reportId}', [SwaController::class, 'deleteEmployeeReport'])
         ->middleware('check.permission:swa.manage');
 
     // Signatories

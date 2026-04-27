@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\Employee;
 use App\Models\CalendarEvent;
+use App\Models\Signatory;
 use App\Models\SwaReport;
+use App\Models\SwaReportTask;
+use App\Models\SwaReportTaskDailyValue;
 use App\Models\SwaTask;
 use App\Models\User;
 use Carbon\Carbon;
@@ -22,6 +25,7 @@ class SwaService
             'tasks' => $this->tasksPayload($subject),
             'reports' => $this->reportsPayload($subject),
             'calendar_events' => $this->calendarEventsPayload(),
+            'office_heads' => $this->officeHeadsPayload(),
         ];
     }
 
@@ -44,10 +48,26 @@ class SwaService
             'subject_type' => 'user',
             'display_name' => $subject->name,
             'employee_no' => null,
-            'office' => $subject->office_designation,
-            'designation' => $subject->office_designation,
+            'office' => $subject->office ?: $subject->office_designation,
+            'designation' => $subject->designation ?: $subject->office_designation,
             'secondary_label' => $subject->email,
         ];
+    }
+
+    public function officeHeadsPayload(): array
+    {
+        return Signatory::query()
+            ->where('part', 'A')
+            ->orderBy('id')
+            ->get()
+            ->map(fn(Signatory $signatory) => [
+                'id' => $signatory->id,
+                'name' => $signatory->name,
+                'office' => $signatory->office,
+                'titles' => array_values(array_filter($signatory->title ?? [])),
+            ])
+            ->values()
+            ->all();
     }
 
     public function tasksPayload(Model $subject): array
@@ -108,6 +128,38 @@ class SwaService
             'generated_by_name' => $report->generator?->name,
             'created_at' => optional($report->created_at)->toISOString(),
         ];
+    }
+
+    public function reportDetail(SwaReport $report): array
+    {
+        $report->loadMissing(['tasks.dailyValues', 'generator']);
+
+        return array_merge($this->reportSummary($report), [
+            'office_head_signatory_id' => $report->office_head_signatory_id,
+            'signatory_name' => $report->signatory_name,
+            'signatory_office' => $report->signatory_office,
+            'signatory_titles' => $report->signatory_titles ?? [],
+            'draft_rows' => $report->tasks
+                ->map(fn(SwaReportTask $task) => [
+                    'sort_order' => (int) $task->sort_order,
+                    'task_name' => $task->task_name,
+                    'task_type' => $task->task_type,
+                    'daily_values' => $task->dailyValues
+                        ->map(fn(SwaReportTaskDailyValue $value) => [
+                            'work_date' => optional($value->work_date)->toDateString(),
+                            'numeric_value' => $task->task_type === 'countable'
+                                ? ($value->numeric_value !== null ? (float) $value->numeric_value : 0)
+                                : null,
+                            'mark_value' => $task->task_type === 'check_blank'
+                                ? ($value->mark_value === 'check' ? 'check' : 'dash')
+                                : null,
+                        ])
+                        ->values()
+                        ->all(),
+                ])
+                ->values()
+                ->all(),
+        ]);
     }
 
     public function syncTasks(Model $subject, array $tasks): array
@@ -189,12 +241,28 @@ class SwaService
         }
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
+        $officeHead = Signatory::query()
+            ->where('part', 'A')
+            ->findOrFail($validated['office_head_id']);
+        $availableSignatoryTitles = collect($officeHead->title ?? [])
+            ->map(fn($title) => trim((string) $title))
+            ->filter()
+            ->values();
+        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
+            ? $availableSignatoryTitles
+            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
+            ->values()
+            : $availableSignatoryTitles;
 
-        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks) {
+        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles) {
             $report = SwaReport::query()->create([
                 'module_type' => $moduleType,
                 'subject_type' => $subject->getMorphClass(),
                 'subject_id' => $subject->getKey(),
+                'office_head_signatory_id' => $officeHead->id,
+                'signatory_name' => $officeHead->name,
+                'signatory_office' => $officeHead->office,
+                'signatory_titles' => $selectedSignatoryTitles->all(),
                 'period_start_date' => $validated['period_start_date'],
                 'period_end_date' => $validated['period_end_date'],
                 'work_days' => $workDays->all(),
@@ -241,6 +309,105 @@ class SwaService
             }
 
             return $report->loadCount('tasks')->load('generator');
+        });
+    }
+
+    public function updateReport(SwaReport $report, array $validated): SwaReport
+    {
+        $report->loadMissing(['tasks.dailyValues']);
+        $tasks = $report->tasks()->with('dailyValues')->orderBy('sort_order')->get();
+
+        if ($tasks->count() !== 5) {
+            throw ValidationException::withMessages([
+                'tasks' => 'This SWA record is missing one or more saved task rows and cannot be updated.',
+            ]);
+        }
+
+        $workDays = collect($validated['work_days'])
+            ->map(fn($day) => strtolower((string) $day))
+            ->unique()
+            ->values();
+
+        $expectedDates = $this->expectedWorkDates(
+            (string) $validated['period_start_date'],
+            (string) $validated['period_end_date'],
+            $workDays,
+        );
+
+        if ($expectedDates->isEmpty()) {
+            throw ValidationException::withMessages([
+                'work_days' => 'The selected work schedule produced no work dates for the chosen range.',
+            ]);
+        }
+
+        $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
+        $officeHead = Signatory::query()
+            ->where('part', 'A')
+            ->findOrFail($validated['office_head_id']);
+        $availableSignatoryTitles = collect($officeHead->title ?? [])
+            ->map(fn($title) => trim((string) $title))
+            ->filter()
+            ->values();
+        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
+            ? $availableSignatoryTitles
+            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
+            ->values()
+            : $availableSignatoryTitles;
+
+        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles) {
+            $report->update([
+                'office_head_signatory_id' => $officeHead->id,
+                'signatory_name' => $officeHead->name,
+                'signatory_office' => $officeHead->office,
+                'signatory_titles' => $selectedSignatoryTitles->all(),
+                'period_start_date' => $validated['period_start_date'],
+                'period_end_date' => $validated['period_end_date'],
+                'work_days' => $workDays->all(),
+            ]);
+
+            foreach ($tasks as $task) {
+                $row = $draftRows->get($task->sort_order);
+
+                if (!$row) {
+                    throw ValidationException::withMessages([
+                        'draft_rows' => 'Draft values are missing one or more saved task rows.',
+                    ]);
+                }
+
+                $rowValues = collect($row['daily_values'])
+                    ->keyBy(fn(array $value) => Carbon::parse($value['work_date'])->toDateString());
+
+                if ($rowValues->keys()->sort()->values()->all() !== $expectedDates->sort()->values()->all()) {
+                    throw ValidationException::withMessages([
+                        'draft_rows' => 'Draft values do not match the selected work schedule and date range.',
+                    ]);
+                }
+
+                $task->dailyValues()->delete();
+
+                foreach ($expectedDates as $date) {
+                    $cell = $rowValues->get($date, []);
+
+                    $task->dailyValues()->create([
+                        'work_date' => $date,
+                        'numeric_value' => $task->task_type === 'countable'
+                            ? (is_numeric($cell['numeric_value'] ?? null) ? (float) $cell['numeric_value'] : 0)
+                            : null,
+                        'mark_value' => $task->task_type === 'check_blank'
+                            ? (($cell['mark_value'] ?? 'dash') === 'check' ? 'check' : 'dash')
+                            : null,
+                    ]);
+                }
+            }
+
+            return $report->refresh()->loadCount('tasks')->load('generator');
+        });
+    }
+
+    public function deleteReport(SwaReport $report): void
+    {
+        DB::transaction(function () use ($report) {
+            $report->forceDelete();
         });
     }
 

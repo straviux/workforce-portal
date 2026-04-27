@@ -266,6 +266,8 @@ const menuItems = computed(() => {
     const isAdmin = props.auth?.user?.roles?.some(r =>
         typeof r === 'string' ? r === 'admin' : r?.name === 'admin'
     );
+    const canPrintCwa = t?.employee_type === 'contract_of_service';
+    const canPrintPayroll = t?.employee_type === 'project_based';
 
     return [
         {
@@ -300,16 +302,16 @@ const menuItems = computed(() => {
             icon: 'pi pi-print',
             command: () => printPdf('obr'),
         },
-        {
+        ...(canPrintCwa ? [{
             label: 'Print CWA',
             icon: 'pi pi-print',
             command: () => printPdf('cwa'),
-        },
-        {
+        }] : []),
+        ...(canPrintPayroll ? [{
             label: 'Print Payroll',
             icon: 'pi pi-print',
             command: () => printPdf('payroll'),
-        },
+        }] : []),
         { separator: true },
         {
             label: 'Tracking History',
@@ -476,7 +478,7 @@ function renderAndShow(type, voucher, signatories) {
         title = `CWA-${voucher.fiscal_year || voucher.transaction_id}`;
         size = 'landscape';
     } else {
-        html = renderVueTemplate(PayrollTemplate, { voucher, signatories });
+        html = renderVueTemplate(PayrollTemplate, { voucher, employees: voucher.employees ?? [], signatories });
         title = `Payroll-${voucher.payee_name || voucher.transaction_id}`;
         size = 'landscape';
     }
@@ -489,6 +491,16 @@ function renderAndShow(type, voucher, signatories) {
 async function printPdf(type) {
     const voucher = selectedTransaction.value;
     if (!voucher) return;
+
+    if (type === 'cwa' && voucher.employee_type !== 'contract_of_service') {
+        toast.add({ severity: 'warn', summary: 'Unavailable', detail: 'CWA is only available for COS transactions.', life: 3000 });
+        return;
+    }
+
+    if (type === 'payroll' && voucher.employee_type !== 'project_based') {
+        toast.add({ severity: 'warn', summary: 'Unavailable', detail: 'Payroll is only available for project-based transactions.', life: 3000 });
+        return;
+    }
 
     let signatories = [];
     try {

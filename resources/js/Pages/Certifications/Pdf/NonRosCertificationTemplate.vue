@@ -109,7 +109,7 @@ const formattedIssuedDate = computed(() => {
     const month = parsed.toLocaleDateString('en-PH', { month: 'long' });
     const year = parsed.getFullYear();
 
-    return `<strong>${formatOrdinal(day)} day </strong> of <strong>${month},${year}</strong>`;
+    return `<strong>${formatOrdinal(day)} day </strong> of <strong>${month}, ${year}</strong>`;
 });
 
 const signatoryTitles = computed(() => {

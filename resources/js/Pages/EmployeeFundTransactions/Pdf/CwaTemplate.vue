@@ -1,5 +1,5 @@
 <template>
-    <div style="display:flex;flex-direction:column;width:100%;border:1pt solid #000;margin-top:28pt;">
+    <div style="display:flex;flex-direction:column;width:100%;border:1pt solid #000;">
         <div style="padding:2pt">
             <p style="text-align: right;font-size: 7.5pt;">"Annex B"</p>
         </div>
@@ -174,9 +174,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="(emp, idx) in sortedEmployees" :key="emp.id" style="height:12pt;">
+                    <tr v-for="(emp, idx) in sortedEmployees" :key="emp.id">
                         <td class="t-8"
-                            style="border: 1pt solid #000;border-left:none;text-align:center;vertical-align:bottom;">
+                            style="border: 1pt solid #000;border-left:none;text-align:center;vertical-align:bottom;height:18pt !important;">
                             {{
                                 idx +
                                 1 }}</td>
@@ -186,7 +186,9 @@
                         <td class="t-8"
                             style="border: 1pt solid #000;border-right:1pt solid #000;padding:2pt 4pt;text-align:center;vertical-align:bottom;overflow:hidden;">
                             {{ emp.contract_ref_no || '' }}</td>
-                        <td style="border: 1pt solid #000;border-right:1pt solid #000;">&nbsp;</td>
+                        <td class="t-7"
+                            style="border: 1pt solid #000;border-right:1pt solid #000;padding:2pt 4pt;text-align:center;vertical-align:bottom;overflow:hidden;">
+                            {{ formatLostHour(emp.lost_hour_minutes) }}</td>
                         <td style="border: 1pt solid #000;border-right:1pt solid #000;">&nbsp;</td>
                         <td class="t-8"
                             style="border: 1pt solid #000;border-right:1pt solid #000;padding:1pt;text-align:center;vertical-align:bottom;">
@@ -496,5 +498,29 @@ const money = (val) => {
         currency: 'PHP',
         minimumFractionDigits: 2,
     }).format(Number(val));
+};
+
+const formatLostHour = (minutes) => {
+    const totalMinutes = Number(minutes ?? 0);
+
+    if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+        return '\u00a0';
+    }
+
+    const wholeMinutes = Math.floor(totalMinutes);
+    const hours = Math.floor(wholeMinutes / 60);
+    const remainingMinutes = wholeMinutes % 60;
+    const hourLabel = hours === 1 ? 'hr' : 'hrs';
+    const minuteLabel = remainingMinutes === 1 ? 'min' : 'mins';
+
+    if (hours && remainingMinutes) {
+        return `${hours} ${hourLabel} & ${remainingMinutes} ${minuteLabel}`;
+    }
+
+    if (hours) {
+        return `${hours} ${hourLabel}`;
+    }
+
+    return `${remainingMinutes} ${minuteLabel}`;
 };
 </script>

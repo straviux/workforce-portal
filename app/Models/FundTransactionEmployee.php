@@ -14,6 +14,7 @@ class FundTransactionEmployee extends Model
         'payee_name',
         'payee_address',
         'office',
+        'amount',
         'employee_id',
         'contract_ref_no',
         'swa',
@@ -22,14 +23,17 @@ class FundTransactionEmployee extends Model
         'deduction_sss',
         'deduction_philhealth',
         'deduction_hdmf',
+        'lost_hour_minutes',
     ];
 
     protected $casts = [
         'swa'                  => 'boolean',
+        'amount'               => 'decimal:2',
         'monthly_compensation' => 'decimal:2',
         'deduction_sss'        => 'decimal:2',
         'deduction_philhealth' => 'decimal:2',
         'deduction_hdmf'       => 'decimal:2',
+        'lost_hour_minutes'    => 'integer',
     ];
 
     public function fundTransaction()

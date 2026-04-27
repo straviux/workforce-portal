@@ -23,6 +23,8 @@ class UserSharedResource extends JsonResource
             'id'                  => $this->id,
             'name'                => $this->name,
             'username'            => $this->username,
+            'office'              => $this->office,
+            'designation'         => $this->designation,
             'office_designation'  => $this->office_designation,
             'roles'               => $roles,
             'primary_role'        => $roles[0] ?? null,

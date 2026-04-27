@@ -19,12 +19,12 @@
                                 <IconField class="flex-1 min-w-60">
                                     <InputIcon class="pi pi-search" />
                                     <InputText v-model="filters.search" class="w-full"
-                                        placeholder="Search employee name, employee no., office, or designation"
+                                        placeholder="Search COS employee name, employee no., office, or designation"
                                         @keyup.enter="fetchEmployees" />
                                 </IconField>
 
                                 <Button icon="pi pi-search" label="Search" class="rounded" size="small"
-                                    :loading="loadingEmployees" @click="fetchEmployees" />
+                                    :loading="loadingEmployees" :disabled="!hasSearchQuery" @click="fetchEmployees" />
                             </div>
 
                             <div v-if="employees.length" class="grid gap-3 lg:grid-cols-2">
@@ -59,7 +59,8 @@
 
                             <div v-else class="text-center py-8 text-surface-400">
                                 <i class="pi pi-users text-3xl block mb-3"></i>
-                                <p class="text-sm">No employee subjects found.</p>
+                                <p class="text-sm">{{ hasSearchQuery ? `No COS employee subjects found.` : `Search for a
+                                    COS employee to start.` }}</p>
                             </div>
                         </div>
                     </div>
@@ -72,9 +73,11 @@
                     </div>
 
                     <SwaWorkspace v-else-if="subject" module-type="employee" :subject="subject" :tasks="tasks"
-                        :reports="reports" :calendar-events="calendarEvents" :can-manage="canManageSwa"
-                        :is-saving-tasks="savingTasks" :is-saving-report="savingReport" @save-tasks="handleSaveTasks"
-                        @save-report="handleSaveReport" />
+                        :reports="reports" :calendar-events="calendarEvents" :office-heads="officeHeads"
+                        :can-manage="canManageSwa" :is-saving-tasks="savingTasks" :is-saving-report="savingReport"
+                        :is-deleting-report="deletingReport" @save-tasks="handleSaveTasks"
+                        @save-report="handleSaveReport" @update-report="handleUpdateReport"
+                        @delete-report="handleDeleteReport" />
                 </div>
             </div>
         </template>
@@ -103,16 +106,19 @@ const loadingEmployees = ref(false);
 const loadingSetup = ref(false);
 const savingTasks = ref(false);
 const savingReport = ref(false);
+const deletingReport = ref(false);
 const employees = ref([]);
 const selectedEmployeeId = ref(null);
 const subject = ref(null);
 const tasks = ref([]);
 const reports = ref([]);
 const calendarEvents = ref([]);
+const officeHeads = ref([]);
 const filters = reactive({ search: '' });
 
 const currentPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageSwa = computed(() => currentPermissions.value.includes('swa.manage'));
+const hasSearchQuery = computed(() => filters.search.trim().length > 0);
 
 const modalStyle = computed(() => ({
     transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px)`,
@@ -122,25 +128,26 @@ watch(() => props.show, (visible) => {
     if (!visible) return;
 
     dragOffset.value = { x: 0, y: 0 };
-    fetchEmployees();
+    resetEmployeeSearchState();
 });
 
 async function fetchEmployees() {
+    if (!hasSearchQuery.value) {
+        employees.value = [];
+        return;
+    }
+
     loadingEmployees.value = true;
 
     try {
         const { data } = await axios.get('/api/swa/employees', {
             params: {
-                search: filters.search,
+                search: filters.search.trim(),
                 per_page: 12,
 
             },
         });
         employees.value = data.data ?? [];
-
-        if (!selectedEmployeeId.value && employees.value.length) {
-            await selectEmployee(employees.value[0].id);
-        }
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -151,6 +158,17 @@ async function fetchEmployees() {
     } finally {
         loadingEmployees.value = false;
     }
+}
+
+function resetEmployeeSearchState() {
+    filters.search = '';
+    employees.value = [];
+    selectedEmployeeId.value = null;
+    subject.value = null;
+    tasks.value = [];
+    reports.value = [];
+    calendarEvents.value = [];
+    officeHeads.value = [];
 }
 
 async function selectEmployee(employeeId) {
@@ -169,6 +187,7 @@ async function fetchSetup() {
         tasks.value = data.tasks ?? [];
         reports.value = data.reports ?? [];
         calendarEvents.value = data.calendar_events ?? [];
+        officeHeads.value = data.office_heads ?? [];
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -234,6 +253,59 @@ async function handleSaveReport(payload) {
         });
     } finally {
         savingReport.value = false;
+    }
+}
+
+async function handleUpdateReport(payload, callbacks = {}) {
+    if (!canManageSwa.value || !selectedEmployeeId.value) return;
+
+    savingReport.value = true;
+
+    try {
+        const { report_id: reportId, ...reportPayload } = payload;
+
+        await axios.put(`/api/swa/employees/${selectedEmployeeId.value}/reports/${reportId}`, reportPayload);
+        await fetchSetup();
+
+        toast.add({ severity: 'success', summary: 'Updated', detail: 'Employee SWA updated.', life: 3000 });
+        callbacks.onSuccess?.();
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: extractErrorMessage(error, 'Could not update employee SWA.'),
+            life: 4000,
+        });
+        callbacks.onError?.(error);
+    } finally {
+        savingReport.value = false;
+    }
+}
+
+async function handleDeleteReport(payload, callbacks = {}) {
+    if (!canManageSwa.value || !selectedEmployeeId.value) return;
+
+    deletingReport.value = true;
+
+    try {
+        const reportId = payload?.report_id ?? payload;
+
+        await axios.delete(`/api/swa/employees/${selectedEmployeeId.value}/reports/${reportId}`);
+        await fetchSetup();
+        await fetchEmployees();
+
+        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Employee SWA deleted.', life: 3000 });
+        callbacks.onSuccess?.();
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: extractErrorMessage(error, 'Could not delete employee SWA.'),
+            life: 4000,
+        });
+        callbacks.onError?.(error);
+    } finally {
+        deletingReport.value = false;
     }
 }
 

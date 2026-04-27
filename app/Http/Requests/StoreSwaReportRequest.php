@@ -18,6 +18,9 @@ class StoreSwaReportRequest extends FormRequest
         return [
             'period_start_date' => ['required', 'date'],
             'period_end_date' => ['required', 'date', 'after_or_equal:period_start_date'],
+            'office_head_id' => ['required', Rule::exists('signatories', 'id')->where('part', 'A')],
+            'signatory_titles' => ['nullable', 'array'],
+            'signatory_titles.*' => ['string', 'max:255'],
             'work_days' => ['required', 'array', 'min:1'],
             'work_days.*' => ['required', Rule::in(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])],
             'draft_rows' => ['required', 'array', 'size:5'],

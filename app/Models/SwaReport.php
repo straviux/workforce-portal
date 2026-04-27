@@ -18,6 +18,10 @@ class SwaReport extends Model
         'subject_type',
         'subject_id',
         'generated_by',
+        'office_head_signatory_id',
+        'signatory_name',
+        'signatory_office',
+        'signatory_titles',
         'period_start_date',
         'period_end_date',
         'work_days',
@@ -27,6 +31,7 @@ class SwaReport extends Model
 
     protected $casts = [
         'work_days' => 'array',
+        'signatory_titles' => 'array',
         'period_start_date' => 'date',
         'period_end_date' => 'date',
     ];
@@ -59,6 +64,11 @@ class SwaReport extends Model
     public function generator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by')->select(['id', 'name']);
+    }
+
+    public function officeHeadSignatory(): BelongsTo
+    {
+        return $this->belongsTo(Signatory::class, 'office_head_signatory_id');
     }
 
     public function creator(): BelongsTo

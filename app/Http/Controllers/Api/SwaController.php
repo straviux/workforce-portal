@@ -30,26 +30,37 @@ class SwaController extends Controller
     public function employees(Request $request): JsonResponse
     {
         try {
+            $search = trim((string) $request->get('search', ''));
+            $perPage = max(1, min((int) $request->get('per_page', 12), 25));
+
+            if ($search === '') {
+                return response()->json([
+                    'data' => [],
+                    'filtered_total' => 0,
+                    'per_page' => $perPage,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ]);
+            }
+
             $query = Employee::query()
+                ->where('employee_type', 'contract_of_service')
                 ->withCount([
                     'swaTasks as active_swa_tasks_count' => fn($taskQuery) => $taskQuery->where('is_active', true),
                     'swaReports as swa_reports_count',
                 ])
                 ->latest();
 
-            if ($search = trim((string) $request->get('search', ''))) {
-                $query->where(function ($employeeQuery) use ($search) {
-                    $employeeQuery->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('middle_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('employee_no', 'like', "%{$search}%")
-                        ->orWhere('office', 'like', "%{$search}%")
-                        ->orWhere('designation', 'like', "%{$search}%")
-                        ->orWhere('agency', 'like', "%{$search}%");
-                });
-            }
+            $query->where(function ($employeeQuery) use ($search) {
+                $employeeQuery->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_no', 'like', "%{$search}%")
+                    ->orWhere('office', 'like', "%{$search}%")
+                    ->orWhere('designation', 'like', "%{$search}%")
+                    ->orWhere('agency', 'like', "%{$search}%");
+            });
 
-            $perPage = max(1, min((int) $request->get('per_page', 12), 25));
             $paginated = $query->paginate($perPage);
 
             return response()->json([
@@ -136,6 +147,54 @@ class SwaController extends Controller
         }
     }
 
+    public function personalReport(Request $request, int $id): JsonResponse
+    {
+        try {
+            $report = $this->personalReportRecord($request, $id);
+
+            return response()->json([
+                'data' => $this->service->reportDetail($report),
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Error loading personal SWA report', ['id' => $id, 'error' => $exception->getMessage()]);
+
+            return response()->json(['message' => 'Could not load personal SWA report.'], 500);
+        }
+    }
+
+    public function updatePersonalReport(StoreSwaReportRequest $request, int $id): JsonResponse
+    {
+        try {
+            $report = $this->service->updateReport($this->personalReportRecord($request, $id), $request->validated());
+
+            return response()->json([
+                'data' => $this->service->reportSummary($report),
+                'message' => 'Personal SWA updated.',
+            ]);
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            Log::error('Error updating personal SWA', ['id' => $id, 'error' => $exception->getMessage()]);
+
+            return response()->json(['message' => 'Could not update personal SWA.'], 500);
+        }
+    }
+
+    public function deletePersonalReport(Request $request, int $id): JsonResponse
+    {
+        try {
+            $this->service->deleteReport($this->personalReportRecord($request, $id));
+
+            return response()->json([
+                'message' => 'Personal SWA deleted.',
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Error deleting personal SWA', ['id' => $id, 'error' => $exception->getMessage()]);
+
+            return response()->json(['message' => 'Could not delete personal SWA.'], 500);
+        }
+    }
+
     public function storeEmployeeReport(StoreSwaReportRequest $request, int $id): JsonResponse
     {
         try {
@@ -154,8 +213,84 @@ class SwaController extends Controller
         }
     }
 
+    public function employeeReport(int $id, int $reportId): JsonResponse
+    {
+        try {
+            $report = $this->employeeReportRecord($id, $reportId);
+
+            return response()->json([
+                'data' => $this->service->reportDetail($report),
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Error loading employee SWA report', [
+                'id' => $id,
+                'report_id' => $reportId,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Could not load employee SWA report.'], 500);
+        }
+    }
+
+    public function updateEmployeeReport(StoreSwaReportRequest $request, int $id, int $reportId): JsonResponse
+    {
+        try {
+            $report = $this->service->updateReport($this->employeeReportRecord($id, $reportId), $request->validated());
+
+            return response()->json([
+                'data' => $this->service->reportSummary($report),
+                'message' => 'Employee SWA updated.',
+            ]);
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            Log::error('Error updating employee SWA', [
+                'id' => $id,
+                'report_id' => $reportId,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Could not update employee SWA.'], 500);
+        }
+    }
+
+    public function deleteEmployeeReport(int $id, int $reportId): JsonResponse
+    {
+        try {
+            $this->service->deleteReport($this->employeeReportRecord($id, $reportId));
+
+            return response()->json([
+                'message' => 'Employee SWA deleted.',
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Error deleting employee SWA', [
+                'id' => $id,
+                'report_id' => $reportId,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Could not delete employee SWA.'], 500);
+        }
+    }
+
     private function employeeRecord(int $id): Employee
     {
         return Employee::query()->findOrFail($id);
+    }
+
+    private function personalReportRecord(Request $request, int $id)
+    {
+        return $request->user()
+            ->swaReports()
+            ->with(['tasks.dailyValues', 'generator'])
+            ->findOrFail($id);
+    }
+
+    private function employeeReportRecord(int $id, int $reportId)
+    {
+        return $this->employeeRecord($id)
+            ->swaReports()
+            ->with(['tasks.dailyValues', 'generator'])
+            ->findOrFail($reportId);
     }
 }

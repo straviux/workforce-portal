@@ -19,8 +19,8 @@
     <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
         <IconField class="flex-1 min-w-60">
             <InputIcon class="pi pi-search" />
-            <InputText v-model="filters.search" placeholder="Search name, username, or email" class="w-full"
-                size="small" @keyup.enter="fetchUsers(1)" />
+            <InputText v-model="filters.search" placeholder="Search name, username, email, office, or designation"
+                class="w-full" size="small" @keyup.enter="fetchUsers(1)" />
         </IconField>
         <Select v-model="filters.role" :options="roleOptions" optionLabel="name" optionValue="name"
             placeholder="All roles" class="w-48" size="small" showClear @change="fetchUsers(1)" />
@@ -65,6 +65,15 @@
                 </template>
             </Column>
 
+            <Column header="Office / Designation" style="min-width:240px;">
+                <template #body="{ data }">
+                    <div>
+                        <p>{{ data.office || '—' }}</p>
+                        <p class="text-xs text-surface-400">{{ data.designation || '—' }}</p>
+                    </div>
+                </template>
+            </Column>
+
             <Column field="roles" header="Roles" style="min-width:220px;">
                 <template #body="{ data }">
                     <div class="flex flex-wrap gap-2">
@@ -106,6 +115,21 @@
                 <label class="ios-label">Email</label>
                 <InputText v-model="form.email" class="w-full" size="small" placeholder="name@example.com" />
                 <InputError :message="firstError('email')" />
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="ios-label">Office / Unit</label>
+                    <InputText v-model="form.office" class="w-full" size="small" placeholder="Office or department" />
+                    <InputError :message="firstError('office')" />
+                </div>
+
+                <div>
+                    <label class="ios-label">Designation</label>
+                    <InputText v-model="form.designation" class="w-full" size="small"
+                        placeholder="Position or designation" />
+                    <InputError :message="firstError('designation')" />
+                </div>
             </div>
 
             <div class="grid md:grid-cols-2 gap-4">
@@ -228,6 +252,8 @@ const defaultForm = () => ({
     name: '',
     username: '',
     email: '',
+    office: '',
+    designation: '',
     password: '',
     password_confirmation: '',
     role_names: [],
@@ -318,6 +344,8 @@ function openEdit(user) {
         name: user.name,
         username: user.username,
         email: user.email ?? '',
+        office: user.office ?? '',
+        designation: user.designation ?? '',
         password: '',
         password_confirmation: '',
         role_names: [...(user.role_names ?? [])],
@@ -385,6 +413,8 @@ async function submit() {
             name: form.name,
             username: form.username,
             email: form.email || null,
+            office: form.office || null,
+            designation: form.designation || null,
             password: form.password,
             password_confirmation: form.password_confirmation,
             role_names: form.role_names,
