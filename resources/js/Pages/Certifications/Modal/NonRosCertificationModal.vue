@@ -45,7 +45,7 @@
                                     <InputText v-model="form.subject_name" placeholder="e.g. Juan Santos"
                                         class="w-full" />
                                     <span v-if="errors.subject_name" class="ios-hint ios-error">{{ errors.subject_name
-                                    }}</span>
+                                        }}</span>
                                 </div>
                             </div>
 
@@ -55,7 +55,7 @@
                                     <InputText v-model="form.designation" placeholder="e.g. Administrative Aide VI"
                                         class="w-full" />
                                     <span v-if="errors.designation" class="ios-hint ios-error">{{ errors.designation
-                                    }}</span>
+                                        }}</span>
                                 </div>
 
                                 <div class="ios-form-group">
@@ -72,7 +72,7 @@
                                     <DatePicker v-model="form.issued_date" class="w-full" showIcon fluid
                                         dateFormat="MM d, yy" />
                                     <span v-if="errors.issued_date" class="ios-hint ios-error">{{ errors.issued_date
-                                    }}</span>
+                                        }}</span>
                                 </div>
                             </div>
                         </div>
@@ -82,10 +82,9 @@
                         <p class="ios-section-label">Signatory Snapshot</p>
                         <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
                             <div class="space-y-1 text-sm">
-                                <p class="font-medium text-surface-800 dark:text-surface-100"
-                                    :style="form.signatory_name_underline
-                                        ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
-                                        : ''">
+                                <p class="font-medium text-surface-800 dark:text-surface-100" :style="form.signatory_name_underline
+                                    ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                    : ''">
                                     {{ selectedOfficeHead?.name || 'No signatory selected' }}
                                 </p>
                                 <template v-if="selectedOfficeHead">

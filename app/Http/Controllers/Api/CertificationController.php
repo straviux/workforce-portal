@@ -143,13 +143,13 @@ class CertificationController extends Controller
             ->where('part', 'A')
             ->findOrFail($validated['office_head_id']);
         $availableTitles = collect($officeHead->title ?? [])
-            ->map(fn ($title) => is_string($title) ? trim($title) : '')
+            ->map(fn($title) => is_string($title) ? trim($title) : '')
             ->filter()
             ->values();
         $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
             ? $availableTitles
-                ->filter(fn ($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
-                ->values()
+            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
+            ->values()
             : $availableTitles;
         $nameUnderline = array_key_exists('signatory_name_underline', $validated)
             ? (bool) $validated['signatory_name_underline']

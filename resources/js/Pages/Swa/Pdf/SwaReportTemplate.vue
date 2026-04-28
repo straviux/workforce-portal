@@ -68,7 +68,7 @@
                             </button>
 
                             <span v-else class="swa-value-text">{{ taskValue.cell.mark_value === 'check' ? '✓' : '-'
-                                }}</span>
+                            }}</span>
                         </td>
                         <td class="swa-value-cell"></td>
                     </template>
@@ -93,7 +93,9 @@
 
             <div>
                 <p class="swa-signature-label">Verified and Approved:</p>
-                <p :class="['swa-signature-line', { 'swa-signature-line--plain': !reviewerNameUnderline }]">{{ reviewerName }}</p>
+                <p :class="['swa-signature-line', { 'swa-signature-line--plain': !reviewerNameUnderline }]">{{
+                    reviewerName }}
+                </p>
                 <p v-for="line in reviewerDetailLines" :key="line" class="swa-signature-title">{{ line }}</p>
             </div>
         </div>

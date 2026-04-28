@@ -172,7 +172,7 @@ class AccessManagementTest extends TestCase
 
         $savedCertification = Certification::query()->sole();
         $this->assertSame([], $savedCertification->signatory_titles);
-    $this->assertTrue($savedCertification->signatory_name_underline);
+        $this->assertTrue($savedCertification->signatory_name_underline);
         $this->assertFalse($savedCertification->signatory_show_designation);
         $this->assertTrue($savedCertification->signatory_show_office);
         $this->assertSame('office_first', $savedCertification->signatory_info_order);

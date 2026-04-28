@@ -88,8 +88,10 @@
                             <div class="ios-card p-4 space-y-4">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline</p>
-                                        <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory name.</p>
+                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline
+                                        </p>
+                                        <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory
+                                            name.</p>
                                     </div>
                                     <ToggleSwitch v-model="draft.signatory_name_underline" />
                                 </div>
@@ -103,10 +105,8 @@
                                                 ? 'border-sky-400 bg-sky-50 dark:border-sky-500/50 dark:bg-sky-950/20'
                                                 : isVisibleLineSelected(lineOption.id)
                                                     ? 'border-emerald-200 dark:border-emerald-500/30'
-                                                    : 'border-surface-200 bg-white dark:border-surface-700 dark:bg-surface-900'"
-                                        :draggable="orderedVisibleLineRows.length > 1"
-                                        @dragstart="onVisibleLineDragStart(idx, $event)"
-                                        @dragend="onVisibleLineDragEnd"
+                                                    : 'border-surface-200 bg-white dark:border-surface-700 dark:bg-surface-900'" :draggable="orderedVisibleLineRows.length > 1"
+                                        @dragstart="onVisibleLineDragStart(idx, $event)" @dragend="onVisibleLineDragEnd"
                                         @dragover.prevent="onVisibleLineDragOver(idx, $event)"
                                         @dragenter.prevent="onVisibleLineDragOver(idx, $event)"
                                         @drop.prevent="onVisibleLineDrop(idx, $event)">
@@ -127,15 +127,17 @@
                                             </p>
                                             <p class="mt-1 text-[11px] text-surface-400">
                                                 {{ isVisibleLineSelected(lineOption.id)
-                                                    ? `Selected${visibleLinePosition(lineOption.id) ? ` · Position ${visibleLinePosition(lineOption.id)}` : ''}`
-                                                    : 'Not shown in the preview' }}
+                                                    ? `Selected${visibleLinePosition(lineOption.id) ? ` · Position
+                                                ${visibleLinePosition(lineOption.id)}` : ''}`
+                                                : 'Not shown in the preview' }}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <p class="text-xs text-surface-400">
-                                    Use the checkboxes to show or hide each line, then drag rows to control the print order.
+                                    Use the checkboxes to show or hide each line, then drag rows to control the print
+                                    order.
                                 </p>
                             </div>
                         </div>
@@ -143,10 +145,9 @@
                         <div v-if="showPreview" class="ios-section pb-4">
                             <p class="ios-section-label">{{ previewSectionTitle }}</p>
                             <div class="ios-card p-4 space-y-1 text-sm">
-                                <p class="font-medium text-surface-800 dark:text-surface-100"
-                                    :style="draft.signatory_name_underline
-                                        ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
-                                        : ''">
+                                <p class="font-medium text-surface-800 dark:text-surface-100" :style="draft.signatory_name_underline
+                                    ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                    : ''">
                                     {{ selectedOfficeHead?.name || noSelectionLabel }}
                                 </p>
                                 <template v-if="selectedOfficeHead">
