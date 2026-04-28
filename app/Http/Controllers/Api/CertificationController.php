@@ -142,6 +142,18 @@ class CertificationController extends Controller
         $officeHead = Signatory::query()
             ->where('part', 'A')
             ->findOrFail($validated['office_head_id']);
+        $availableTitles = collect($officeHead->title ?? [])
+            ->map(fn ($title) => is_string($title) ? trim($title) : '')
+            ->filter()
+            ->values();
+        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
+            ? $availableTitles
+                ->filter(fn ($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
+                ->values()
+            : $availableTitles;
+        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
+            ? (bool) $validated['signatory_name_underline']
+            : false;
 
         $showDesignation = array_key_exists('signatory_show_designation', $validated)
             ? (bool) $validated['signatory_show_designation']
@@ -165,7 +177,8 @@ class CertificationController extends Controller
             'office_head_signatory_id' => $officeHead->id,
             'signatory_name' => $officeHead->name,
             'signatory_office' => $officeHead->office,
-            'signatory_titles' => array_values(array_filter($officeHead->title ?? [])),
+            'signatory_titles' => $selectedSignatoryTitles->all(),
+            'signatory_name_underline' => $nameUnderline,
             'signatory_show_designation' => $showDesignation,
             'signatory_show_office' => $showOffice,
             'signatory_info_order' => $infoOrder,

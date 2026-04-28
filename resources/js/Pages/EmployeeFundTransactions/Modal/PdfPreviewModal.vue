@@ -60,8 +60,8 @@
                 </div>
 
                 <!-- Paper Preview Area -->
-                <div ref="scrollArea" class="overflow-auto bg-[#d1d1d6] dark:bg-[#1c1c1e]"
-                    style="flex:1; min-height:0; padding:16px 0;">
+                <div ref="scrollArea" class="overflow-auto"
+                    style="flex:1; min-height:0; padding:16px 0; background:#fff;">
                     <div :style="paperWrapperStyle" class="mx-auto">
                         <iframe ref="iframeEl" :srcdoc="htmlDoc" scrolling="no" style="border:none; display:block;"
                             :style="iframeStyle" @load="onIframeLoad" />

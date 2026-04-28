@@ -242,6 +242,7 @@ const pendingPrint = reactive({
     snapshot: {
         office_head_id: null,
         signatory_titles: null,
+        signatory_name_underline: false,
         signatory_show_designation: true,
         signatory_show_office: true,
         signatory_info_order: 'designation_first',
@@ -587,9 +588,10 @@ async function printPdf(type) {
     if (type !== 'obr') {
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
+            const previousPrintType = pendingPrint.type;
             pendingPrint.type = type;
             pendingPrint.signatories = signatories;
-            pendingPrint.snapshot = createPendingPrintSnapshot(partA);
+            pendingPrint.snapshot = createPendingPrintSnapshot(partA, type, previousPrintType === type);
             modals.officeHeadSelect = true;
             return;
         }
@@ -606,6 +608,7 @@ function onOfficeHeadSelected(snapshot) {
     pendingPrint.snapshot = {
         office_head_id: snapshot.office_head_id,
         signatory_titles: [...(snapshot.signatory_titles ?? [])],
+        signatory_name_underline: snapshot.signatory_name_underline === true,
         signatory_show_designation: snapshot.signatory_show_designation !== false,
         signatory_show_office: snapshot.signatory_show_office !== false,
         signatory_info_order: snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
@@ -617,6 +620,7 @@ function onOfficeHeadSelected(snapshot) {
         {
             ...chosen,
             part: 'A',
+            name_underline: snapshot.signatory_name_underline === true,
             title: partADetailLines,
             titles: partADetailLines,
             office: '',
@@ -625,7 +629,7 @@ function onOfficeHeadSelected(snapshot) {
     renderAndShow(pendingPrint.type, voucher, signatories);
 }
 
-function createPendingPrintSnapshot(partAOfficeHeads) {
+function createPendingPrintSnapshot(partAOfficeHeads, printType, preservePreviousSettings = false) {
     const officeHeads = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
     const fallbackOfficeHead = officeHeads[0] ?? null;
     const hasPreviousOfficeHead = officeHeads.some((officeHead) => officeHead.id === pendingPrint.snapshot.office_head_id);
@@ -638,10 +642,17 @@ function createPendingPrintSnapshot(partAOfficeHeads) {
         signatory_titles: normalizeSignatoryTitles(
             hasPreviousOfficeHead ? pendingPrint.snapshot.signatory_titles : selectedOfficeHead?.title ?? selectedOfficeHead?.titles,
         ),
+        signatory_name_underline: preservePreviousSettings
+            ? pendingPrint.snapshot.signatory_name_underline === true
+            : defaultPrintSignatoryUnderline(printType),
         signatory_show_designation: pendingPrint.snapshot.signatory_show_designation !== false,
         signatory_show_office: pendingPrint.snapshot.signatory_show_office !== false,
         signatory_info_order: pendingPrint.snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
     };
+}
+
+function defaultPrintSignatoryUnderline(printType) {
+    return printType === 'cwa';
 }
 
 function buildPrintSignatoryDetailLines(snapshot) {

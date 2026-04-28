@@ -93,7 +93,7 @@
 
             <div>
                 <p class="swa-signature-label">Verified and Approved:</p>
-                <p class="swa-signature-line">{{ reviewerName }}</p>
+                <p :class="['swa-signature-line', { 'swa-signature-line--plain': !reviewerNameUnderline }]">{{ reviewerName }}</p>
                 <p v-for="line in reviewerDetailLines" :key="line" class="swa-signature-title">{{ line }}</p>
             </div>
         </div>
@@ -126,6 +126,7 @@ const props = defineProps({
     reviewerName: { type: String, default: '______________________________' },
     reviewerTitles: { type: Array, default: () => ['PROGRAM MANAGER'] },
     reviewerOffice: { type: String, default: '' },
+    reviewerNameUnderline: { type: Boolean, default: false },
     reviewerShowDesignation: { type: Boolean, default: true },
     reviewerShowOffice: { type: Boolean, default: true },
     reviewerInfoOrder: { type: String, default: 'designation_first' },

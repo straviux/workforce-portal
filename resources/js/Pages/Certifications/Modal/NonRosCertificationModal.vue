@@ -82,7 +82,10 @@
                         <p class="ios-section-label">Signatory Snapshot</p>
                         <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
                             <div class="space-y-1 text-sm">
-                                <p class="font-medium text-surface-800 dark:text-surface-100">
+                                <p class="font-medium text-surface-800 dark:text-surface-100"
+                                    :style="form.signatory_name_underline
+                                        ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                        : ''">
                                     {{ selectedOfficeHead?.name || 'No signatory selected' }}
                                 </p>
                                 <template v-if="selectedOfficeHead">
@@ -109,7 +112,8 @@
     </Dialog>
 
     <SignatorySnapshotModal v-model:show="showSnapshotModal" :office-heads="officeHeads"
-        :initial-value="signatorySnapshotForm" :allow-display-options="true" @apply="applySignatorySnapshot" />
+        :initial-value="signatorySnapshotForm" :allow-title-selection="true" :allow-display-options="true"
+        @apply="applySignatorySnapshot" />
 </template>
 
 <script setup>
@@ -137,6 +141,8 @@ const defaultForm = () => ({
     office: '',
     issued_date: new Date(),
     office_head_id: null,
+    signatory_titles: [],
+    signatory_name_underline: false,
     signatory_show_designation: true,
     signatory_show_office: true,
     signatory_info_order: 'designation_first',
@@ -157,6 +163,11 @@ watch(() => props.show, (visible) => {
         form.office = props.certification.office ?? '';
         form.issued_date = parseDate(props.certification.issued_date) ?? new Date();
         form.office_head_id = props.certification.office_head_signatory_id ?? props.officeHeads[0]?.id ?? null;
+        form.signatory_titles = sanitizeSelectedTitles(
+            props.certification.signatory_titles,
+            officeHeadTitlesForId(form.office_head_id),
+        );
+        form.signatory_name_underline = props.certification.signatory_name_underline === true;
         form.signatory_show_designation = props.certification.signatory_show_designation ?? true;
         form.signatory_show_office = props.certification.signatory_show_office ?? true;
         form.signatory_info_order = props.certification.signatory_info_order === 'office_first'
@@ -165,6 +176,7 @@ watch(() => props.show, (visible) => {
     } else {
         Object.assign(form, defaultForm());
         form.office_head_id = props.officeHeads[0]?.id ?? null;
+        form.signatory_titles = officeHeadTitlesForId(form.office_head_id);
     }
 
     dragOffset.value = { x: 0, y: 0 };
@@ -173,6 +185,8 @@ watch(() => props.show, (visible) => {
 const selectedOfficeHead = computed(() => props.officeHeads.find((officeHead) => officeHead.id === form.office_head_id) ?? null);
 const signatorySnapshotForm = computed(() => ({
     office_head_id: form.office_head_id,
+    signatory_titles: form.signatory_titles,
+    signatory_name_underline: form.signatory_name_underline,
     signatory_show_designation: form.signatory_show_designation,
     signatory_show_office: form.signatory_show_office,
     signatory_info_order: form.signatory_info_order,
@@ -189,6 +203,8 @@ async function submit() {
         office: form.office,
         issued_date: formatDateForApi(form.issued_date),
         office_head_id: form.office_head_id,
+        signatory_titles: form.signatory_titles,
+        signatory_name_underline: form.signatory_name_underline,
         signatory_show_designation: form.signatory_show_designation,
         signatory_show_office: form.signatory_show_office,
         signatory_info_order: form.signatory_info_order,
@@ -232,6 +248,11 @@ async function submit() {
 
 function applySignatorySnapshot(snapshot) {
     form.office_head_id = snapshot.office_head_id;
+    form.signatory_titles = sanitizeSelectedTitles(
+        snapshot.signatory_titles,
+        officeHeadTitlesForId(snapshot.office_head_id),
+    );
+    form.signatory_name_underline = snapshot.signatory_name_underline === true;
     form.signatory_show_designation = snapshot.signatory_show_designation;
     form.signatory_show_office = snapshot.signatory_show_office;
     form.signatory_info_order = snapshot.signatory_info_order;
@@ -246,7 +267,7 @@ function buildSignatoryDetailLines(officeHead, config) {
         return [];
     }
 
-    const titles = Array.isArray(officeHead.titles) ? officeHead.titles.filter(Boolean) : [];
+    const titles = sanitizeSelectedTitles(config.signatory_titles, officeHeadTitlesForId(officeHead.id));
     const officeLine = typeof officeHead.office === 'string' ? officeHead.office.trim() : '';
     const designationLines = config.signatory_show_designation ? titles : [];
     const officeLines = config.signatory_show_office && officeLine ? [officeLine] : [];
@@ -254,6 +275,25 @@ function buildSignatoryDetailLines(officeHead, config) {
     return uniqueTextLines(config.signatory_info_order === 'office_first'
         ? [...officeLines, ...designationLines]
         : [...designationLines, ...officeLines]);
+}
+
+function officeHeadTitlesForId(officeHeadId) {
+    const officeHead = props.officeHeads.find((entry) => entry.id === officeHeadId);
+    const titles = Array.isArray(officeHead?.titles) ? officeHead.titles : [];
+
+    return titles
+        .map((title) => (typeof title === 'string' ? title.trim() : ''))
+        .filter(Boolean);
+}
+
+function sanitizeSelectedTitles(selectedTitles, availableTitles) {
+    if (!Array.isArray(selectedTitles)) {
+        return [...availableTitles];
+    }
+
+    return selectedTitles
+        .map((title) => (typeof title === 'string' ? title.trim() : ''))
+        .filter((title) => availableTitles.includes(title));
 }
 
 function uniqueTextLines(lines) {

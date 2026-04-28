@@ -66,6 +66,7 @@ class SwaWorkflowTest extends TestCase
                 '2026-04-06',
                 '2026-04-07',
             ], $officeHead->id, ['Program Manager'], [
+                'signatory_name_underline' => false,
                 'signatory_show_designation' => false,
                 'signatory_show_office' => true,
                 'signatory_info_order' => 'office_first',
@@ -73,6 +74,7 @@ class SwaWorkflowTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.module_type', 'personal')
             ->assertJsonPath('data.task_count', 5)
+            ->assertJsonPath('data.signatory_name_underline', false)
             ->assertJsonPath('data.signatory_show_designation', false)
             ->assertJsonPath('data.signatory_show_office', true)
             ->assertJsonPath('data.signatory_info_order', 'office_first');
@@ -90,6 +92,7 @@ class SwaWorkflowTest extends TestCase
         $this->assertSame(5, SwaReportTask::query()->count());
         $this->assertSame(15, SwaReportTaskDailyValue::query()->count());
         $this->assertSame(['Program Manager'], SwaReport::query()->value('signatory_titles'));
+        $this->assertFalse((bool) SwaReport::query()->value('signatory_name_underline'));
         $this->assertFalse((bool) SwaReport::query()->value('signatory_show_designation'));
         $this->assertTrue((bool) SwaReport::query()->value('signatory_show_office'));
         $this->assertSame('office_first', SwaReport::query()->value('signatory_info_order'));
@@ -162,6 +165,7 @@ class SwaWorkflowTest extends TestCase
                 'period_end_date' => '2026-04-08',
                 'office_head_id' => $officeHead->id,
                 'signatory_titles' => ['Scholarship Coordinator'],
+                'signatory_name_underline' => true,
                 'signatory_show_designation' => true,
                 'signatory_show_office' => false,
                 'signatory_info_order' => 'office_first',
@@ -172,6 +176,7 @@ class SwaWorkflowTest extends TestCase
             ->assertJsonPath('data.id', $reportId)
             ->assertJsonPath('data.period_start_date', '2026-04-06')
             ->assertJsonPath('data.period_end_date', '2026-04-08')
+            ->assertJsonPath('data.signatory_name_underline', true)
             ->assertJsonPath('data.signatory_show_office', false)
             ->assertJsonPath('data.signatory_info_order', 'office_first');
 
@@ -181,6 +186,7 @@ class SwaWorkflowTest extends TestCase
         $this->assertSame('2026-04-08', $report->period_end_date?->toDateString());
         $this->assertSame(['monday', 'tuesday', 'wednesday'], $report->work_days);
         $this->assertSame(['Scholarship Coordinator'], $report->signatory_titles);
+        $this->assertTrue($report->signatory_name_underline);
         $this->assertTrue($report->signatory_show_designation);
         $this->assertFalse($report->signatory_show_office);
         $this->assertSame('office_first', $report->signatory_info_order);
@@ -322,6 +328,7 @@ class SwaWorkflowTest extends TestCase
             'period_end_date' => '2026-04-07',
             'office_head_id' => $officeHeadId,
             'signatory_titles' => $signatoryTitles,
+            'signatory_name_underline' => true,
             'signatory_show_designation' => true,
             'signatory_show_office' => true,
             'signatory_info_order' => 'designation_first',

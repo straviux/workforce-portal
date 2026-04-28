@@ -149,7 +149,7 @@
                                 provided thereof.</p>
                         </div>
                         <div style="margin-top:34pt;text-align:center;">
-                            <p class="bold t-10" style="width:85%;margin:0 auto !important;padding-bottom:2pt;">
+                            <p class="bold t-10" :style="signatoryNameStyle(preparedBySignatory.nameUnderline)">
                                 {{ formatSignatoryName(preparedBySignatory.name) }}
                             </p>
                             <p v-for="title in preparedBySignatory.titleDisplay" :key="`A-${title}`" class="t-10"
@@ -169,7 +169,7 @@
                             <p style="font-weight: 700;">C. Cash Available</p>
                         </div>
                         <div style="margin-top:44pt;text-align:center;margin-left: -260pt;">
-                            <p class="bold t-10" style="width:85%;margin:0 auto !important;padding-bottom:2pt;">
+                            <p class="bold t-10" :style="signatoryNameStyle(treasurerSignatory.nameUnderline)">
                                 {{ formatSignatoryName(treasurerSignatory.name) }}
                             </p>
                             <p v-for="title in treasurerSignatory.titleDisplay" :key="`C-${title}`" class="t-9"
@@ -189,7 +189,7 @@
                             <p style="font-weight: 700;">B. CERTIFIED: Supporting Documents Valid, Proper, and Legal</p>
                         </div>
                         <div style="margin-top:24pt;text-align:center;">
-                            <p class="bold t-10" style="width:85%;margin:0 auto !important;padding-bottom:2pt;">
+                            <p class="bold t-10" :style="signatoryNameStyle(accountantSignatory.nameUnderline)">
                                 {{ formatSignatoryName(accountantSignatory.name) }}
                             </p>
                             <p v-for="title in accountantSignatory.titleDisplay" :key="`B-${title}`" class="t-10"
@@ -220,7 +220,7 @@
                             style="margin-top:24pt;text-align:center; display: flex;width: 100%;align-items: flex-start;">
 
                             <div style="font-weight: 700;width: 38%;">
-                                <p class="bold t-10" style="width:85%;margin:0 auto !important;padding-bottom:2pt;">
+                                <p class="bold t-10" :style="signatoryNameStyle(approverSignatory.nameUnderline)">
                                     {{ formatSignatoryName(approverSignatory.name) }}
                                 </p>
                                 <p v-for="title in approverSignatory.titleDisplay" :key="`D-${title}`" class="t-10"
@@ -381,6 +381,7 @@ function signatoryByPart(part) {
 
     return {
         ...signatory,
+        nameUnderline: signatory.name_underline === true,
         titleDisplay: titles.filter(Boolean),
     };
 }
@@ -393,6 +394,10 @@ const approverSignatory = computed(() => signatoryByPart('D'));
 function formatSignatoryName(value) {
     const text = String(value ?? '').trim();
     return text ? text.toUpperCase() : '______________________________';
+}
+
+function signatoryNameStyle(nameUnderline) {
+    return `width:85%;margin:0 auto !important;padding-bottom:2pt;${nameUnderline ? 'border-bottom:1pt solid #000;' : ''}`;
 }
 
 const money = (val) => {

@@ -21,6 +21,7 @@ class StoreSwaReportRequest extends FormRequest
             'office_head_id' => ['required', Rule::exists('signatories', 'id')->where('part', 'A')],
             'signatory_titles' => ['nullable', 'array'],
             'signatory_titles.*' => ['string', 'max:255'],
+            'signatory_name_underline' => ['nullable', 'boolean'],
             'signatory_show_designation' => ['nullable', 'boolean'],
             'signatory_show_office' => ['nullable', 'boolean'],
             'signatory_info_order' => ['nullable', Rule::in(['designation_first', 'office_first'])],

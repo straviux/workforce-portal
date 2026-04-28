@@ -146,6 +146,8 @@ class AccessManagementTest extends TestCase
                 'office' => 'Human Resource Management Office',
                 'issued_date' => '2026-04-24',
                 'office_head_id' => $officeHead->id,
+                'signatory_titles' => [],
+                'signatory_name_underline' => true,
                 'signatory_show_designation' => false,
                 'signatory_show_office' => true,
                 'signatory_info_order' => 'office_first',
@@ -154,6 +156,8 @@ class AccessManagementTest extends TestCase
             ->assertJsonPath('data.subject_name', 'Maria Santos')
             ->assertJsonPath('data.subject_honorific', 'Ms.')
             ->assertJsonPath('data.signatory_name', 'Juan Dela Cruz')
+            ->assertJsonPath('data.signatory_titles', [])
+            ->assertJsonPath('data.signatory_name_underline', true)
             ->assertJsonPath('data.signatory_show_designation', false)
             ->assertJsonPath('data.signatory_show_office', true)
             ->assertJsonPath('data.signatory_info_order', 'office_first');
@@ -167,6 +171,8 @@ class AccessManagementTest extends TestCase
         ]);
 
         $savedCertification = Certification::query()->sole();
+        $this->assertSame([], $savedCertification->signatory_titles);
+    $this->assertTrue($savedCertification->signatory_name_underline);
         $this->assertFalse($savedCertification->signatory_show_designation);
         $this->assertTrue($savedCertification->signatory_show_office);
         $this->assertSame('office_first', $savedCertification->signatory_info_order);
@@ -178,6 +184,8 @@ class AccessManagementTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.subject_name', 'Maria Santos')
             ->assertJsonPath('data.0.subject_honorific', 'Ms.')
+            ->assertJsonPath('data.0.signatory_titles', [])
+            ->assertJsonPath('data.0.signatory_name_underline', true)
             ->assertJsonPath('data.0.signatory_show_designation', false)
             ->assertJsonPath('data.0.signatory_info_order', 'office_first')
             ->assertJsonPath('office_heads.0.name', 'Juan Dela Cruz')
@@ -230,12 +238,16 @@ class AccessManagementTest extends TestCase
                 'office' => 'Human Resource Management Office',
                 'issued_date' => '2026-04-24',
                 'office_head_id' => $updatedOfficeHead->id,
+                'signatory_titles' => [],
+                'signatory_name_underline' => false,
                 'signatory_show_designation' => true,
                 'signatory_show_office' => false,
                 'signatory_info_order' => 'office_first',
             ])
             ->assertOk()
             ->assertJsonPath('data.signatory_name', 'Maria R. Perez')
+            ->assertJsonPath('data.signatory_titles', [])
+            ->assertJsonPath('data.signatory_name_underline', false)
             ->assertJsonPath('data.signatory_show_designation', true)
             ->assertJsonPath('data.signatory_show_office', false)
             ->assertJsonPath('data.signatory_info_order', 'office_first');
@@ -245,7 +257,8 @@ class AccessManagementTest extends TestCase
         $this->assertSame($updatedOfficeHead->id, $certification->office_head_signatory_id);
         $this->assertSame('Maria R. Perez', $certification->signatory_name);
         $this->assertSame('Provincial Administrator Office', $certification->signatory_office);
-        $this->assertSame(['Provincial Administrator'], $certification->signatory_titles);
+        $this->assertSame([], $certification->signatory_titles);
+        $this->assertFalse($certification->signatory_name_underline);
         $this->assertTrue($certification->signatory_show_designation);
         $this->assertFalse($certification->signatory_show_office);
         $this->assertSame('office_first', $certification->signatory_info_order);

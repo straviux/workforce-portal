@@ -57,7 +57,7 @@
         <div style="margin-top:54pt;display:flex;justify-content:flex-end;">
             <div>
                 <p style="font-weight: 700;">Certified Correct:</p>
-                <p style="font-weight:700;font-size:11pt;margin-top: 42pt !important;">{{
+                <p :style="signatoryNameStyle">{{
                     certification?.signatory_name ||
                     '______________________________' }}</p>
                 <p v-for="line in signatoryDetailLines" :key="line" style="font-size:11pt;">{{ line }}</p>
@@ -120,9 +120,13 @@ const signatoryTitles = computed(() => {
 
 const showSignatoryDesignation = computed(() => props.certification?.signatory_show_designation !== false);
 const showSignatoryOffice = computed(() => props.certification?.signatory_show_office !== false);
+const signatoryNameUnderline = computed(() => props.certification?.signatory_name_underline === true);
 const signatoryInfoOrder = computed(() => props.certification?.signatory_info_order === 'office_first'
     ? 'office_first'
     : 'designation_first');
+const signatoryNameStyle = computed(() => signatoryNameUnderline.value
+    ? 'font-weight:700;font-size:11pt;margin-top: 42pt !important;display:inline-block;padding-bottom:2pt;border-bottom:1pt solid currentColor;'
+    : 'font-weight:700;font-size:11pt;margin-top: 42pt !important;');
 const signatoryDetailLines = computed(() => {
     const designationLines = showSignatoryDesignation.value
         ? signatoryTitles.value.filter((title) => normalizeText(title))

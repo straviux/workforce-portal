@@ -124,6 +124,7 @@ class SwaService
             'period_start_date' => optional($report->period_start_date)->toDateString(),
             'period_end_date' => optional($report->period_end_date)->toDateString(),
             'work_days' => $report->work_days ?? [],
+            'signatory_name_underline' => $report->signatory_name_underline !== false,
             'signatory_show_designation' => $report->signatory_show_designation !== false,
             'signatory_show_office' => $report->signatory_show_office !== false,
             'signatory_info_order' => $report->signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
@@ -251,6 +252,9 @@ class SwaService
             ->map(fn($title) => trim((string) $title))
             ->filter()
             ->values();
+        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
+            ? (bool) $validated['signatory_name_underline']
+            : true;
         $showDesignation = array_key_exists('signatory_show_designation', $validated)
             ? (bool) $validated['signatory_show_designation']
             : true;
@@ -275,7 +279,7 @@ class SwaService
             ? 'office_first'
             : 'designation_first';
 
-        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $showDesignation, $showOffice, $infoOrder) {
+        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $nameUnderline, $showDesignation, $showOffice, $infoOrder) {
             $report = SwaReport::query()->create([
                 'module_type' => $moduleType,
                 'subject_type' => $subject->getMorphClass(),
@@ -284,6 +288,7 @@ class SwaService
                 'signatory_name' => $officeHead->name,
                 'signatory_office' => $officeHead->office,
                 'signatory_titles' => $selectedSignatoryTitles->all(),
+                'signatory_name_underline' => $nameUnderline,
                 'signatory_show_designation' => $showDesignation,
                 'signatory_show_office' => $showOffice,
                 'signatory_info_order' => $infoOrder,
@@ -372,6 +377,9 @@ class SwaService
             ->map(fn($title) => trim((string) $title))
             ->filter()
             ->values();
+        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
+            ? (bool) $validated['signatory_name_underline']
+            : true;
         $showDesignation = array_key_exists('signatory_show_designation', $validated)
             ? (bool) $validated['signatory_show_designation']
             : true;
@@ -387,12 +395,13 @@ class SwaService
             ->values()
             : $availableSignatoryTitles;
 
-        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $showDesignation, $showOffice, $infoOrder) {
+        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $nameUnderline, $showDesignation, $showOffice, $infoOrder) {
             $report->update([
                 'office_head_signatory_id' => $officeHead->id,
                 'signatory_name' => $officeHead->name,
                 'signatory_office' => $officeHead->office,
                 'signatory_titles' => $selectedSignatoryTitles->all(),
+                'signatory_name_underline' => $nameUnderline,
                 'signatory_show_designation' => $showDesignation,
                 'signatory_show_office' => $showOffice,
                 'signatory_info_order' => $infoOrder,

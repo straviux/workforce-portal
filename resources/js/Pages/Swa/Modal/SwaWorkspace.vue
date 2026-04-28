@@ -191,7 +191,10 @@
 
                 <div v-else class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
                     <div class="space-y-1 text-sm">
-                        <p class="font-medium text-surface-800 dark:text-surface-100">
+                        <p class="font-medium text-surface-800 dark:text-surface-100"
+                            :style="signatoryNameUnderline
+                                ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                : ''">
                             {{ selectedOfficeHead?.name || 'No signatory selected' }}
                         </p>
                         <template v-if="selectedOfficeHead">
@@ -431,6 +434,7 @@ const editingReportId = ref(null);
 const editingReportTaskRows = ref([]);
 const selectedOfficeHeadId = ref(null);
 const selectedOfficeHeadTitles = ref([]);
+const signatoryNameUnderline = ref(true);
 const signatoryShowDesignation = ref(true);
 const signatoryShowOffice = ref(true);
 const signatoryInfoOrder = ref('designation_first');
@@ -547,6 +551,7 @@ const documentPeriodLabel = computed(() => formatSwaPeriodLabel(generation.perio
 const swaSignatorySnapshotForm = computed(() => ({
     office_head_id: selectedOfficeHeadId.value,
     signatory_titles: [...selectedOfficeHeadTitles.value],
+    signatory_name_underline: signatoryNameUnderline.value,
     signatory_show_designation: signatoryShowDesignation.value,
     signatory_show_office: signatoryShowOffice.value,
     signatory_info_order: signatoryInfoOrder.value,
@@ -677,6 +682,7 @@ async function openSavedReportEditor(report) {
         generation.period_start_date = parseDateValue(reportDetail.period_start_date);
         generation.period_end_date = parseDateValue(reportDetail.period_end_date);
         applyOfficeHeadSelection(reportDetail.office_head_signatory_id, reportDetail.signatory_titles ?? []);
+        signatoryNameUnderline.value = reportDetail.signatory_name_underline !== false;
         signatoryShowDesignation.value = reportDetail.signatory_show_designation !== false;
         signatoryShowOffice.value = reportDetail.signatory_show_office !== false;
         signatoryInfoOrder.value = reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
@@ -746,6 +752,7 @@ async function openSavedReportPreview(report) {
                 ? formatUpperList(reportDetail.signatory_titles)
                 : reviewerTitles.value,
             reviewerOffice: formatUpperText(reportDetail.signatory_office) || reviewerOffice.value,
+            reviewerNameUnderline: reportDetail.signatory_name_underline !== false,
             reviewerShowDesignation: reportDetail.signatory_show_designation !== false,
             reviewerShowOffice: reportDetail.signatory_show_office !== false,
             reviewerInfoOrder: reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
@@ -801,6 +808,7 @@ function emitSaveReport() {
         period_end_date: formatDateForApi(generation.period_end_date),
         office_head_id: selectedOfficeHeadId.value,
         signatory_titles: [...selectedOfficeHeadTitles.value],
+        signatory_name_underline: signatoryNameUnderline.value,
         signatory_show_designation: signatoryShowDesignation.value,
         signatory_show_office: signatoryShowOffice.value,
         signatory_info_order: signatoryInfoOrder.value,
@@ -847,6 +855,7 @@ function toggleWorkDay(day) {
 
 function applySwaSignatorySnapshot(snapshot) {
     applyOfficeHeadSelection(snapshot.office_head_id, snapshot.signatory_titles ?? []);
+    signatoryNameUnderline.value = snapshot.signatory_name_underline !== false;
     signatoryShowDesignation.value = snapshot.signatory_show_designation !== false;
     signatoryShowOffice.value = snapshot.signatory_show_office !== false;
     signatoryInfoOrder.value = snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';

@@ -142,7 +142,7 @@ em     { font-style: italic; }
 
 @media screen {
   body {
-    background: #ececf1;
+    background: #fff;
   }
 
   .pdf-page {

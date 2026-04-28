@@ -361,7 +361,7 @@
                     style="padding:16pt 8pt 8pt;vertical-align:bottom;border-bottom: 1pt solid #000;border-right: 1pt solid #000;font-size: 7pt;">
                     <div style="display: flex;justify-content: space-between;align-items: flex-end;">
                         <div style="text-align: center; vertical-align: bottom; width: 40%;">
-                            <p style="border-bottom: 1pt solid #000;font-weight: 600;">{{ sig('A').name }}</p>
+                            <p :style="signatoryNameStyle(sig('A').nameUnderline)">{{ sig('A').name }}</p>
                             <span style="white-space:pre-line;">{{ sig('A').titleDisplay }}</span>
                             <span v-if="sig('A').office" style="display:block;">{{ sig('A').office }}</span>
                         </div>
@@ -374,7 +374,7 @@
                     style="padding:16pt 8pt 8pt;vertical-align:bottom;border-bottom: 1pt solid #000;border-right: 1pt solid #000;font-size: 7pt;">
                     <div style="display: flex;justify-content: space-between;align-items: flex-end;">
                         <div style="text-align: center; vertical-align: bottom; width: 40%;">
-                            <p style="border-bottom: 1pt solid #000;font-weight: 600;">{{ sig('C').name }}</p>
+                            <p :style="signatoryNameStyle(sig('C').nameUnderline)">{{ sig('C').name }}</p>
                             <span style="white-space:pre-line;">{{ sig('C').titleDisplay }}</span>
                             <span v-if="sig('C').office" style="display:block;">{{ sig('C').office }}</span>
                         </div>
@@ -400,7 +400,7 @@
                     style="padding:10pt 8pt 8pt;vertical-align:bottom;border-right: 1pt solid #000;font-size: 7pt;">
                     <div style="display: flex;justify-content: space-between;align-items: flex-end;">
                         <div style="text-align: center; vertical-align: bottom;width: 40%;">
-                            <p style="border-bottom: 1pt solid #000;font-weight: 600;">{{ sig('B').name }}</p>
+                            <p :style="signatoryNameStyle(sig('B').nameUnderline)">{{ sig('B').name }}</p>
                             <span style="white-space:pre-line;">{{ sig('B').titleDisplay }}</span>
                             <span v-if="sig('B').office" style="display:block;">{{ sig('B').office }}</span>
                         </div>
@@ -413,7 +413,7 @@
                     style="padding:10pt 8pt 8pt;vertical-align:bottom;border-right: 1pt solid #000;font-size: 7pt;">
                     <div style="display: flex;justify-content: space-between;align-items: flex-end;">
                         <div style="text-align: center; vertical-align: bottom;width: 40%;">
-                            <p style="border-bottom: 1pt solid #000;font-weight: 600;">{{ sig('D').name }}</p>
+                            <p :style="signatoryNameStyle(sig('D').nameUnderline)">{{ sig('D').name }}</p>
                             <span style="white-space:pre-line;">{{ sig('D').titleDisplay }}</span>
                             <span v-if="sig('D').office" style="display:block;">{{ sig('D').office }}</span>
                         </div>
@@ -452,8 +452,16 @@ const sig = (part) => {
     const found = props.signatories.find((s) => s.part === part);
     const s = found ?? { name: '', title: [], office: '' };
     const titles = Array.isArray(s.title) ? s.title : (s.title ? [s.title] : []);
-    return { ...s, titleDisplay: titles.join('\n') };
+    return {
+        ...s,
+        nameUnderline: s.name_underline !== false,
+        titleDisplay: titles.join('\n'),
+    };
 };
+
+function signatoryNameStyle(nameUnderline) {
+    return `display:block;min-height:12pt;font-weight:600;${nameUnderline ? 'border-bottom:1pt solid #000;' : ''}`;
+}
 
 const sortedEmployees = computed(() =>
     [...props.employees].sort((left, right) => {
