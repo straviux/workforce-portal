@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateEmployeeFundTransactionRequest;
 use App\Http\Requests\UpdateEmployeeFundTransactionStatusRequest;
 use App\Models\EmployeeFundTransaction;
 use App\Services\EmployeeFundTransactionService;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,10 +53,6 @@ class EmployeeFundTransactionController extends Controller
 
             if ($employeeType = $request->get('employee_type')) {
                 $query->where('employee_type', $employeeType);
-            }
-
-            if ($obrStatus = $request->get('obr_status')) {
-                $query->where('obr_status', $obrStatus);
             }
 
             if ($obrType = $request->get('obr_type')) {
@@ -135,6 +132,36 @@ class EmployeeFundTransactionController extends Controller
     }
 
     /**
+     * Proxy OBR tracking info from the external tracking service.
+     */
+    public function getObrTrackingInfo(Request $request): JsonResponse
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->timeout(10)
+                ->get('https://tracking.pgpict.com/api/obr-tracking-info', $request->query());
+
+            if ($response->failed()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to fetch tracking information from server. Please try again later.',
+                ], $response->status() >= 500 ? 503 : $response->status());
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $response->json(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to fetch tracking information from server. Please try again later.',
+                'error' => $e->getMessage(),
+            ], 503);
+        }
+    }
+
+    /**
      * Update a transaction.
      */
     public function update(UpdateEmployeeFundTransactionRequest $request, int $id): JsonResponse
@@ -160,7 +187,7 @@ class EmployeeFundTransactionController extends Controller
     }
 
     /**
-     * Update only the status (and optional remarks) of a transaction.
+     * Update transaction tracking fields such as status, remarks, and basic OBR info.
      */
     public function updateStatus(UpdateEmployeeFundTransactionStatusRequest $request, int $id): JsonResponse
     {
@@ -170,7 +197,7 @@ class EmployeeFundTransactionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Status updated successfully',
+                'message' => 'Tracking updated successfully',
                 'data'    => $record,
             ]);
         } catch (\Exception $e) {
@@ -178,7 +205,7 @@ class EmployeeFundTransactionController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating status',
+                'message' => 'Error updating tracking',
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -254,38 +281,5 @@ class EmployeeFundTransactionController extends Controller
             'success' => true,
             'data'    => $record,
         ]);
-    }
-
-    /**
-     * Update OBR tracking info (fiscal_year, obr_no, date_obligated, dv_no, obr_status).
-     */
-    public function updateObr(Request $request, int $id): JsonResponse
-    {
-        $validated = $request->validate([
-            'fiscal_year'    => 'nullable|integer|min:2000|max:2100',
-            'obr_no'         => 'nullable|string|max:100',
-            'date_obligated' => 'nullable|date',
-            'dv_no'          => 'nullable|string|max:100',
-            'obr_status'     => 'nullable|string|in:No OBR,LOA,Irregular,Transferred,Claimed,Paid,On Process,Denied',
-        ]);
-
-        try {
-            $record = EmployeeFundTransaction::findOrFail($id);
-            $record->update($validated);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'OBR info updated successfully',
-                'data'    => $record,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error updating OBR info for employee fund transaction ' . $id, ['error' => $e->getMessage()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error updating OBR info',
-                'error'   => $e->getMessage(),
-            ], 500);
-        }
     }
 }

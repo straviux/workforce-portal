@@ -47,7 +47,6 @@ class EmployeeFundTransaction extends Model
         'deduction_sss',
         'deduction_philhealth',
         'deduction_hdmf',
-        'obr_status',
         'created_by',
         'updated_by',
     ];

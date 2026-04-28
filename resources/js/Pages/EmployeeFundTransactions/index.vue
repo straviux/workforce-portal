@@ -28,8 +28,6 @@
                 optionValue="value" placeholder="All types" class="w-44" showClear @change="fetchTransactions(1)" />
             <InputText v-model="filters.fiscal_year" placeholder="Fiscal year" class="w-28"
                 @keyup.enter="fetchTransactions(1)" />
-            <Select v-model="filters.obr_status" :options="obrStatusOptions" optionLabel="label" optionValue="value"
-                placeholder="OBR Status" class="w-40" showClear @change="fetchTransactions(1)" />
             <Select v-model="filters.obr_type" :options="obrTypeOptions" optionLabel="label" optionValue="value"
                 placeholder="OBR Type" class="w-44" showClear @change="fetchTransactions(1)" />
             <Button icon="pi pi-filter-slash" severity="secondary" class="rounded" outlined v-tooltip="'Reset filters'"
@@ -37,7 +35,7 @@
         </div>
 
         <!-- DataTable -->
-        <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
+        <div class="overflow-auto" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
             <DataTable v-model:contextMenuSelection="contextMenuTransaction" :value="transactions" :loading="loading"
                 contextMenu showGridlines stripedRows scrollable lazy @row-contextmenu="openRowContextMenu"
                 :totalRecords="pagination.filtered_total" :rows="pagination.per_page" :first="paginatorFirst" paginator
@@ -57,21 +55,35 @@
 
                 <Column field="transaction_id" header="Transaction ID" style="min-width:160px;">
                     <template #body="{ data }">
-                        <span class="font-mono text-xs font-semibold">{{ data.transaction_id }}</span>
+                        <div class="flex flex-col gap-1">
+                            <span class="font-mono text-[10px] ">{{ data.transaction_id }}</span>
+                            <span class="font-mono text-[11px] font-semibold text-surface-400">OBR: {{ data.obr_no ||
+                                '—' }}</span>
+                        </div>
                     </template>
                 </Column>
 
                 <Column field="employee_type" header="Type" style="min-width:150px;">
                     <template #body="{ data }">
-                        <Tag :value="formatType(data.employee_type)" severity="secondary" />
+                        <span :class="['text-xs font-medium', typeTextClass(data.employee_type)]">
+                            {{ formatType(data.employee_type) }}
+                        </span>
                     </template>
                 </Column>
 
-                <Column field="payee_name" header="Payee Name" style="min-width:180px;" />
+                <Column field="payee_name" header="Payee" style="min-width:180px;">
+                    <template #body="{ data }">
+                        <span class="text-xs">
+                            {{ data.payee_name || '—' }}
+                        </span>
+                    </template>
+                </Column>
 
                 <Column field="office" header="Office" style="min-width:140px;">
                     <template #body="{ data }">
-                        {{ data.office || '—' }}
+                        <span class="text-xs">
+                            {{ data.office || '—' }}
+                        </span>
                     </template>
                 </Column>
 
@@ -81,28 +93,24 @@
                     </template>
                 </Column>
 
-                <Column field="obr_status" header="OBR Status" style="min-width:120px;">
-                    <template #body="{ data }">
-                        <Tag :value="data.obr_status || 'No OBR'" :severity="obrStatusSeverity(data.obr_status)" />
-                    </template>
-                </Column>
-
                 <Column field="transaction_status" header="Status" style="min-width:110px;">
                     <template #body="{ data }">
-                        <Tag :value="data.transaction_status" :severity="statusSeverity(data.transaction_status)"
-                            class="capitalize" />
+                        <span
+                            :class="['text-xs font-medium', textClassForSeverity(statusSeverity(data.transaction_status))]">
+                            {{ formatTransactionStatus(data.transaction_status) }}
+                        </span>
                     </template>
                 </Column>
 
                 <Column header="Created By" style="min-width:140px;">
                     <template #body="{ data }">
-                        {{ data.creator?.name || '—' }}
+                        <span class="text-xs">{{ data.creator?.name || '—' }}</span>
                     </template>
                 </Column>
 
                 <Column header="Date" style="min-width:110px;">
                     <template #body="{ data }">
-                        {{ formatDate(data.created_at) }}
+                        <span class="text-xs">{{ formatDate(data.created_at) }}</span>
                     </template>
                 </Column>
 
@@ -130,16 +138,15 @@
             @save="handleSaveRemarks" />
 
         <StatusModal v-model:show="modals.status" :model-value="selectedTransaction" :is-saving="isSaving"
-            @save="handleSaveStatus" />
+            :live-tracking-data="liveObrTrackingData" :is-tracking-loading="liveObrTrackingLoading"
+            :tracking-error="liveObrTrackingError" @save="handleSaveStatus" />
 
-        <TrackingHistoryModal v-model:show="modals.tracking" :tracking-data="selectedTransaction" />
+        <TrackingHistoryModal v-model:show="modals.tracking" :transaction="selectedTransaction"
+            :tracking-data="trackingHistoryData" :is-loading="trackingHistoryLoading" />
 
         <!-- ── Create / Edit Wizard ── -->
         <TransactionWizard v-model:show="wizardShow" :mode="wizardMode" :transaction="wizardTransaction"
             @saved="onWizardSaved" />
-
-        <ObrTrackingModal v-model:show="modals.obrTracking" :model-value="selectedTransaction" :is-saving="isSaving"
-            :is-complete="obrTrackingComplete" @save="handleSaveObrTracking" />
 
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
@@ -159,7 +166,6 @@ import axios from 'axios';
 
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import TransactionWizard from './Modal/TransactionWizard.vue';
-import ObrTrackingModal from './Modal/ObrTrackingModal.vue';
 import PdfPreviewModal from './Modal/PdfPreviewModal.vue';
 
 import ViewTransactionModal from './Modal/ViewTransactionModal.vue';
@@ -187,7 +193,12 @@ const transactions = ref([]);
 const loading = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
+const trackingHistoryLoading = ref(false);
+const liveObrTrackingLoading = ref(false);
 const selectedTransaction = ref(null);
+const trackingHistoryData = ref(null);
+const liveObrTrackingData = ref(null);
+const liveObrTrackingError = ref('');
 const wizardShow = ref(false);
 const wizardMode = ref('create');
 const wizardTransaction = ref(null);
@@ -208,7 +219,6 @@ const filters = reactive({
     status: null,
     employee_type: null,
     fiscal_year: '',
-    obr_status: null,
     obr_type: null,
 });
 
@@ -218,40 +228,25 @@ const modals = reactive({
     remarks: false,
     status: false,
     tracking: false,
-    obrTracking: false,
     officeHeadSelect: false,
 });
 
 const pendingPrint = reactive({ type: '', signatories: [] });
-
-const obrTrackingComplete = ref(false);
 const pdfPreview = reactive({ show: false, html: '', title: '', size: 'a4' });
 
 
 
 // ── Options ──
 const statusOptions = [
-    { label: 'Pending', value: 'pending' },
-    { label: 'Approved', value: 'approved' },
-    { label: 'Active', value: 'active' },
-    { label: 'Denied', value: 'denied' },
+    { label: 'On Process', value: 'on_process' },
+    { label: 'Claimed', value: 'claimed' },
+    { label: 'Cancelled', value: 'cancelled' },
     { label: 'Suspended', value: 'suspended' },
 ];
 
 const employeeTypeOptions = [
     { label: 'Contract of Service', value: 'contract_of_service' },
     { label: 'Project-Based', value: 'project_based' },
-];
-
-const obrStatusOptions = [
-    { label: 'No OBR', value: 'No OBR' },
-    { label: 'On Process', value: 'On Process' },
-    { label: 'LOA', value: 'LOA' },
-    { label: 'Irregular', value: 'Irregular' },
-    { label: 'Transferred', value: 'Transferred' },
-    { label: 'Claimed', value: 'Claimed' },
-    { label: 'Paid', value: 'Paid' },
-    { label: 'Denied', value: 'Denied' },
 ];
 
 const obrTypeOptions = [
@@ -282,14 +277,9 @@ const menuItems = computed(() => {
         },
         { separator: true },
         {
-            label: 'Update Status',
+            label: 'Update Status / OBR',
             icon: 'pi pi-tag',
-            command: () => { modals.status = true; },
-        },
-        {
-            label: 'Update OBR Info',
-            icon: 'pi pi-pencil',
-            command: () => { obrTrackingComplete.value = false; modals.obrTracking = true; },
+            command: () => openStatusModal(t),
         },
         {
             label: 'Add Remarks',
@@ -316,7 +306,7 @@ const menuItems = computed(() => {
         {
             label: 'Tracking History',
             icon: 'pi pi-history',
-            command: () => { modals.tracking = true; },
+            command: () => openTrackingHistory(t),
         },
         ...(isAdmin ? [
             { separator: true },
@@ -342,7 +332,6 @@ async function fetchTransactions(page = pagination.current_page) {
         if (filters.status) params.status = filters.status;
         if (filters.employee_type) params.employee_type = filters.employee_type;
         if (filters.fiscal_year) params.fiscal_year = filters.fiscal_year;
-        if (filters.obr_status) params.obr_status = filters.obr_status;
         if (filters.obr_type) params.obr_type = filters.obr_type;
 
         const res = await axios.get('/api/employee-fund-transactions', { params });
@@ -370,7 +359,6 @@ function resetFilters() {
     filters.status = null;
     filters.employee_type = null;
     filters.fiscal_year = '';
-    filters.obr_status = null;
     filters.obr_type = null;
     fetchTransactions(1);
 }
@@ -416,12 +404,76 @@ function onWizardSaved() {
     fetchTransactions(wizardMode.value === 'edit' ? pagination.current_page : 1);
 }
 
+async function fetchObrTrackingData(transaction) {
+    const res = await axios.get('/api/obr-tracking-info', {
+        params: {
+            fiscal_year: transaction.fiscal_year,
+            obr_no: transaction.obr_no,
+            dv_no: transaction.dv_no || '',
+            type: transaction.obr_type || '',
+        },
+    });
+
+    if (!res.data.success) {
+        throw new Error(res.data.message || 'Failed to load tracking history.');
+    }
+
+    return res.data.data;
+}
+
+async function openStatusModal(transaction) {
+    selectedTransaction.value = transaction;
+    liveObrTrackingData.value = null;
+    liveObrTrackingError.value = '';
+    modals.status = true;
+
+    if (!transaction?.fiscal_year || !transaction?.obr_no) {
+        return;
+    }
+
+    liveObrTrackingLoading.value = true;
+
+    try {
+        liveObrTrackingData.value = await fetchObrTrackingData(transaction);
+    } catch {
+        liveObrTrackingError.value = 'Unable to check live OBR status.';
+    } finally {
+        liveObrTrackingLoading.value = false;
+    }
+}
+
+async function openTrackingHistory(transaction) {
+    if (!transaction?.fiscal_year || !transaction?.obr_no) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Incomplete OBR Data',
+            detail: 'Fiscal year and OBR number are required before tracking can be viewed.',
+            life: 4000,
+        });
+        return;
+    }
+
+    selectedTransaction.value = transaction;
+    trackingHistoryData.value = null;
+    trackingHistoryLoading.value = true;
+    modals.tracking = true;
+
+    try {
+        trackingHistoryData.value = await fetchObrTrackingData(transaction);
+    } catch {
+        modals.tracking = false;
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to load tracking history.', life: 3000 });
+    } finally {
+        trackingHistoryLoading.value = false;
+    }
+}
+
 // ── Modal Saves ──
 async function handleSaveRemarks(remarks) {
     isSaving.value = true;
     try {
         await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
-            transaction_status: selectedTransaction.value.transaction_status,
+            transaction_status: normalizeTransactionStatus(selectedTransaction.value.transaction_status),
             remarks,
         });
         toast.add({ severity: 'success', summary: 'Saved', detail: 'Remarks updated.', life: 3000 });
@@ -434,17 +486,26 @@ async function handleSaveRemarks(remarks) {
     }
 }
 
-async function handleSaveStatus(status) {
+async function handleSaveStatus(data) {
     isSaving.value = true;
     try {
+        const payload = typeof data === 'object' && data !== null
+            ? {
+                ...data,
+                transaction_status: normalizeTransactionStatus(data.transaction_status),
+            }
+            : {
+                transaction_status: normalizeTransactionStatus(data),
+            };
+
         await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
-            transaction_status: status,
+            ...payload,
         });
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Status updated.', life: 3000 });
+        toast.add({ severity: 'success', summary: 'Updated', detail: 'Tracking updated.', life: 3000 });
         modals.status = false;
         fetchTransactions();
     } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update status.', life: 3000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update tracking.', life: 3000 });
     } finally {
         isSaving.value = false;
     }
@@ -532,20 +593,6 @@ function onOfficeHeadSelected(chosen) {
 }
 
 // ── Helpers ──
-async function handleSaveObrTracking(data) {
-    isSaving.value = true;
-    try {
-        await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-obr`, data);
-        obrTrackingComplete.value = true;
-        fetchTransactions(pagination.current_page);
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'OBR info updated.', life: 3000 });
-    } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update OBR info.', life: 3000 });
-    } finally {
-        isSaving.value = false;
-    }
-}
-
 function formatDate(val) {
     if (!val) return '—';
     return new Date(val).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -557,20 +604,63 @@ function money(val) {
 }
 
 function statusSeverity(status) {
-    return { pending: 'warn', approved: 'success', active: 'info', denied: 'danger', suspended: 'secondary' }[status] || 'secondary';
+    return {
+        on_process: 'warn',
+        claimed: 'success',
+        approved: 'success',
+        active: 'info',
+        cancelled: 'danger',
+        denied: 'danger',
+        suspended: 'secondary',
+    }[status] || 'secondary';
 }
 
-function obrStatusSeverity(status) {
+function textClassForSeverity(severity) {
     return {
-        'No OBR': 'secondary',
-        'On Process': 'warn',
-        'LOA': 'info',
-        'Irregular': 'danger',
-        'Transferred': 'secondary',
-        'Claimed': 'success',
-        'Paid': 'success',
-        'Denied': 'danger',
-    }[status] || 'secondary';
+        warn: 'text-yellow-700 dark:text-yellow-300',
+        success: 'text-emerald-700 dark:text-emerald-300',
+        info: 'text-sky-700 dark:text-sky-300',
+        danger: 'text-red-700 dark:text-red-300',
+        secondary: 'text-surface-600 dark:text-surface-300',
+    }[severity] || 'text-surface-600 dark:text-surface-300';
+}
+
+function typeTextClass(type) {
+    return type === 'project_based'
+        ? 'text-amber-600 dark:text-amber-300'
+        : 'text-purple-600 dark:text-purple-300';
+}
+
+function formatTransactionStatus(status) {
+    return {
+        on_process: 'On Process',
+        claimed: 'Claimed',
+        approved: 'Approved',
+        active: 'Active',
+        cancelled: 'Cancelled',
+        denied: 'Denied',
+        suspended: 'Suspended',
+    }[status] || status || '—';
+}
+
+function normalizeTransactionStatus(status) {
+    if (status && typeof status === 'object' && 'value' in status) {
+        return normalizeTransactionStatus(status.value);
+    }
+
+    if (typeof status !== 'string') {
+        return status;
+    }
+
+    const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+    if (normalized === 'canceled') {
+        return 'cancelled';
+    }
+
+    return ['on_process', 'claimed', 'cancelled', 'suspended', 'approved', 'active', 'denied'].includes(normalized)
+        ? normalized
+        : status;
 }
 
 function formatType(type) {

@@ -19,12 +19,12 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'show']);
     Route::put('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'update']);
     Route::patch('/employee-fund-transactions/{id}/update-status', [EmployeeFundTransactionController::class, 'updateStatus']);
-    Route::patch('/employee-fund-transactions/{id}/update-obr', [EmployeeFundTransactionController::class, 'updateObr']);
     Route::delete('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'destroy'])
         ->middleware('check.permission:employee_fund_transactions.delete');
     Route::get('/employee-fund-transactions/{id}/dv-pdf', [EmployeeFundTransactionController::class, 'generateDVPdf']);
     Route::get('/employee-fund-transactions/{id}/obr-pdf', [EmployeeFundTransactionController::class, 'generateOBRPdf']);
     Route::get('/employee-fund-transactions/{id}/payroll-pdf', [EmployeeFundTransactionController::class, 'generatePayrollPdf']);
+    Route::get('/obr-tracking-info', [EmployeeFundTransactionController::class, 'getObrTrackingInfo']);
 
     // Responsibility Centers
     Route::get('/responsibility-centers', [ResponsibilityCenterController::class, 'index'])
@@ -64,6 +64,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/certifications/non-ros', [CertificationController::class, 'storeNonRos'])
         ->middleware('check.permission:certifications.manage');
     Route::put('/certifications/non-ros/{id}', [CertificationController::class, 'updateNonRos'])
+        ->middleware('check.permission:certifications.manage');
+    Route::delete('/certifications/non-ros/{id}', [CertificationController::class, 'destroyNonRos'])
         ->middleware('check.permission:certifications.manage');
 
     // Calendar

@@ -44,7 +44,7 @@
     <Dialog v-model:visible="showNonRosRegistry" modal :draggable="false" :closable="false"
         :pt="{ root: { class: 'ios-dialog-root' }, mask: { class: 'ios-dialog-mask' } }">
         <template #container>
-            <div class="ios-modal w-[98vw] max-w-[1480px]" :style="registryModalStyle">
+            <div class="ios-modal w-[98vw] max-w-370" :style="registryModalStyle">
                 <div class="ios-nav-bar cursor-grab active:cursor-grabbing select-none"
                     @pointerdown="onRegistryDragStart">
                     <button type="button" class="ios-nav-btn ios-nav-cancel" @click="closeNonRosRegistry">
@@ -60,7 +60,7 @@
                         :disabled="!officeHeads.length" @click="openCreate">
                         Add
                     </button>
-                    <div v-else class="min-w-[3.5rem] shrink-0"></div>
+                    <div v-else class="min-w-14 shrink-0"></div>
                 </div>
 
                 <div class="ios-body max-h-[88vh] overflow-y-auto">
@@ -104,10 +104,11 @@
 
                         <div class="overflow-hidden ios-card"
                             style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
-                            <DataTable :value="certifications" :loading="loading" showGridlines stripedRows scrollable
-                                lazy :totalRecords="pagination.filtered_total" :rows="pagination.per_page"
-                                :first="paginatorFirst" paginator @page="onPage" :rowsPerPageOptions="[15, 25, 50]"
-                                scrollHeight="58vh"
+                            <DataTable v-model:contextMenuSelection="contextMenuCertification" :value="certifications"
+                                :loading="loading" contextMenu showGridlines stripedRows scrollable lazy
+                                @row-contextmenu="openRowContextMenu" :totalRecords="pagination.filtered_total"
+                                :rows="pagination.per_page" :first="paginatorFirst" paginator @page="onPage"
+                                :rowsPerPageOptions="[15, 25, 50]" scrollHeight="58vh"
                                 paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
                                 :pt="{
                                     root: { style: 'border-radius:0;border:none;' },
@@ -158,14 +159,14 @@
                                     </template>
                                 </Column>
 
-                                <Column header="" style="width:200px;min-width:200px;" frozen alignFrozen="right">
+                                <Column header="" style="width:140px;min-width:140px;" frozen alignFrozen="right">
                                     <template #body="{ data }">
-                                        <div class="flex items-center justify-end gap-2">
-                                            <Button icon="pi pi-print" label="Print" class="rounded" size="small"
-                                                @click="printCertification(data)" />
-                                            <Button v-if="canManageCertifications" icon="pi pi-pencil"
-                                                severity="secondary" text rounded size="small"
-                                                @click="openEdit(data)" />
+                                        <div class="flex items-center justify-end gap-1">
+                                            <Button icon="pi pi-print" text severity="info"
+                                                @click="printCertification(data)" v-tooltip="'Print'" />
+                                            <Button icon="pi pi-ellipsis-v" severity="secondary" text
+                                                v-tooltip="'More Actions'" size="small"
+                                                @click="openRowMenu($event, data)" />
                                         </div>
                                     </template>
                                 </Column>
@@ -177,8 +178,15 @@
         </template>
     </Dialog>
 
+    <ContextMenu ref="contextMenuRef" :model="rowMenuItems" @hide="contextMenuCertification = null" />
+
     <NonRosCertificationModal v-model:show="showCertificationModal" :mode="certificationModalMode"
         :certification="selectedCertification" :office-heads="officeHeads" @saved="onSaved" />
+
+    <DeleteConfirmModal v-model:show="showDeleteModal"
+        :certification-name="selectedCertification ? formatSubjectDisplayName(selectedCertification) : ''"
+        :issued-date="selectedCertification ? formatDate(selectedCertification.issued_date) : ''"
+        :is-deleting="isDeleting" @confirm-delete="handleDelete" />
 
     <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
         :title="pdfPreview.title" />
@@ -187,11 +195,13 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
+import ContextMenu from 'primevue/contextmenu';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewModal.vue';
+import DeleteConfirmModal from '@/Pages/Certifications/Modal/DeleteConfirmModal.vue';
 import NonRosCertificationModal from '@/Pages/Certifications/Modal/NonRosCertificationModal.vue';
 import NonRosCertificationTemplate from '@/Pages/Certifications/Pdf/NonRosCertificationTemplate.vue';
 
@@ -204,10 +214,14 @@ const { buildHtmlDoc } = usePdfPrint();
 const certifications = ref([]);
 const officeHeads = ref([]);
 const loading = ref(false);
+const isDeleting = ref(false);
 const showNonRosRegistry = ref(false);
 const showCertificationModal = ref(false);
+const showDeleteModal = ref(false);
 const certificationModalMode = ref('create');
 const selectedCertification = ref(null);
+const contextMenuRef = ref(null);
+const contextMenuCertification = ref(null);
 const registryDragOffset = ref({ x: 0, y: 0 });
 const registryDragStart = ref(null);
 
@@ -232,6 +246,40 @@ const pdfPreview = reactive({
 const paginatorFirst = computed(() => (pagination.current_page - 1) * pagination.per_page);
 const currentPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageCertifications = computed(() => currentPermissions.value.includes('certifications.manage'));
+const rowMenuItems = computed(() => {
+    const certification = selectedCertification.value;
+
+    if (!certification) {
+        return [];
+    }
+
+    const items = [
+        {
+            label: 'Print',
+            icon: 'pi pi-print',
+            command: () => printCertification(certification),
+        },
+    ];
+
+    if (canManageCertifications.value) {
+        items.push(
+            { separator: true },
+            {
+                label: 'Edit',
+                icon: 'pi pi-pencil',
+                command: () => openEdit(certification),
+            },
+            {
+                label: 'Delete',
+                icon: 'pi pi-trash',
+                class: 'text-red-500',
+                command: () => { showDeleteModal.value = true; },
+            },
+        );
+    }
+
+    return items;
+});
 const registryModalStyle = computed(() => ({
     transform: `translate(${registryDragOffset.value.x}px, ${registryDragOffset.value.y}px)`,
 }));
@@ -320,9 +368,60 @@ function openEdit(certification) {
     showCertificationModal.value = true;
 }
 
+function showContextMenu(mouseEvent) {
+    if (typeof contextMenuRef.value?.show === 'function') {
+        contextMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    contextMenuRef.value?.toggle(mouseEvent);
+}
+
+function openRowMenu(event, certification) {
+    selectedCertification.value = certification;
+    contextMenuCertification.value = certification;
+    showContextMenu(event);
+}
+
+function openRowContextMenu(event) {
+    event.originalEvent.preventDefault();
+    selectedCertification.value = event.data;
+    contextMenuCertification.value = event.data;
+    showContextMenu(event.originalEvent);
+}
+
 function onSaved() {
     showCertificationModal.value = false;
     fetchCertifications(pagination.current_page);
+}
+
+async function handleDelete() {
+    if (!canManageCertifications.value || !selectedCertification.value?.id) {
+        return;
+    }
+
+    isDeleting.value = true;
+
+    try {
+        await axios.delete(`/api/certifications/non-ros/${selectedCertification.value.id}`);
+        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Certification deleted.', life: 3000 });
+        showDeleteModal.value = false;
+
+        const targetPage = certifications.value.length === 1 && pagination.current_page > 1
+            ? pagination.current_page - 1
+            : pagination.current_page;
+
+        await fetchCertifications(targetPage);
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: error.response?.data?.message ?? 'Could not delete certification.',
+            life: 3500,
+        });
+    } finally {
+        isDeleting.value = false;
+    }
 }
 
 function printCertification(certification) {

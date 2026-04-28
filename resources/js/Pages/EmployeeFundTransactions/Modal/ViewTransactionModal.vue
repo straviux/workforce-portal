@@ -15,8 +15,8 @@
 
                     <!-- Status badge -->
                     <div class="flex items-center gap-2 mb-4">
-                        <Tag :value="transaction.transaction_status"
-                            :severity="statusSeverity(transaction.transaction_status)" class="capitalize" />
+                        <Tag :value="formatTransactionStatus(transaction.transaction_status)"
+                            :severity="statusSeverity(transaction.transaction_status)" />
                         <Tag :value="formatEmployeeType(transaction.employee_type)" severity="secondary" />
                     </div>
 
@@ -180,13 +180,29 @@ function money(val) {
 
 function statusSeverity(status) {
     const map = {
-        pending: 'warn',
+        on_process: 'warn',
+        claimed: 'success',
         approved: 'success',
         active: 'info',
+        cancelled: 'danger',
         denied: 'danger',
         suspended: 'secondary',
     };
     return map[status] || 'secondary';
+}
+
+function formatTransactionStatus(status) {
+    const map = {
+        on_process: 'On Process',
+        claimed: 'Claimed',
+        approved: 'Approved',
+        active: 'Active',
+        cancelled: 'Cancelled',
+        denied: 'Denied',
+        suspended: 'Suspended',
+    };
+
+    return map[status] || status || '—';
 }
 
 function formatEmployeeType(type) {

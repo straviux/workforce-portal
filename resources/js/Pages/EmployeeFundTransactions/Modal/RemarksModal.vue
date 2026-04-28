@@ -6,21 +6,28 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Cancel
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">Add Remarks</span>
-                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving">
-                        <i class="pi pi-check"></i> Save
+                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving"
+                        v-tooltip="'Save Remarks'">
+                        <i class="pi pi-save text-emerald-500"></i>
                     </button>
                 </div>
 
                 <div class="ios-body !pb-6">
 
                     <div class="ios-section" v-if="modelValue">
-                        <p class="text-xs text-surface-400 uppercase tracking-wide mb-1">
-                            Transaction: <span class="font-semibold text-surface-300">{{ modelValue.transaction_id
+                        <div class="flex text-xs text-surface-400 uppercase tracking-wide mb-2">
+                            <p class="w-1/4">Transaction: </p><span class="font-semibold text-surface-300">{{
+                                modelValue.transaction_id
                                 }}</span>
-                        </p>
+                        </div>
+                        <div class="flex text-xs text-surface-400 uppercase tracking-wide mb-2">
+                            <p class="w-1/4">Payee: </p><span class="font-semibold text-surface-300">{{
+                                modelValue.payee_name
+                            }}</span>
+                        </div>
                     </div>
 
                     <div class="ios-section">

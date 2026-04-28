@@ -6,15 +6,16 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Close
+                        <i class="pi pi-times"></i>
                     </button>
                     <span class="ios-nav-title">Employee Details</span>
-                    <button class="ios-nav-btn ios-nav-action" @click="emit('edit', employee)">
-                        <i class="pi pi-pencil"></i> Edit
+                    <button class="ios-nav-btn ios-nav-action" @click="emit('edit', employee)"
+                        v-tooltip="'Edit Employee'">
+                        <i class="pi pi-pencil text-amber-500"></i>
                     </button>
                 </div>
 
-                <div class="ios-body !py-6" v-if="employee">
+                <div class="ios-body !pt-2 !pb-6" v-if="employee">
 
                     <!-- Status badges -->
                     <div class="flex items-center gap-2 mt-4 mb-2">

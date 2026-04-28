@@ -13,14 +13,51 @@
 
                 <div class="ios-body !py-6">
 
+                    <div class="ios-section mt-2" v-if="transaction">
+                        <div class="flex text-xs text-surface-400 uppercase tracking-wide mb-2">
+                            <p class="w-1/4">Transaction:</p>
+                            <span class="font-semibold text-surface-300">{{ transaction.transaction_id }}</span>
+                        </div>
+                        <div class="flex text-xs text-surface-400 uppercase tracking-wide mb-2">
+                            <p class="w-1/4">Payee:</p>
+                            <span class="font-semibold text-surface-300">{{ transaction.payee_name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="ios-section" v-if="!isLoading && trackingData?.obr_info">
+                        <div class="ios-card p-4 space-y-2">
+                            <div class="flex text-xs text-surface-400 items-center">
+                                <p class="w-1/4">OBR status:</p>
+                                <Tag :value="trackingData.obr_info.obr_status || '—'"
+                                    :severity="obrStatusSeverity(trackingData.obr_info.obr_status)" />
+                            </div>
+                            <div class="flex text-xs text-surface-400">
+                                <p class="w-1/4">OBR date:</p>
+                                <span class="font-semibold text-surface-300">{{
+                                    formatDate(trackingData.obr_info.obr_date) }}</span>
+                            </div>
+                            <div v-if="latestTrackingRemark" class="flex text-xs text-surface-400">
+                                <p class="w-1/4">Latest update:</p>
+                                <span class="font-semibold text-surface-300">{{ latestTrackingRemark }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ios-section" v-if="isLoading">
+                        <div class="ios-card flex flex-col items-center gap-3 py-8 text-center">
+                            <ProgressSpinner style="width: 2.5rem; height: 2.5rem" strokeWidth="6" />
+                            <p class="text-sm text-surface-400">Loading tracking history...</p>
+                        </div>
+                    </div>
+
                     <!-- Timeline -->
-                    <div class="ios-section" v-if="hasHistory">
+                    <div class="ios-section" v-else-if="hasHistory">
                         <div class="relative">
                             <!-- Vertical line -->
                             <div class="absolute left-3.5 top-4 bottom-4 w-0.5 bg-surface-200 dark:bg-surface-600">
                             </div>
 
-                            <div v-for="(entry, index) in trackingData.tracking_information" :key="index"
+                            <div v-for="(entry, index) in trackingEntries" :key="index"
                                 class="relative flex gap-4 pb-6 last:pb-0">
                                 <!-- Dot -->
                                 <div class="relative z-10 shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
@@ -31,17 +68,11 @@
                                 <!-- Content -->
                                 <div class="flex-1 min-w-0 pt-0.5">
                                     <p class="text-sm font-medium text-surface-800 dark:text-surface-100 leading-snug">
-                                        {{ entry.description || entry.action || '—' }}
+                                        {{ entry.trn_remarks || entry.transaction_description || entry.description ||
+                                        '—' }}
                                     </p>
                                     <p class="text-xs text-surface-400 mt-0.5">
-                                        {{ formatDate(entry.created_at || entry.date) }}
-                                        <span v-if="entry.by || entry.performed_by" class="ml-1">
-                                            · {{ entry.by || entry.performed_by }}
-                                        </span>
-                                    </p>
-                                    <p v-if="entry.status" class="mt-1">
-                                        <Tag :value="entry.status" :severity="statusSeverity(entry.status)"
-                                            class="capitalize" />
+                                        {{ formatDate(entry.trn_date || entry.transaction_date || entry.date) }}
                                     </p>
                                 </div>
                             </div>
@@ -67,14 +98,23 @@ import { ref, computed } from 'vue';
 
 const props = defineProps({
     show: Boolean,
+    transaction: { type: Object, default: null },
     trackingData: { type: Object, default: null },
+    isLoading: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:show']);
 
-const hasHistory = computed(() => {
+const trackingEntries = computed(() => {
     return Array.isArray(props.trackingData?.tracking_information)
-        && props.trackingData.tracking_information.length > 0;
+        ? props.trackingData.tracking_information
+        : [];
+});
+
+const latestTrackingRemark = computed(() => trackingEntries.value[0]?.trn_remarks || null);
+
+const hasHistory = computed(() => {
+    return trackingEntries.value.length > 0;
 });
 
 function formatDate(val) {
@@ -87,13 +127,42 @@ function formatDate(val) {
 
 function statusSeverity(status) {
     const map = {
-        pending: 'warn',
+        on_process: 'warn',
+        claimed: 'success',
         approved: 'success',
         active: 'info',
+        cancelled: 'danger',
         denied: 'danger',
         suspended: 'secondary',
     };
     return map[status] || 'secondary';
+}
+
+function obrStatusSeverity(status) {
+    const map = {
+        Active: 'success',
+        Cancelled: 'danger',
+        Canceled: 'danger',
+        Suspended: 'warn',
+        Denied: 'danger',
+        Closed: 'secondary',
+    };
+
+    return map[status] || 'info';
+}
+
+function formatTransactionStatus(status) {
+    const map = {
+        on_process: 'On Process',
+        claimed: 'Claimed',
+        approved: 'Approved',
+        active: 'Active',
+        cancelled: 'Cancelled',
+        denied: 'Denied',
+        suspended: 'Suspended',
+    };
+
+    return map[status] || status || '—';
 }
 
 const elModal = ref(null);

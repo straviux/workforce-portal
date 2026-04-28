@@ -15,13 +15,14 @@
                         :disabled="selectedEmployees.length === 0" @click="goNext">
                         <i class="pi pi-chevron-right"></i>
                     </button>
-                    <button v-else class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">
-                        {{ saving ? `Saving…` : (mode === `edit` ? `Update` : `Save`) }}
+                    <button v-else class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit"
+                        v-tooltip="'Save Transaction'">
+                        <i class="pi pi-save text-emerald-500"></i>
                     </button>
                 </div>
 
                 <!-- Step dots -->
-                <div class="py-2.5 flex items-center justify-center gap-1.5 flex-shrink-0">
+                <div class="py-2.5 flex items-center justify-center gap-1.5 shrink-0">
                     <span v-for="n in 2" :key="n" class="rounded-full transition-all duration-300" :style="step === n
                         ? 'width:20px;height:6px;background:var(--p-primary-500)'
                         : 'width:6px;height:6px;background:#d1d5db'">
@@ -32,28 +33,28 @@
                 <div v-show="step === 1" class="flex overflow-hidden px-2" style="height:540px;">
 
                     <!-- Left: Filter & List -->
-                    <div class="flex flex-col border-r" style="width:55%;">
+                    <div class="flex flex-col border-r pb-2" style="width:55%;">
 
                         <!-- Panel header -->
-                        <div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700 flex-shrink-0">
+                        <div class="px-5 py-3 border-b border-surface-100 dark:border-surface-700 shrink-0">
                             <p class="text-sm font-semibold text-surface-700 dark:text-surface-200">Select Employee</p>
                         </div>
 
                         <!-- Info banner -->
-                        <div class="mx-4 mt-3 px-3 py-2 rounded-xl flex items-start gap-2 text-xs flex-shrink-0"
+                        <div class="mx-4 mt-3 px-3 py-2 rounded-xl flex items-start gap-2 text-xs shrink-0"
                             style="background:#e8f0fe;color:#1e40af;">
-                            <i class="pi pi-info-circle mt-0.5 flex-shrink-0" style="font-size:13px;"></i>
+                            <i class="pi pi-info-circle mt-0.5 shrink-0" style="font-size:13px;"></i>
                             <span>Select an employee type to filter the list, then search by name.</span>
                         </div>
 
                         <!-- Type dropdown -->
-                        <div class="px-4 pt-3 pb-2 flex-shrink-0">
+                        <div class="px-4 pt-3 pb-2 shrink-0">
                             <Select v-model="form.employee_type" :options="typeOptions" optionLabel="label"
                                 optionValue="value" class="w-full" size="small" @update:modelValue="setEmployeeType" />
                         </div>
 
                         <!-- Search -->
-                        <div class="px-4 pb-2 flex-shrink-0">
+                        <div class="px-4 pb-2 shrink-0">
                             <IconField>
                                 <InputIcon class="pi pi-search" />
                                 <InputText v-model="employeeSearch" placeholder="Search name, employee no…"
@@ -62,7 +63,7 @@
                         </div>
 
                         <!-- Count row -->
-                        <div class="px-4 py-2 border-y border-surface-100 dark:border-surface-700 flex-shrink-0">
+                        <div class="px-4 py-2 border-y border-surface-100 dark:border-surface-700 shrink-0">
                             <span class="text-xs text-surface-500">
                                 <span v-if="loadingEmployees"><i class="pi pi-spin pi-spinner mr-1"
                                         style="font-size:11px;"></i>Loading…</span>
@@ -71,7 +72,7 @@
                         </div>
 
                         <!-- Scrollable list -->
-                        <div class="flex-1 overflow-y-auto divide-y divide-surface-100 dark:divide-surface-800">
+                        <div class="flex-1 overflow-y-auto divide-y divide-surface-100 dark:divide-surface-800 py-4">
                             <div v-if="loadingEmployees" class="py-12 text-center text-surface-400 text-xs">
                                 <i class="pi pi-spin pi-spinner text-2xl block mb-2"></i>
                                 Loading employees…
@@ -87,7 +88,7 @@
                                     :class="isSelected(emp) ? 'bg-blue-50 dark:bg-primary-900/20' : 'hover:bg-surface-50 dark:hover:bg-surface-800'"
                                     @click="toggleEmployee(emp)">
                                     <Checkbox :modelValue="isSelected(emp)" :binary="true"
-                                        class="pointer-events-none flex-shrink-0" />
+                                        class="pointer-events-none shrink-0" />
                                     <span
                                         class="flex-1 text-xs font-semibold text-surface-800 dark:text-surface-100 truncate">{{
                                             emp.full_name }}</span>
@@ -102,7 +103,7 @@
                     <div class="flex flex-col" style="flex:1;">
 
                         <!-- Panel header -->
-                        <div class="px-5 py-3 border-b  flex items-center gap-2 flex-shrink-0">
+                        <div class="px-5 py-3 border-b  flex items-center gap-2 shrink-0">
                             <p class="text-sm font-semibold text-surface-700 dark:text-surface-200">Selected Employees
                             </p>
                             <span class="text-xs text-surface-400 font-normal">({{ selectedEmployees.length }})</span>
@@ -130,7 +131,7 @@
                                         </p>
                                     </div>
                                     <button
-                                        class="text-surface-300 hover:text-red-400 transition-colors flex-shrink-0 cursor-pointer"
+                                        class="text-surface-300 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
                                         @click="toggleEmployee(emp)">
                                         <i class="pi pi-times text-xs! text-red-400"></i>
                                     </button>
@@ -205,13 +206,31 @@
                                     <label class="ios-label">Account Code</label>
                                     <InputText v-model="form.account_code" class="w-full" size="small" readonly />
                                 </div>
+
+                                <!-- date -->
+                                <div class="ios-form-group">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="ios-form-group">
+                                            <label class="ios-label">Date From</label>
+                                            <DatePicker v-model="form.date_from" class="w-full" size="small" showIcon
+                                                iconDisplay="input" dateFormat="mm/dd/yy"
+                                                placeholder="Select date from…" />
+                                        </div>
+                                        <div class="ios-form-group">
+                                            <label class="ios-label">Date To</label>
+                                            <DatePicker v-model="form.date_to" class="w-full" size="small" showIcon
+                                                iconDisplay="input" dateFormat="mm/dd/yy"
+                                                placeholder="Select date to…" />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Vertical divider -->
-                            <div class="w-px self-stretch bg-surface-100 dark:bg-surface-700 flex-shrink-0"></div>
+                            <div class="w-px self-stretch bg-surface-100 dark:bg-surface-700 shrink-0"></div>
 
                             <!-- Right: Selected Employees list -->
-                            <div class="flex flex-col" style="flex:1;">
+                            <div class="flex flex-col flex-1 max-h-[30vh]">
                                 <div class="flex items-center mb-3">
                                     <span class="text-xs font-semibold text-surface-700 dark:text-surface-200">
                                         Selected Employees ({{ selectedEmployees.length }})
@@ -230,16 +249,16 @@
                                                 class="block text-xs font-semibold text-primary-600 dark:text-primary-400 truncate uppercase">{{
                                                     emp.full_name || emp.payee_name }}</span>
                                             <span v-if="!isProjectBased && emp.monthly_compensation"
-                                                class="text-xs text-surface-400 flex-shrink-0">
+                                                class="text-xs text-surface-400 shrink-0">
                                                 {{ money(emp.monthly_compensation) }}/mo
                                             </span>
                                             <span
                                                 v-else-if="isProjectBased && resolveSelectedEmployeeAmount(emp) !== null"
-                                                class="text-xs text-surface-400 flex-shrink-0">
+                                                class="text-xs text-surface-400 shrink-0">
                                                 {{ money(resolveSelectedEmployeeAmount(emp)) }}
                                             </span>
                                         </div>
-                                        <div v-if="!isProjectBased" class="flex items-center gap-2 flex-shrink-0">
+                                        <div v-if="!isProjectBased" class="flex items-center gap-2 shrink-0">
                                             <label class="text-[11px] text-surface-500 whitespace-nowrap">Lost
                                                 Hour</label>
                                             <InputNumber v-model="emp.lost_hour_minutes" inputId="lost-hour-minutes"
@@ -252,23 +271,6 @@
                         </div>
                     </div>
 
-                    <!-- Date From / To -->
-                    <div class="ios-section">
-                        <div class="ios-card p-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="ios-form-group">
-                                    <label class="ios-label">Date From</label>
-                                    <DatePicker v-model="form.date_from" class="w-full" size="small" showIcon
-                                        iconDisplay="input" dateFormat="mm/dd/yy" placeholder="Select date from…" />
-                                </div>
-                                <div class="ios-form-group">
-                                    <label class="ios-label">Date To</label>
-                                    <DatePicker v-model="form.date_to" class="w-full" size="small" showIcon
-                                        iconDisplay="input" dateFormat="mm/dd/yy" placeholder="Select date to…" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Explanation + Particulars Description -->
                     <div class="ios-section">
@@ -361,11 +363,9 @@ const obrTypeOptions = [
 ];
 
 const transactionStatusOptions = [
-    { label: 'Pending', value: 'pending' },
     { label: 'On Process', value: 'on_process' },
-    { label: 'Approved', value: 'approved' },
-    { label: 'Active', value: 'active' },
-    { label: 'Denied', value: 'denied' },
+    { label: 'Claimed', value: 'claimed' },
+    { label: 'Cancelled', value: 'cancelled' },
     { label: 'Suspended', value: 'suspended' },
 ];
 
@@ -454,6 +454,30 @@ function normalizeSelectedEmployee(emp) {
     };
 }
 
+function normalizeTransactionStatus(status) {
+    if (status && typeof status === 'object' && 'value' in status) {
+        return normalizeTransactionStatus(status.value);
+    }
+
+    if (typeof status === 'string') {
+        const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, '_');
+
+        if (normalized === 'canceled') {
+            return 'cancelled';
+        }
+
+        if (['on_process', 'claimed', 'cancelled', 'suspended', 'approved', 'active', 'denied'].includes(normalized)) {
+            return normalized;
+        }
+    }
+
+    if (!status) {
+        return 'on_process';
+    }
+
+    return status;
+}
+
 function isSelected(emp) {
     return selectedEmployees.value.some(e => (e.employee_record_id ?? e.id) === emp.id);
 }
@@ -514,7 +538,7 @@ const defaultForm = () => ({
     fiscal_year: new Date().getFullYear().toString(),
     disbursement_type: '',
     explanation: '',
-    transaction_status: 'pending',
+    transaction_status: 'on_process',
     obr_type: '',
     obr_no: '',
     dv_no: '',
@@ -557,7 +581,7 @@ watch(() => props.show, (val) => {
                 fiscal_year: t.fiscal_year || new Date().getFullYear().toString(),
                 disbursement_type: t.disbursement_type || '',
                 explanation: t.explanation || '',
-                transaction_status: t.transaction_status || 'pending',
+                transaction_status: normalizeTransactionStatus(t.transaction_status),
                 obr_type: t.obr_type || '',
                 obr_no: t.obr_no || '',
                 dv_no: t.dv_no || '',
@@ -648,6 +672,7 @@ function localDateStr(d) {
 
 function buildMainPayload() {
     const payload = { ...toRaw(form) };
+    payload.transaction_status = normalizeTransactionStatus(payload.transaction_status);
     // particulars_id is kept in payload so it's saved to DB
 
     // In create mode, derive top-level payee info from first selected employee

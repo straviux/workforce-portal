@@ -96,6 +96,27 @@ class CertificationController extends Controller
         }
     }
 
+    public function destroyNonRos(int $id): JsonResponse
+    {
+        try {
+            $certification = Certification::query()
+                ->where('certification_type', 'non_ros')
+                ->findOrFail($id);
+
+            $certification->delete();
+
+            return response()->json([
+                'message' => 'Certification deleted.',
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Error deleting non-ROS certification', ['id' => $id, 'error' => $exception->getMessage()]);
+
+            return response()->json([
+                'message' => 'Could not delete certification.',
+            ], 500);
+        }
+    }
+
     private function officeHeads()
     {
         return Signatory::query()

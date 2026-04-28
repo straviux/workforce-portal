@@ -38,7 +38,7 @@ class StoreEmployeeFundTransactionRequest extends FormRequest
             'date_obligated'           => ['nullable', 'date'],
             'date_from'                => ['nullable', 'date'],
             'date_to'                  => ['nullable', 'date'],
-            'transaction_status'       => ['nullable', 'string', 'in:pending,approved,active,denied,suspended'],
+            'transaction_status'       => ['nullable', 'string', 'in:on_process,claimed,cancelled,suspended,approved,active,denied'],
             'remarks'                  => ['nullable', 'string'],
 
             // Contract of Service only
@@ -74,6 +74,27 @@ class StoreEmployeeFundTransactionRequest extends FormRequest
     {
         $this->merge([
             'created_by' => Auth::id(),
+            'transaction_status' => $this->normalizeTransactionStatus($this->input('transaction_status')),
         ]);
+    }
+
+    private function normalizeTransactionStatus(mixed $status): mixed
+    {
+        if (is_array($status) && array_key_exists('value', $status)) {
+            $status = $status['value'];
+        }
+
+        if (!is_string($status)) {
+            return $status;
+        }
+
+        $normalized = strtolower(trim($status));
+        $normalized = str_replace([' ', '-'], '_', $normalized);
+
+        return match ($normalized) {
+            'on_process', 'claimed', 'cancelled', 'suspended', 'approved', 'active', 'denied' => $normalized,
+            'canceled' => 'cancelled',
+            default => $status,
+        };
     }
 }

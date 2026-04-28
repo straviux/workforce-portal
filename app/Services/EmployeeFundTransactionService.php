@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\EmployeeFundTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\QueryException;
 
 class EmployeeFundTransactionService
 {
@@ -19,7 +20,7 @@ class EmployeeFundTransactionService
         $month = date('m');
         $prefix = sprintf('EFT-%s%s-', $year, $month);
 
-        $last = EmployeeFundTransaction::withoutTrashed()
+        $last = EmployeeFundTransaction::withTrashed()
             ->where('transaction_id', 'like', $prefix . '%')
             ->orderBy('transaction_id', 'desc')
             ->first();
@@ -36,31 +37,43 @@ class EmployeeFundTransactionService
      */
     public function create(array $data): EmployeeFundTransaction
     {
-        return DB::transaction(function () use ($data) {
-            $employees = $data['employees'] ?? [];
-            unset($data['employees']);
+        $maxAttempts = 3;
 
-            $data['transaction_id'] = $this->generateTransactionId();
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return DB::transaction(function () use ($data) {
+                    $employees = $data['employees'] ?? [];
+                    unset($data['employees']);
 
-            if (empty($data['transaction_status'])) {
-                $data['transaction_status'] = 'pending';
+                    $data['transaction_id'] = $this->generateTransactionId();
+
+                    if (empty($data['transaction_status'])) {
+                        $data['transaction_status'] = 'on_process';
+                    }
+
+                    $record = EmployeeFundTransaction::create($data);
+
+                    foreach ($employees as $empData) {
+                        $record->employees()->create($empData);
+                    }
+
+                    Log::info('employee_fund_transaction_created', [
+                        'id'               => $record->id,
+                        'transaction_id'   => $record->transaction_id,
+                        'employees_count'  => count($employees),
+                        'created_by'       => $record->created_by,
+                    ]);
+
+                    return $record->load('employees.employeeRecord');
+                });
+            } catch (QueryException $exception) {
+                if (!$this->isDuplicateTransactionIdException($exception) || $attempt === $maxAttempts) {
+                    throw $exception;
+                }
             }
+        }
 
-            $record = EmployeeFundTransaction::create($data);
-
-            foreach ($employees as $empData) {
-                $record->employees()->create($empData);
-            }
-
-            Log::info('employee_fund_transaction_created', [
-                'id'               => $record->id,
-                'transaction_id'   => $record->transaction_id,
-                'employees_count'  => count($employees),
-                'created_by'       => $record->created_by,
-            ]);
-
-            return $record->load('employees.employeeRecord');
-        });
+        throw new \RuntimeException('Could not generate a unique transaction ID.');
     }
 
     /**
@@ -106,5 +119,11 @@ class EmployeeFundTransactionService
     {
         $record->delete();
         return true;
+    }
+
+    private function isDuplicateTransactionIdException(QueryException $exception): bool
+    {
+        return $exception->getCode() === '23000'
+            && str_contains($exception->getMessage(), 'employee_fund_transactions_transaction_id_unique');
     }
 }

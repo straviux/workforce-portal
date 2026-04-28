@@ -124,7 +124,7 @@
     <!-- Modals -->
     <CreateEditModal v-model:show="showCreateEdit" :employee="selectedEmployee" :mode="modalMode" @saved="onSaved" />
     <ViewModal v-model:show="showView" :employee="selectedEmployee" @edit="onEditFromView" />
-    <DeleteConfirmModal v-model:show="showDelete" :employee-name="selectedEmployee?.name" :is-deleting="isDeleting"
+    <DeleteConfirmModal v-model:show="showDelete" :employee="selectedEmployee ?? ''" :is-deleting="isDeleting"
         @confirm-delete="confirmDelete" />
 </template>
 

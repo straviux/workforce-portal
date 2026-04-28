@@ -173,6 +173,42 @@ class AccessManagementTest extends TestCase
         $this->assertSame(1, Certification::query()->count());
     }
 
+    public function test_admin_can_delete_non_ros_certification_records(): void
+    {
+        $admin = $this->makeAdminUser();
+
+        $officeHead = Signatory::query()->create([
+            'part' => 'A',
+            'name' => 'Maria R. Perez',
+            'office' => 'Office of the Governor',
+            'title' => ['Provincial Administrator'],
+        ]);
+
+        $certification = Certification::query()->create([
+            'certification_type' => 'non_ros',
+            'subject_name' => 'Ana Lopez',
+            'subject_honorific' => 'Ms.',
+            'designation' => 'Administrative Officer II',
+            'office' => 'Human Resource Management Office',
+            'issued_date' => '2026-04-24',
+            'office_head_signatory_id' => $officeHead->id,
+            'signatory_name' => $officeHead->name,
+            'signatory_office' => $officeHead->office,
+            'signatory_titles' => $officeHead->title,
+            'created_by' => $admin->id,
+            'updated_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->deleteJson("/api/certifications/non-ros/{$certification->id}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Certification deleted.');
+
+        $this->assertSoftDeleted('certifications', [
+            'id' => $certification->id,
+        ]);
+    }
+
     public function test_admin_can_create_update_and_delete_users_with_roles(): void
     {
         $admin = $this->makeAdminUser();
