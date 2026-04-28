@@ -65,10 +65,17 @@ class SwaWorkflowTest extends TestCase
                 '2026-04-01',
                 '2026-04-06',
                 '2026-04-07',
-            ], $officeHead->id, ['Program Manager']))
+            ], $officeHead->id, ['Program Manager'], [
+                'signatory_show_designation' => false,
+                'signatory_show_office' => true,
+                'signatory_info_order' => 'office_first',
+            ]))
             ->assertCreated()
             ->assertJsonPath('data.module_type', 'personal')
-            ->assertJsonPath('data.task_count', 5);
+            ->assertJsonPath('data.task_count', 5)
+            ->assertJsonPath('data.signatory_show_designation', false)
+            ->assertJsonPath('data.signatory_show_office', true)
+            ->assertJsonPath('data.signatory_info_order', 'office_first');
 
         $this->assertSame(5, SwaTask::query()->count());
         $this->assertDatabaseHas('swa_reports', [
@@ -83,6 +90,9 @@ class SwaWorkflowTest extends TestCase
         $this->assertSame(5, SwaReportTask::query()->count());
         $this->assertSame(15, SwaReportTaskDailyValue::query()->count());
         $this->assertSame(['Program Manager'], SwaReport::query()->value('signatory_titles'));
+        $this->assertFalse((bool) SwaReport::query()->value('signatory_show_designation'));
+        $this->assertTrue((bool) SwaReport::query()->value('signatory_show_office'));
+        $this->assertSame('office_first', SwaReport::query()->value('signatory_info_order'));
         $this->assertDatabaseMissing('swa_report_task_daily_values', [
             'work_date' => '2026-04-02',
         ]);
@@ -152,13 +162,18 @@ class SwaWorkflowTest extends TestCase
                 'period_end_date' => '2026-04-08',
                 'office_head_id' => $officeHead->id,
                 'signatory_titles' => ['Scholarship Coordinator'],
+                'signatory_show_designation' => true,
+                'signatory_show_office' => false,
+                'signatory_info_order' => 'office_first',
                 'work_days' => ['monday', 'tuesday', 'wednesday'],
                 'draft_rows' => $this->reportPayload(['2026-04-06', '2026-04-07', '2026-04-08'], $officeHead->id)['draft_rows'],
             ])
             ->assertOk()
             ->assertJsonPath('data.id', $reportId)
             ->assertJsonPath('data.period_start_date', '2026-04-06')
-            ->assertJsonPath('data.period_end_date', '2026-04-08');
+            ->assertJsonPath('data.period_end_date', '2026-04-08')
+            ->assertJsonPath('data.signatory_show_office', false)
+            ->assertJsonPath('data.signatory_info_order', 'office_first');
 
         $report = SwaReport::query()->findOrFail($reportId);
 
@@ -166,6 +181,9 @@ class SwaWorkflowTest extends TestCase
         $this->assertSame('2026-04-08', $report->period_end_date?->toDateString());
         $this->assertSame(['monday', 'tuesday', 'wednesday'], $report->work_days);
         $this->assertSame(['Scholarship Coordinator'], $report->signatory_titles);
+        $this->assertTrue($report->signatory_show_designation);
+        $this->assertFalse($report->signatory_show_office);
+        $this->assertSame('office_first', $report->signatory_info_order);
         $this->assertSame(15, SwaReportTaskDailyValue::query()->count());
         $this->assertDatabaseMissing('swa_report_task_daily_values', [
             'work_date' => '2026-04-01',
@@ -295,15 +313,18 @@ class SwaWorkflowTest extends TestCase
         ];
     }
 
-    private function reportPayload(?array $dates = null, ?int $officeHeadId = null, ?array $signatoryTitles = null): array
+    private function reportPayload(?array $dates = null, ?int $officeHeadId = null, ?array $signatoryTitles = null, array $overrides = []): array
     {
         $dates = $dates ?? ['2026-04-01', '2026-04-02', '2026-04-06', '2026-04-07'];
 
-        return [
+        return array_merge([
             'period_start_date' => '2026-04-01',
             'period_end_date' => '2026-04-07',
             'office_head_id' => $officeHeadId,
             'signatory_titles' => $signatoryTitles,
+            'signatory_show_designation' => true,
+            'signatory_show_office' => true,
+            'signatory_info_order' => 'designation_first',
             'work_days' => ['monday', 'tuesday', 'wednesday', 'thursday'],
             'draft_rows' => [
                 [
@@ -347,6 +368,6 @@ class SwaWorkflowTest extends TestCase
                     ])->all(),
                 ],
             ],
-        ];
+        ], $overrides);
     }
 }

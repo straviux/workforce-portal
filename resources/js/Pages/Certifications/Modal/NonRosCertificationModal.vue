@@ -66,7 +66,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid md:grid-cols-2 gap-3">
+                            <div class="grid md:grid-cols-1 gap-3">
                                 <div class="ios-form-group">
                                     <label class="ios-label">Date Issued <span class="text-red-500">*</span></label>
                                     <DatePicker v-model="form.issued_date" class="w-full" showIcon fluid
@@ -74,35 +74,39 @@
                                     <span v-if="errors.issued_date" class="ios-hint ios-error">{{ errors.issued_date
                                         }}</span>
                                 </div>
-
-                                <div class="ios-form-group">
-                                    <label class="ios-label">Office Head Signatory <span
-                                            class="text-red-500">*</span></label>
-                                    <Select v-model="form.office_head_id" :options="officeHeads" optionLabel="name"
-                                        optionValue="id" placeholder="Select office head" class="w-full" />
-                                    <span v-if="errors.office_head_id" class="ios-hint ios-error">{{
-                                        errors.office_head_id }}</span>
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div v-if="selectedOfficeHead" class="ios-section pb-4">
+                    <div class="ios-section pb-4">
                         <p class="ios-section-label">Signatory Snapshot</p>
-                        <div class="ios-card p-4 space-y-1 text-sm">
-                            <p class="font-medium text-surface-800 dark:text-surface-100">{{ selectedOfficeHead.name }}
-                            </p>
-                            <p class="text-surface-500">{{ selectedOfficeHead.office || '—' }}</p>
-                            <p v-if="selectedOfficeHead.titles?.length" class="text-surface-400">
-                                {{ selectedOfficeHead.titles.join(' / ') }}
-                            </p>
+                        <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
+                            <div class="space-y-1 text-sm">
+                                <p class="font-medium text-surface-800 dark:text-surface-100">
+                                    {{ selectedOfficeHead?.name || 'No signatory selected' }}
+                                </p>
+                                <template v-if="selectedOfficeHead">
+                                    <p v-for="line in signatoryPreviewLines" :key="line" class="text-surface-500">{{ line }}</p>
+                                    <p v-if="!signatoryPreviewLines.length" class="text-surface-400">
+                                        Only the signatory name will be printed.
+                                    </p>
+                                </template>
+                                <p v-else class="text-surface-400">Choose the signatory and display options for the certification footer.</p>
+                            </div>
+
+                            <Button type="button" icon="pi pi-user-edit" label="Configure" class="rounded"
+                                size="small" @click="showSnapshotModal = true" :disabled="!officeHeads.length" />
                         </div>
+                        <span v-if="errors.office_head_id" class="ios-hint ios-error mt-2 block">{{ errors.office_head_id }}</span>
                     </div>
                 </div>
 
             </div>
         </template>
     </Dialog>
+
+    <SignatorySnapshotModal v-model:show="showSnapshotModal" :office-heads="officeHeads"
+        :initial-value="signatorySnapshotForm" :allow-display-options="true" @apply="applySignatorySnapshot" />
 </template>
 
 <script setup>
@@ -130,9 +134,13 @@ const defaultForm = () => ({
     office: '',
     issued_date: new Date(),
     office_head_id: null,
+    signatory_show_designation: true,
+    signatory_show_office: true,
+    signatory_info_order: 'designation_first',
 });
 
 const form = reactive(defaultForm());
+const showSnapshotModal = ref(false);
 
 watch(() => props.show, (visible) => {
     if (!visible) return;
@@ -146,6 +154,11 @@ watch(() => props.show, (visible) => {
         form.office = props.certification.office ?? '';
         form.issued_date = parseDate(props.certification.issued_date) ?? new Date();
         form.office_head_id = props.certification.office_head_signatory_id ?? props.officeHeads[0]?.id ?? null;
+        form.signatory_show_designation = props.certification.signatory_show_designation ?? true;
+        form.signatory_show_office = props.certification.signatory_show_office ?? true;
+        form.signatory_info_order = props.certification.signatory_info_order === 'office_first'
+            ? 'office_first'
+            : 'designation_first';
     } else {
         Object.assign(form, defaultForm());
         form.office_head_id = props.officeHeads[0]?.id ?? null;
@@ -155,6 +168,13 @@ watch(() => props.show, (visible) => {
 });
 
 const selectedOfficeHead = computed(() => props.officeHeads.find((officeHead) => officeHead.id === form.office_head_id) ?? null);
+const signatorySnapshotForm = computed(() => ({
+    office_head_id: form.office_head_id,
+    signatory_show_designation: form.signatory_show_designation,
+    signatory_show_office: form.signatory_show_office,
+    signatory_info_order: form.signatory_info_order,
+}));
+const signatoryPreviewLines = computed(() => buildSignatoryDetailLines(selectedOfficeHead.value, form));
 
 async function submit() {
     errors.value = {};
@@ -166,6 +186,9 @@ async function submit() {
         office: form.office,
         issued_date: formatDateForApi(form.issued_date),
         office_head_id: form.office_head_id,
+        signatory_show_designation: form.signatory_show_designation,
+        signatory_show_office: form.signatory_show_office,
+        signatory_info_order: form.signatory_info_order,
     };
 
     saving.value = true;
@@ -202,6 +225,52 @@ async function submit() {
     } finally {
         saving.value = false;
     }
+}
+
+function applySignatorySnapshot(snapshot) {
+    form.office_head_id = snapshot.office_head_id;
+    form.signatory_show_designation = snapshot.signatory_show_designation;
+    form.signatory_show_office = snapshot.signatory_show_office;
+    form.signatory_info_order = snapshot.signatory_info_order;
+
+    if (errors.value.office_head_id) {
+        delete errors.value.office_head_id;
+    }
+}
+
+function buildSignatoryDetailLines(officeHead, config) {
+    if (!officeHead) {
+        return [];
+    }
+
+    const titles = Array.isArray(officeHead.titles) ? officeHead.titles.filter(Boolean) : [];
+    const officeLine = typeof officeHead.office === 'string' ? officeHead.office.trim() : '';
+    const designationLines = config.signatory_show_designation ? titles : [];
+    const officeLines = config.signatory_show_office && officeLine ? [officeLine] : [];
+
+    return uniqueTextLines(config.signatory_info_order === 'office_first'
+        ? [...officeLines, ...designationLines]
+        : [...designationLines, ...officeLines]);
+}
+
+function uniqueTextLines(lines) {
+    const seen = new Set();
+
+    return lines
+        .map((line) => (typeof line === 'string' ? line.trim() : ''))
+        .filter((line) => {
+            if (!line) {
+                return false;
+            }
+
+            const key = line.toLowerCase();
+            if (seen.has(key)) {
+                return false;
+            }
+
+            seen.add(key);
+            return true;
+        });
 }
 
 function parseDate(value) {

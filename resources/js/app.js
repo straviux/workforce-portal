@@ -63,6 +63,7 @@ import Editor from 'primevue/editor';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import safeHtmlDirective from '@/directives/safeHtml';
+import SignatorySnapshotModal from '@/Components/SignatorySnapshotModal.vue';
 import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
 import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
 
@@ -195,6 +196,7 @@ createInertiaApp({
 		app.component('Editor', Editor);
 		app.component('InputGroup', InputGroup);
 		app.component('InputGroupAddon', InputGroupAddon);
+		app.component('SignatorySnapshotModal', SignatorySnapshotModal);
 		app.component('ResponsibilityCenterSelect', ResponsibilityCenterSelect);
 		app.component('ParticularsSelect', ParticularsSelect);
 

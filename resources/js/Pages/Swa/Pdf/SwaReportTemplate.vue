@@ -94,8 +94,7 @@
             <div>
                 <p class="swa-signature-label">Verified and Approved:</p>
                 <p class="swa-signature-line">{{ reviewerName }}</p>
-                <p v-for="title in reviewerTitleLines" :key="title" class="swa-signature-title">{{ title }}</p>
-                <!-- <p v-if="reviewerOffice" class="swa-signature-title">{{ reviewerOffice }}</p> -->
+                <p v-for="line in reviewerDetailLines" :key="line" class="swa-signature-title">{{ line }}</p>
             </div>
         </div>
 
@@ -127,6 +126,9 @@ const props = defineProps({
     reviewerName: { type: String, default: '______________________________' },
     reviewerTitles: { type: Array, default: () => ['PROGRAM MANAGER'] },
     reviewerOffice: { type: String, default: '' },
+    reviewerShowDesignation: { type: Boolean, default: true },
+    reviewerShowOffice: { type: Boolean, default: true },
+    reviewerInfoOrder: { type: String, default: 'designation_first' },
     documentPeriodLabel: { type: String, default: '—' },
     editable: { type: Boolean, default: true },
     canManage: { type: Boolean, default: false },
@@ -134,7 +136,50 @@ const props = defineProps({
 });
 
 const logoUrl = '/images/pgp-logo.svg';
-const reviewerTitleLines = computed(() => (Array.isArray(props.reviewerTitles) ? props.reviewerTitles : []).filter(Boolean));
+const reviewerDetailLines = computed(() => buildReviewerDetailLines(
+    props.reviewerTitles,
+    props.reviewerOffice,
+    props.reviewerShowDesignation,
+    props.reviewerShowOffice,
+    props.reviewerInfoOrder,
+));
+
+function buildReviewerDetailLines(titles, office, showDesignation, showOffice, infoOrder) {
+    const designationLines = showDesignation
+        ? (Array.isArray(titles) ? titles : []).map((title) => normalizeText(title)).filter(Boolean)
+        : [];
+    const officeLine = showOffice && normalizeText(office)
+        ? [normalizeText(office)]
+        : [];
+
+    return uniqueTextLines(infoOrder === 'office_first'
+        ? [...officeLine, ...designationLines]
+        : [...designationLines, ...officeLine]);
+}
+
+function uniqueTextLines(lines) {
+    const seen = new Set();
+
+    return (lines ?? []).filter((line) => {
+        const text = normalizeText(line);
+
+        if (!text) {
+            return false;
+        }
+
+        const key = text.toLowerCase();
+        if (seen.has(key)) {
+            return false;
+        }
+
+        seen.add(key);
+        return true;
+    });
+}
+
+function normalizeText(value) {
+    return typeof value === 'string' ? value.trim() : '';
+}
 
 function formatTaskType(value) {
     return value === 'check_blank' ? 'Check / Blank (-)' : 'Countable';

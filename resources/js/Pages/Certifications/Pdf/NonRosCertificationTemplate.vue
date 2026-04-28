@@ -60,9 +60,7 @@
                 <p style="font-weight:700;font-size:11pt;margin-top: 42pt !important;">{{
                     certification?.signatory_name ||
                     '______________________________' }}</p>
-                <p v-for="title in signatoryTitles" :key="title" style="font-size:11pt;">{{ title }}</p>
-                <p v-if="certification?.signatory_office" style="font-size:11pt;">{{ certification.signatory_office }}
-                </p>
+                <p v-for="line in signatoryDetailLines" :key="line" style="font-size:11pt;">{{ line }}</p>
             </div>
         </div>
     </div>
@@ -120,9 +118,47 @@ const signatoryTitles = computed(() => {
     return [];
 });
 
+const showSignatoryDesignation = computed(() => props.certification?.signatory_show_designation !== false);
+const showSignatoryOffice = computed(() => props.certification?.signatory_show_office !== false);
+const signatoryInfoOrder = computed(() => props.certification?.signatory_info_order === 'office_first'
+    ? 'office_first'
+    : 'designation_first');
+const signatoryDetailLines = computed(() => {
+    const designationLines = showSignatoryDesignation.value
+        ? signatoryTitles.value.filter((title) => normalizeText(title))
+        : [];
+    const officeLine = showSignatoryOffice.value && normalizeText(props.certification?.signatory_office)
+        ? [normalizeText(props.certification?.signatory_office)]
+        : [];
+
+    return uniqueTextLines(signatoryInfoOrder.value === 'office_first'
+        ? [...officeLine, ...designationLines]
+        : [...designationLines, ...officeLine]);
+});
+
 function normalizeText(value) {
     const text = typeof value === 'string' ? value.trim() : '';
     return text || '';
+}
+
+function uniqueTextLines(lines) {
+    const seen = new Set();
+
+    return lines
+        .map((line) => normalizeText(line))
+        .filter((line) => {
+            if (!line) {
+                return false;
+            }
+
+            const key = line.toLowerCase();
+            if (seen.has(key)) {
+                return false;
+            }
+
+            seen.add(key);
+            return true;
+        });
 }
 
 function removeFirstName(value) {

@@ -151,8 +151,14 @@
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
 
-        <OfficeHeadSelectModal v-model:show="modals.officeHeadSelect"
-            :options="pendingPrint.signatories.filter(s => s.part === 'A')" @select="onOfficeHeadSelected" />
+        <SignatorySnapshotModal v-model:show="modals.officeHeadSelect"
+            :office-heads="pendingPrint.signatories.filter(s => s.part === 'A')" :initial-value="pendingPrint.snapshot"
+            modal-title="Document Signatory" confirm-label="Apply"
+            intro-text="Choose the office head and how the signature block should appear on this document."
+            selection-section-title="Signatory" selection-label="Office Head Signatory"
+            :allow-title-selection="true" :allow-display-options="true"
+            title-selection-hint="Toggle the titles or designations that should appear in the signature block."
+            preview-empty-text="Only the signatory name will appear on this document." @apply="onOfficeHeadSelected" />
 
     </WorkforceLayout>
 </template>
@@ -173,7 +179,6 @@ import DeleteConfirmModal from './Modal/DeleteConfirmModal.vue';
 import RemarksModal from './Modal/RemarksModal.vue';
 import StatusModal from './Modal/StatusModal.vue';
 import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
-import OfficeHeadSelectModal from './Modal/OfficeHeadSelectModal.vue';
 
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
@@ -231,7 +236,17 @@ const modals = reactive({
     officeHeadSelect: false,
 });
 
-const pendingPrint = reactive({ type: '', signatories: [] });
+const pendingPrint = reactive({
+    type: '',
+    signatories: [],
+    snapshot: {
+        office_head_id: null,
+        signatory_titles: null,
+        signatory_show_designation: true,
+        signatory_show_office: true,
+        signatory_info_order: 'designation_first',
+    },
+});
 const pdfPreview = reactive({ show: false, html: '', title: '', size: 'a4' });
 
 
@@ -571,9 +586,10 @@ async function printPdf(type) {
 
     if (type !== 'obr') {
         const partA = signatories.filter((s) => s.part === 'A');
-        if (partA.length > 1) {
+        if (partA.length > 0) {
             pendingPrint.type = type;
             pendingPrint.signatories = signatories;
+            pendingPrint.snapshot = createPendingPrintSnapshot(partA);
             modals.officeHeadSelect = true;
             return;
         }
@@ -582,14 +598,105 @@ async function printPdf(type) {
     renderAndShow(type, voucher, signatories);
 }
 
-function onOfficeHeadSelected(chosen) {
+function onOfficeHeadSelected(snapshot) {
     const voucher = selectedTransaction.value;
-    if (!voucher) return;
+    const chosen = snapshot?.office_head;
+    if (!voucher || !chosen) return;
+
+    pendingPrint.snapshot = {
+        office_head_id: snapshot.office_head_id,
+        signatory_titles: [...(snapshot.signatory_titles ?? [])],
+        signatory_show_designation: snapshot.signatory_show_designation !== false,
+        signatory_show_office: snapshot.signatory_show_office !== false,
+        signatory_info_order: snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
+    };
+
+    const partADetailLines = buildPrintSignatoryDetailLines(snapshot);
     const signatories = [
         ...pendingPrint.signatories.filter((s) => s.part !== 'A'),
-        { ...chosen, part: 'A' },
+        {
+            ...chosen,
+            part: 'A',
+            title: partADetailLines,
+            titles: partADetailLines,
+            office: '',
+        },
     ];
     renderAndShow(pendingPrint.type, voucher, signatories);
+}
+
+function createPendingPrintSnapshot(partAOfficeHeads) {
+    const officeHeads = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
+    const fallbackOfficeHead = officeHeads[0] ?? null;
+    const hasPreviousOfficeHead = officeHeads.some((officeHead) => officeHead.id === pendingPrint.snapshot.office_head_id);
+    const selectedOfficeHead = hasPreviousOfficeHead
+        ? officeHeads.find((officeHead) => officeHead.id === pendingPrint.snapshot.office_head_id)
+        : fallbackOfficeHead;
+
+    return {
+        office_head_id: selectedOfficeHead?.id ?? null,
+        signatory_titles: normalizeSignatoryTitles(
+            hasPreviousOfficeHead ? pendingPrint.snapshot.signatory_titles : selectedOfficeHead?.title ?? selectedOfficeHead?.titles,
+        ),
+        signatory_show_designation: pendingPrint.snapshot.signatory_show_designation !== false,
+        signatory_show_office: pendingPrint.snapshot.signatory_show_office !== false,
+        signatory_info_order: pendingPrint.snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
+    };
+}
+
+function buildPrintSignatoryDetailLines(snapshot) {
+    const officeHead = snapshot?.office_head;
+
+    if (!officeHead) {
+        return [];
+    }
+
+    const designationLines = snapshot?.signatory_show_designation === false
+        ? []
+        : normalizeSignatoryTitles(snapshot?.signatory_titles ?? officeHead.title ?? officeHead.titles);
+    const officeLine = snapshot?.signatory_show_office === false
+        ? []
+        : normalizeText(officeHead.office)
+            ? [normalizeText(officeHead.office)]
+            : [];
+
+    return uniqueTextLines(snapshot?.signatory_info_order === 'office_first'
+        ? [...officeLine, ...designationLines]
+        : [...designationLines, ...officeLine]);
+}
+
+function normalizeSignatoryTitles(titles) {
+    const titleList = Array.isArray(titles)
+        ? titles
+        : normalizeText(titles)
+            ? [normalizeText(titles)]
+            : [];
+
+    return uniqueTextLines(titleList);
+}
+
+function uniqueTextLines(lines) {
+    const seen = new Set();
+
+    return (lines ?? [])
+        .map((line) => normalizeText(line))
+        .filter((line) => {
+            if (!line) {
+                return false;
+            }
+
+            const key = line.toLowerCase();
+            if (seen.has(key)) {
+                return false;
+            }
+
+            seen.add(key);
+            return true;
+        });
+}
+
+function normalizeText(value) {
+    return typeof value === 'string' ? value.trim() : '';
 }
 
 // ── Helpers ──

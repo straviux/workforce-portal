@@ -22,6 +22,9 @@ class SwaReport extends Model
         'signatory_name',
         'signatory_office',
         'signatory_titles',
+        'signatory_show_designation',
+        'signatory_show_office',
+        'signatory_info_order',
         'period_start_date',
         'period_end_date',
         'work_days',
@@ -32,6 +35,8 @@ class SwaReport extends Model
     protected $casts = [
         'work_days' => 'array',
         'signatory_titles' => 'array',
+        'signatory_show_designation' => 'boolean',
+        'signatory_show_office' => 'boolean',
         'period_start_date' => 'date',
         'period_end_date' => 'date',
     ];

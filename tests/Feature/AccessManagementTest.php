@@ -146,11 +146,17 @@ class AccessManagementTest extends TestCase
                 'office' => 'Human Resource Management Office',
                 'issued_date' => '2026-04-24',
                 'office_head_id' => $officeHead->id,
+                'signatory_show_designation' => false,
+                'signatory_show_office' => true,
+                'signatory_info_order' => 'office_first',
             ])
             ->assertCreated()
             ->assertJsonPath('data.subject_name', 'Maria Santos')
             ->assertJsonPath('data.subject_honorific', 'Ms.')
-            ->assertJsonPath('data.signatory_name', 'Juan Dela Cruz');
+            ->assertJsonPath('data.signatory_name', 'Juan Dela Cruz')
+            ->assertJsonPath('data.signatory_show_designation', false)
+            ->assertJsonPath('data.signatory_show_office', true)
+            ->assertJsonPath('data.signatory_info_order', 'office_first');
 
         $this->assertDatabaseHas('certifications', [
             'certification_type' => 'non_ros',
@@ -160,6 +166,11 @@ class AccessManagementTest extends TestCase
             'office' => 'Human Resource Management Office',
         ]);
 
+        $savedCertification = Certification::query()->sole();
+        $this->assertFalse($savedCertification->signatory_show_designation);
+        $this->assertTrue($savedCertification->signatory_show_office);
+        $this->assertSame('office_first', $savedCertification->signatory_info_order);
+
         $this->actingAs($admin)
             ->getJson('/api/certifications/non-ros')
             ->assertOk()
@@ -167,10 +178,77 @@ class AccessManagementTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.subject_name', 'Maria Santos')
             ->assertJsonPath('data.0.subject_honorific', 'Ms.')
+            ->assertJsonPath('data.0.signatory_show_designation', false)
+            ->assertJsonPath('data.0.signatory_info_order', 'office_first')
             ->assertJsonPath('office_heads.0.name', 'Juan Dela Cruz')
             ->assertJsonPath('office_heads.0.title', 'Administrative Officer V');
 
         $this->assertSame(1, Certification::query()->count());
+    }
+
+    public function test_admin_can_update_non_ros_certification_signatory_snapshot_settings(): void
+    {
+        $admin = $this->makeAdminUser();
+
+        $originalOfficeHead = Signatory::query()->create([
+            'part' => 'A',
+            'name' => 'Juan Dela Cruz',
+            'office' => 'Office of the Governor',
+            'title' => ['Administrative Officer V'],
+        ]);
+
+        $updatedOfficeHead = Signatory::query()->create([
+            'part' => 'A',
+            'name' => 'Maria R. Perez',
+            'office' => 'Provincial Administrator Office',
+            'title' => ['Provincial Administrator'],
+        ]);
+
+        $certification = Certification::query()->create([
+            'certification_type' => 'non_ros',
+            'subject_name' => 'Ana Lopez',
+            'subject_honorific' => 'Ms.',
+            'designation' => 'Administrative Officer II',
+            'office' => 'Human Resource Management Office',
+            'issued_date' => '2026-04-24',
+            'office_head_signatory_id' => $originalOfficeHead->id,
+            'signatory_name' => $originalOfficeHead->name,
+            'signatory_office' => $originalOfficeHead->office,
+            'signatory_titles' => $originalOfficeHead->title,
+            'signatory_show_designation' => true,
+            'signatory_show_office' => true,
+            'signatory_info_order' => 'designation_first',
+            'created_by' => $admin->id,
+            'updated_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->putJson("/api/certifications/non-ros/{$certification->id}", [
+                'subject_name' => 'Ana Lopez',
+                'subject_honorific' => 'Ms.',
+                'designation' => 'Administrative Officer II',
+                'office' => 'Human Resource Management Office',
+                'issued_date' => '2026-04-24',
+                'office_head_id' => $updatedOfficeHead->id,
+                'signatory_show_designation' => true,
+                'signatory_show_office' => false,
+                'signatory_info_order' => 'office_first',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.signatory_name', 'Maria R. Perez')
+            ->assertJsonPath('data.signatory_show_designation', true)
+            ->assertJsonPath('data.signatory_show_office', false)
+            ->assertJsonPath('data.signatory_info_order', 'office_first');
+
+        $certification->refresh();
+
+        $this->assertSame($updatedOfficeHead->id, $certification->office_head_signatory_id);
+        $this->assertSame('Maria R. Perez', $certification->signatory_name);
+        $this->assertSame('Provincial Administrator Office', $certification->signatory_office);
+        $this->assertSame(['Provincial Administrator'], $certification->signatory_titles);
+        $this->assertTrue($certification->signatory_show_designation);
+        $this->assertFalse($certification->signatory_show_office);
+        $this->assertSame('office_first', $certification->signatory_info_order);
     }
 
     public function test_admin_can_delete_non_ros_certification_records(): void

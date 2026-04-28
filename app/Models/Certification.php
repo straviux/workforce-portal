@@ -21,6 +21,9 @@ class Certification extends Model
         'signatory_name',
         'signatory_office',
         'signatory_titles',
+        'signatory_show_designation',
+        'signatory_show_office',
+        'signatory_info_order',
         'created_by',
         'updated_by',
     ];
@@ -28,6 +31,8 @@ class Certification extends Model
     protected $casts = [
         'issued_date' => 'date',
         'signatory_titles' => 'array',
+        'signatory_show_designation' => 'boolean',
+        'signatory_show_office' => 'boolean',
     ];
 
     protected static function boot(): void

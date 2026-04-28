@@ -124,6 +124,9 @@ class SwaService
             'period_start_date' => optional($report->period_start_date)->toDateString(),
             'period_end_date' => optional($report->period_end_date)->toDateString(),
             'work_days' => $report->work_days ?? [],
+            'signatory_show_designation' => $report->signatory_show_designation !== false,
+            'signatory_show_office' => $report->signatory_show_office !== false,
+            'signatory_info_order' => $report->signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
             'task_count' => (int) ($report->tasks_count ?? $report->tasks()->count()),
             'generated_by_name' => $report->generator?->name,
             'created_at' => optional($report->created_at)->toISOString(),
@@ -248,13 +251,31 @@ class SwaService
             ->map(fn($title) => trim((string) $title))
             ->filter()
             ->values();
+        $showDesignation = array_key_exists('signatory_show_designation', $validated)
+            ? (bool) $validated['signatory_show_designation']
+            : true;
+        $showOffice = array_key_exists('signatory_show_office', $validated)
+            ? (bool) $validated['signatory_show_office']
+            : true;
+        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
+            ? 'office_first'
+            : 'designation_first';
         $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
             ? $availableSignatoryTitles
             ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
             ->values()
             : $availableSignatoryTitles;
+        $showDesignation = array_key_exists('signatory_show_designation', $validated)
+            ? (bool) $validated['signatory_show_designation']
+            : true;
+        $showOffice = array_key_exists('signatory_show_office', $validated)
+            ? (bool) $validated['signatory_show_office']
+            : true;
+        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
+            ? 'office_first'
+            : 'designation_first';
 
-        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles) {
+        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $showDesignation, $showOffice, $infoOrder) {
             $report = SwaReport::query()->create([
                 'module_type' => $moduleType,
                 'subject_type' => $subject->getMorphClass(),
@@ -263,6 +284,9 @@ class SwaService
                 'signatory_name' => $officeHead->name,
                 'signatory_office' => $officeHead->office,
                 'signatory_titles' => $selectedSignatoryTitles->all(),
+                'signatory_show_designation' => $showDesignation,
+                'signatory_show_office' => $showOffice,
+                'signatory_info_order' => $infoOrder,
                 'period_start_date' => $validated['period_start_date'],
                 'period_end_date' => $validated['period_end_date'],
                 'work_days' => $workDays->all(),
@@ -348,18 +372,30 @@ class SwaService
             ->map(fn($title) => trim((string) $title))
             ->filter()
             ->values();
+        $showDesignation = array_key_exists('signatory_show_designation', $validated)
+            ? (bool) $validated['signatory_show_designation']
+            : true;
+        $showOffice = array_key_exists('signatory_show_office', $validated)
+            ? (bool) $validated['signatory_show_office']
+            : true;
+        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
+            ? 'office_first'
+            : 'designation_first';
         $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
             ? $availableSignatoryTitles
             ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
             ->values()
             : $availableSignatoryTitles;
 
-        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles) {
+        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $showDesignation, $showOffice, $infoOrder) {
             $report->update([
                 'office_head_signatory_id' => $officeHead->id,
                 'signatory_name' => $officeHead->name,
                 'signatory_office' => $officeHead->office,
                 'signatory_titles' => $selectedSignatoryTitles->all(),
+                'signatory_show_designation' => $showDesignation,
+                'signatory_show_office' => $showOffice,
+                'signatory_info_order' => $infoOrder,
                 'period_start_date' => $validated['period_start_date'],
                 'period_end_date' => $validated['period_end_date'],
                 'work_days' => $workDays->all(),

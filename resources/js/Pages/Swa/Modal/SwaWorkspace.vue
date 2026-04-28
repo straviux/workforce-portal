@@ -189,42 +189,24 @@
                     </p>
                 </div>
 
-                <div v-else class="grid gap-3 md:grid-cols-[minmax(0,1fr)_320px] items-start">
-                    <div class="ios-form-group">
-                        <label class="ios-label">Signatory</label>
-                        <Select :modelValue="selectedOfficeHeadId" :options="officeHeads" optionLabel="name"
-                            optionValue="id" placeholder="Select signatory" class="w-full"
-                            @update:modelValue="handleOfficeHeadChange"
-                            :disabled="!canManage || isSavingReport || isSavingTasks" />
+                <div v-else class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
+                    <div class="space-y-1 text-sm">
+                        <p class="font-medium text-surface-800 dark:text-surface-100">
+                            {{ selectedOfficeHead?.name || 'No signatory selected' }}
+                        </p>
+                        <template v-if="selectedOfficeHead">
+                            <p v-for="line in signatoryPreviewLines" :key="line" class="text-surface-500">{{ line }}</p>
+                            <p v-if="!signatoryPreviewLines.length" class="text-surface-400">
+                                Only the signatory name will appear under Verified and Approved.
+                            </p>
+                        </template>
+                        <p class="text-xs text-surface-400 mt-2">
+                            Configure the office head and which titles or designations appear under Verified and Approved.
+                        </p>
                     </div>
 
-                    <div v-if="selectedOfficeHead"
-                        class="rounded-2xl border border-surface-200 dark:border-surface-800 px-4 py-3 text-sm">
-                        <p class="font-medium text-surface-800 dark:text-surface-100">{{ selectedOfficeHead.name }}</p>
-                        <p class="text-surface-500 mt-1">{{ selectedOfficeHead.office || '—' }}</p>
-
-                        <div v-if="availableOfficeHeadTitles.length" class="mt-3">
-                            <p class="text-xs uppercase tracking-[0.18em] text-surface-400 mb-2">
-                                Titles / Designations
-                            </p>
-
-                            <div class="flex flex-wrap gap-2">
-                                <button v-for="title in availableOfficeHeadTitles" :key="title" type="button"
-                                    class="rounded-full border px-3 py-1.5 text-xs font-medium transition cursor-pointer"
-                                    :class="selectedOfficeHeadTitles.includes(title)
-                                        ? 'border-emerald-500 bg-emerald-500 text-white'
-                                        : 'border-surface-200 bg-white text-surface-500 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300'"
-                                    :disabled="!canManage || isSavingReport || isSavingTasks"
-                                    @click="toggleOfficeHeadTitle(title)">
-                                    {{ title }}
-                                </button>
-                            </div>
-
-                            <p class="text-xs text-surface-400 mt-2">
-                                Toggle the titles or designations that should appear under Verified and Approved.
-                            </p>
-                        </div>
-                    </div>
+                    <Button label="Configure Signatory" icon="pi pi-user-edit" class="rounded" size="small"
+                        :disabled="!canManage || isSavingReport || isSavingTasks" @click="showSignatorySnapshotModal = true" />
                 </div>
 
                 <div>
@@ -368,6 +350,13 @@
 
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
+
+        <SignatorySnapshotModal v-model:show="showSignatorySnapshotModal" :office-heads="officeHeads"
+            :initial-value="swaSignatorySnapshotForm" modal-title="SWA Signatory" :allow-title-selection="true"
+            :allow-display-options="true"
+            title-selection-hint="Toggle the titles or designations that should appear under Verified and Approved."
+            preview-empty-text="Only the signatory name will appear under Verified and Approved."
+            @apply="applySwaSignatorySnapshot" />
     </div>
 </template>
 
@@ -420,6 +409,7 @@ const DEFAULT_COUNTABLE_MAX = 9;
 
 const showTaskDialog = ref(false);
 const showGenerateDialog = ref(false);
+const showSignatorySnapshotModal = ref(false);
 const previewingReportId = ref(null);
 const loadingEditorReportId = ref(null);
 const deletingReportId = ref(null);
@@ -431,6 +421,9 @@ const editingReportId = ref(null);
 const editingReportTaskRows = ref([]);
 const selectedOfficeHeadId = ref(null);
 const selectedOfficeHeadTitles = ref([]);
+const signatoryShowDesignation = ref(true);
+const signatoryShowOffice = ref(true);
+const signatoryInfoOrder = ref('designation_first');
 const isHydratingReport = ref(false);
 const pdfPreview = reactive({
     show: false,
@@ -458,13 +451,6 @@ const draftSourceRows = computed(() => isEditingReport.value && editingReportTas
     ? editingReportTaskRows.value
     : normalizedTasks.value);
 const hasValidDraftSourceTasks = computed(() => draftSourceRows.value.filter((task) => task.task_name).length === 5);
-const availableOfficeHeadTitles = computed(() => {
-    const titles = Array.isArray(selectedOfficeHead.value?.titles) ? selectedOfficeHead.value.titles : [];
-
-    return titles
-        .map((title) => String(title ?? '').trim())
-        .filter(Boolean);
-});
 const canPrepareDraft = computed(() => props.canManage
     && hasValidDraftSourceTasks.value
     && (isEditingReport.value || hasValidCountableRanges.value)
@@ -533,7 +519,28 @@ const reviewerTitles = computed(() => {
     return [fallbackTitle];
 });
 const reviewerOffice = computed(() => formatUpperText(selectedOfficeHead.value?.office || page.props.auth?.user?.office));
+const reviewerDetailLines = computed(() => buildOrderedSignatoryDetailLines(
+    reviewerTitles.value,
+    reviewerOffice.value,
+    signatoryShowDesignation.value,
+    signatoryShowOffice.value,
+    signatoryInfoOrder.value,
+));
 const documentPeriodLabel = computed(() => formatSwaPeriodLabel(generation.period_start_date, generation.period_end_date));
+const swaSignatorySnapshotForm = computed(() => ({
+    office_head_id: selectedOfficeHeadId.value,
+    signatory_titles: [...selectedOfficeHeadTitles.value],
+    signatory_show_designation: signatoryShowDesignation.value,
+    signatory_show_office: signatoryShowOffice.value,
+    signatory_info_order: signatoryInfoOrder.value,
+}));
+const signatoryPreviewLines = computed(() => buildOrderedSignatoryDetailLines(
+    selectedOfficeHeadTitles.value,
+    selectedOfficeHead.value?.office,
+    signatoryShowDesignation.value,
+    signatoryShowOffice.value,
+    signatoryInfoOrder.value,
+));
 const draftEditorRows = computed(() => draftDates.value.map((workDate) => ({
     work_date: workDate,
     task_values: draftRows.value.map((task) => ({
@@ -654,6 +661,9 @@ async function openSavedReportEditor(report) {
         generation.period_start_date = parseDateValue(reportDetail.period_start_date);
         generation.period_end_date = parseDateValue(reportDetail.period_end_date);
         applyOfficeHeadSelection(reportDetail.office_head_signatory_id, reportDetail.signatory_titles ?? []);
+        signatoryShowDesignation.value = reportDetail.signatory_show_designation !== false;
+        signatoryShowOffice.value = reportDetail.signatory_show_office !== false;
+        signatoryInfoOrder.value = reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
         draftRows.value = reportRows;
         draftDates.value = reportRows[0]?.daily_values?.map((value) => value.work_date) ?? [];
         showGenerateDialog.value = true;
@@ -720,6 +730,9 @@ async function openSavedReportPreview(report) {
                 ? formatUpperList(reportDetail.signatory_titles)
                 : reviewerTitles.value,
             reviewerOffice: formatUpperText(reportDetail.signatory_office) || reviewerOffice.value,
+            reviewerShowDesignation: reportDetail.signatory_show_designation !== false,
+            reviewerShowOffice: reportDetail.signatory_show_office !== false,
+            reviewerInfoOrder: reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
             documentPeriodLabel: formatSwaPeriodLabel(reportDetail.period_start_date, reportDetail.period_end_date),
             editable: false,
             canManage: false,
@@ -767,6 +780,9 @@ function emitSaveReport() {
         period_end_date: formatDateForApi(generation.period_end_date),
         office_head_id: selectedOfficeHeadId.value,
         signatory_titles: [...selectedOfficeHeadTitles.value],
+        signatory_show_designation: signatoryShowDesignation.value,
+        signatory_show_office: signatoryShowOffice.value,
+        signatory_info_order: signatoryInfoOrder.value,
         work_days: [...generation.work_days],
         draft_rows: draftRows.value.map((row) => ({
             sort_order: row.sort_order,
@@ -808,23 +824,11 @@ function toggleWorkDay(day) {
         .filter((value) => value === day || generation.work_days.includes(value));
 }
 
-function handleOfficeHeadChange(officeHeadId) {
-    applyOfficeHeadSelection(officeHeadId);
-}
-
-function toggleOfficeHeadTitle(title) {
-    if (!props.canManage || props.isSavingTasks || props.isSavingReport) return;
-
-    const normalizedTitle = String(title ?? '').trim();
-
-    if (!normalizedTitle || !availableOfficeHeadTitles.value.includes(normalizedTitle)) return;
-
-    const exists = selectedOfficeHeadTitles.value.includes(normalizedTitle);
-    const nextTitles = exists
-        ? selectedOfficeHeadTitles.value.filter((value) => value !== normalizedTitle)
-        : [...selectedOfficeHeadTitles.value, normalizedTitle];
-
-    selectedOfficeHeadTitles.value = availableOfficeHeadTitles.value.filter((value) => nextTitles.includes(value));
+function applySwaSignatorySnapshot(snapshot) {
+    applyOfficeHeadSelection(snapshot.office_head_id, snapshot.signatory_titles ?? []);
+    signatoryShowDesignation.value = snapshot.signatory_show_designation !== false;
+    signatoryShowOffice.value = snapshot.signatory_show_office !== false;
+    signatoryInfoOrder.value = snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
 }
 
 function prepareDraftValues() {
@@ -925,6 +929,45 @@ function applyOfficeHeadSelection(officeHeadId, selectedTitles = null) {
     selectedOfficeHeadTitles.value = selectedTitles
         .map((title) => String(title ?? '').trim())
         .filter((title) => availableTitles.includes(title));
+}
+
+function buildSwaSignatoryPreviewLines(officeHead, selectedTitles) {
+    return buildOrderedSignatoryDetailLines(
+        selectedTitles,
+        officeHead?.office,
+        signatoryShowDesignation.value,
+        signatoryShowOffice.value,
+        signatoryInfoOrder.value,
+    );
+}
+
+function buildOrderedSignatoryDetailLines(titles, office, showDesignation = true, showOffice = true, infoOrder = 'designation_first') {
+    const designationLines = showDesignation ? formatUpperList(titles) : [];
+    const officeLines = showOffice && formatUpperText(office) ? [formatUpperText(office)] : [];
+
+    return uniqueTextLines(infoOrder === 'office_first'
+        ? [...officeLines, ...designationLines]
+        : [...designationLines, ...officeLines]);
+}
+
+function uniqueTextLines(lines) {
+    const seen = new Set();
+
+    return (lines ?? [])
+        .map((line) => String(line ?? '').trim())
+        .filter((line) => {
+            if (!line) {
+                return false;
+            }
+
+            const key = line.toLowerCase();
+            if (seen.has(key)) {
+                return false;
+            }
+
+            seen.add(key);
+            return true;
+        });
 }
 
 function cloneDraftRows(rows) {

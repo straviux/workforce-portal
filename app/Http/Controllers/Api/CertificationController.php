@@ -143,6 +143,16 @@ class CertificationController extends Controller
             ->where('part', 'A')
             ->findOrFail($validated['office_head_id']);
 
+        $showDesignation = array_key_exists('signatory_show_designation', $validated)
+            ? (bool) $validated['signatory_show_designation']
+            : true;
+        $showOffice = array_key_exists('signatory_show_office', $validated)
+            ? (bool) $validated['signatory_show_office']
+            : true;
+        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
+            ? 'office_first'
+            : 'designation_first';
+
         return [
             'certification_type' => 'non_ros',
             'subject_name' => $validated['subject_name'],
@@ -156,6 +166,9 @@ class CertificationController extends Controller
             'signatory_name' => $officeHead->name,
             'signatory_office' => $officeHead->office,
             'signatory_titles' => array_values(array_filter($officeHead->title ?? [])),
+            'signatory_show_designation' => $showDesignation,
+            'signatory_show_office' => $showOffice,
+            'signatory_info_order' => $infoOrder,
         ];
     }
 }
