@@ -32,9 +32,11 @@
                             <p class="ios-section-label">{{ selectionSectionTitle }}</p>
                             <div class="ios-card p-4 space-y-3">
                                 <div class="ios-form-group">
-                                    <label class="ios-label">{{ selectionLabel }} <span class="text-red-500">*</span></label>
-                                    <Select v-model="draft.office_head_id" :options="normalizedOfficeHeads" optionLabel="name"
-                                        optionValue="id" :placeholder="selectionPlaceholder" class="w-full" />
+                                    <label class="ios-label">{{ selectionLabel }} <span
+                                            class="text-red-500">*</span></label>
+                                    <Select v-model="draft.office_head_id" :options="normalizedOfficeHeads"
+                                        optionLabel="name" optionValue="id" :placeholder="selectionPlaceholder"
+                                        class="w-full" />
                                 </div>
                             </div>
                         </div>
@@ -64,24 +66,28 @@
                             <div class="ios-card p-4 space-y-4">
                                 <div class="flex items-center justify-between gap-4">
                                     <div>
-                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show designation</p>
-                                        <p class="text-xs text-surface-500">Print the saved signatory titles under the name.</p>
+                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show
+                                            designation</p>
+                                        <p class="text-xs text-surface-500">Print the saved signatory titles under the
+                                            name.</p>
                                     </div>
                                     <ToggleSwitch v-model="draft.signatory_show_designation" />
                                 </div>
 
                                 <div class="flex items-center justify-between gap-4">
                                     <div>
-                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show office</p>
-                                        <p class="text-xs text-surface-500">Print the office line in the signature block.</p>
+                                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show
+                                            office</p>
+                                        <p class="text-xs text-surface-500">Print the office line in the signature
+                                            block.</p>
                                     </div>
                                     <ToggleSwitch v-model="draft.signatory_show_office" />
                                 </div>
 
                                 <div class="ios-form-group">
                                     <label class="ios-label">Detail order</label>
-                                    <Select v-model="draft.signatory_info_order" :options="orderOptions" optionLabel="label"
-                                        optionValue="value" class="w-full"
+                                    <Select v-model="draft.signatory_info_order" :options="orderOptions"
+                                        optionLabel="label" optionValue="value" class="w-full"
                                         :disabled="!draft.signatory_show_designation || !draft.signatory_show_office" />
                                     <p class="text-xs text-surface-400 mt-2">
                                         Only affects the print order when both designation and office are shown.

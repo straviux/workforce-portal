@@ -45,7 +45,7 @@
                                     <InputText v-model="form.subject_name" placeholder="e.g. Juan Santos"
                                         class="w-full" />
                                     <span v-if="errors.subject_name" class="ios-hint ios-error">{{ errors.subject_name
-                                        }}</span>
+                                    }}</span>
                                 </div>
                             </div>
 
@@ -55,7 +55,7 @@
                                     <InputText v-model="form.designation" placeholder="e.g. Administrative Aide VI"
                                         class="w-full" />
                                     <span v-if="errors.designation" class="ios-hint ios-error">{{ errors.designation
-                                        }}</span>
+                                    }}</span>
                                 </div>
 
                                 <div class="ios-form-group">
@@ -72,7 +72,7 @@
                                     <DatePicker v-model="form.issued_date" class="w-full" showIcon fluid
                                         dateFormat="MM d, yy" />
                                     <span v-if="errors.issued_date" class="ios-hint ios-error">{{ errors.issued_date
-                                        }}</span>
+                                    }}</span>
                                 </div>
                             </div>
                         </div>
@@ -86,18 +86,21 @@
                                     {{ selectedOfficeHead?.name || 'No signatory selected' }}
                                 </p>
                                 <template v-if="selectedOfficeHead">
-                                    <p v-for="line in signatoryPreviewLines" :key="line" class="text-surface-500">{{ line }}</p>
+                                    <p v-for="line in signatoryPreviewLines" :key="line" class="text-surface-500">{{
+                                        line }}</p>
                                     <p v-if="!signatoryPreviewLines.length" class="text-surface-400">
                                         Only the signatory name will be printed.
                                     </p>
                                 </template>
-                                <p v-else class="text-surface-400">Choose the signatory and display options for the certification footer.</p>
+                                <p v-else class="text-surface-400">Choose the signatory and display options for the
+                                    certification footer.</p>
                             </div>
 
-                            <Button type="button" icon="pi pi-user-edit" label="Configure" class="rounded"
-                                size="small" @click="showSnapshotModal = true" :disabled="!officeHeads.length" />
+                            <Button type="button" icon="pi pi-user-edit" label="Configure" class="rounded" size="small"
+                                @click="showSnapshotModal = true" :disabled="!officeHeads.length" />
                         </div>
-                        <span v-if="errors.office_head_id" class="ios-hint ios-error mt-2 block">{{ errors.office_head_id }}</span>
+                        <span v-if="errors.office_head_id" class="ios-hint ios-error mt-2 block">{{
+                            errors.office_head_id }}</span>
                     </div>
                 </div>
 

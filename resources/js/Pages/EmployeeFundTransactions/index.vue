@@ -155,8 +155,8 @@
             :office-heads="pendingPrint.signatories.filter(s => s.part === 'A')" :initial-value="pendingPrint.snapshot"
             modal-title="Document Signatory" confirm-label="Apply"
             intro-text="Choose the office head and how the signature block should appear on this document."
-            selection-section-title="Signatory" selection-label="Office Head Signatory"
-            :allow-title-selection="true" :allow-display-options="true"
+            selection-section-title="Signatory" selection-label="Office Head Signatory" :allow-title-selection="true"
+            :allow-display-options="true"
             title-selection-hint="Toggle the titles or designations that should appear in the signature block."
             preview-empty-text="Only the signatory name will appear on this document." @apply="onOfficeHeadSelected" />
 
