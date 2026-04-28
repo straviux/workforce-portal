@@ -53,6 +53,7 @@ class UpdateEmployeeFundTransactionRequest extends FormRequest
 
             // Employees list
             'employees'                          => ['nullable', 'array'],
+            'employees.*.sort_order'            => ['nullable', 'integer', 'min:1'],
             'employees.*.employee_record_id'     => ['nullable', 'integer', 'exists:employees,id'],
             'employees.*.payee_name'             => ['required_with:employees', 'string', 'max:255'],
             'employees.*.payee_address'          => ['nullable', 'string', 'max:255'],

@@ -103,10 +103,18 @@
                     <div class="flex flex-col" style="flex:1;">
 
                         <!-- Panel header -->
-                        <div class="px-5 py-3 border-b  flex items-center gap-2 shrink-0">
-                            <p class="text-sm font-semibold text-surface-700 dark:text-surface-200">Selected Employees
-                            </p>
-                            <span class="text-xs text-surface-400 font-normal">({{ selectedEmployees.length }})</span>
+                        <div class="px-5 py-3 border-b shrink-0 flex items-center justify-between gap-3 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold text-surface-700 dark:text-surface-200">Selected
+                                    Employees
+                                </p>
+                                <span class="text-xs text-surface-400 font-normal">({{ selectedEmployees.length
+                                    }})</span>
+                            </div>
+                            <span v-if="selectedEmployees.length > 1"
+                                class="text-[11px] text-surface-400 dark:text-surface-500">
+                                Drag to set the exact listing order.
+                            </span>
                         </div>
 
                         <!-- Content -->
@@ -120,14 +128,42 @@
 
                             <!-- Selected cards -->
                             <div v-else class="flex flex-col gap-2">
-                                <div v-for="emp in selectedEmployees" :key="emp.id"
-                                    class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-white dark:bg-primary-900/20">
-                                    <div class="min-w-0">
+                                <div v-for="(emp, idx) in selectedEmployees" :key="selectedEmployeeKey(emp)"
+                                    class="flex items-center gap-3 rounded-xl border bg-white px-3 py-2 transition dark:bg-primary-900/20"
+                                    :class="draggedEmployeeIndex === idx
+                                        ? 'border-sky-300 bg-sky-50/70 dark:border-sky-500/40 dark:bg-sky-950/20 opacity-70'
+                                        : dragOverEmployeeIndex === idx
+                                            ? 'border-sky-400 bg-sky-50 dark:border-sky-500/50 dark:bg-sky-950/20'
+                                            : 'border-surface-100 dark:border-surface-700'"
+                                    :draggable="selectedEmployees.length > 1"
+                                    @dragstart="onSelectedEmployeeDragStart(idx, $event)"
+                                    @dragend="onSelectedEmployeeDragEnd"
+                                    @dragover.prevent="onSelectedEmployeeDragOver(idx, $event)"
+                                    @dragenter.prevent="onSelectedEmployeeDragOver(idx, $event)"
+                                    @drop.prevent="onSelectedEmployeeDrop(idx, $event)">
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span
+                                            class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-surface-400 transition cursor-grab active:cursor-grabbing">
+                                            <i class="pi pi-sort text-xs"></i>
+                                        </span>
+                                        <span
+                                            class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-surface-100 px-2 text-[11px] font-semibold text-surface-600 dark:bg-surface-800 dark:text-surface-300">
+                                            {{ idx + 1 }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
                                         <p
-                                            class="text-xs font-semibold text-surface-800 dark:text-surface-100 truncate">
-                                            {{ emp.full_name ||
-                                                emp.payee_name }}</p>
+                                            class="text-xs font-semibold text-surface-800 dark:text-surface-100 truncate uppercase">
+                                            {{ emp.full_name || emp.payee_name }}</p>
                                         <p v-if="emp.office" class="text-xs text-surface-400 truncate">{{ emp.office }}
+                                        </p>
+                                        <p v-if="!isProjectBased && emp.monthly_compensation"
+                                            class="text-xs text-surface-400 truncate">
+                                            {{ money(emp.monthly_compensation) }}/mo
+                                        </p>
+                                        <p v-else-if="isProjectBased && resolveSelectedEmployeeAmount(emp) !== null"
+                                            class="text-xs text-surface-400 truncate">
+                                            {{ money(resolveSelectedEmployeeAmount(emp)) }}
                                         </p>
                                     </div>
                                     <button
@@ -153,7 +189,7 @@
                                     <InputText v-model="form.payee_name" class="w-full" size="small"
                                         placeholder="Payee name…" />
                                     <span v-if="errors.payee_name" class="ios-hint ios-error">{{ errors.payee_name
-                                    }}</span>
+                                        }}</span>
                                 </div>
 
                                 <div v-if="isProjectBased" class="ios-form-group">
@@ -194,7 +230,7 @@
                                         :fiscal-year="form.fiscal_year" @change="onRcChange" />
                                     <span v-if="errors.responsibility_center" class="ios-hint ios-error">{{
                                         errors.responsibility_center
-                                        }}</span>
+                                    }}</span>
                                 </div>
                                 <div class="ios-form-group">
                                     <label class="ios-label">Particulars</label>
@@ -231,19 +267,28 @@
 
                             <!-- Right: Selected Employees list -->
                             <div class="flex flex-col flex-1 max-h-[30vh]">
-                                <div class="flex items-center mb-3">
+                                <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
                                     <span class="text-xs font-semibold text-surface-700 dark:text-surface-200">
                                         Selected Employees ({{ selectedEmployees.length }})
+                                    </span>
+                                    <span v-if="selectedEmployees.length > 1"
+                                        class="text-[11px] text-surface-400 dark:text-surface-500">
+                                        Order is set in Step 1.
                                     </span>
                                 </div>
                                 <div v-if="selectedEmployees.length === 0"
                                     class="flex-1 flex items-center justify-center text-xs text-surface-400 italic">
                                     No employees selected
                                 </div>
-                                <div v-else
-                                    class="flex flex-col divide-y divide-surface-100 dark:divide-surface-700 overflow-y-auto">
-                                    <div v-for="emp in selectedEmployees" :key="emp.id"
-                                        class="flex items-center gap-3 py-2">
+                                <div v-else class="flex flex-col gap-2 overflow-y-auto">
+                                    <div v-for="(emp, idx) in selectedEmployees" :key="selectedEmployeeKey(emp)"
+                                        class="flex items-center gap-3 rounded-2xl border border-surface-100 px-3 py-2 transition dark:border-surface-700">
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span
+                                                class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-surface-100 px-2 text-[11px] font-semibold text-surface-600 dark:bg-surface-800 dark:text-surface-300">
+                                                {{ idx + 1 }}
+                                            </span>
+                                        </div>
                                         <div class="min-w-0 flex-1">
                                             <span
                                                 class="block text-xs font-semibold text-primary-600 dark:text-primary-400 truncate uppercase">{{
@@ -344,6 +389,8 @@ const toast = useToast();
 const step = ref(1);
 const saving = ref(false);
 const errors = ref({});
+const draggedEmployeeIndex = ref(null);
+const dragOverEmployeeIndex = ref(null);
 
 // ── Employee selection ──
 const allEmployees = ref([]);
@@ -449,9 +496,24 @@ function resolveSelectedEmployeeAmount(emp) {
 function normalizeSelectedEmployee(emp) {
     return {
         ...emp,
+        sort_order: normalizeSortOrder(emp.sort_order),
         amount: resolveSelectedEmployeeAmount(emp),
         lost_hour_minutes: normalizeLostHourMinutes(emp.lost_hour_minutes ?? emp.lostHour),
     };
+}
+
+function normalizeSortOrder(value) {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    if (Number.isNaN(parsed) || parsed <= 0) {
+        return null;
+    }
+
+    return parsed;
 }
 
 function normalizeTransactionStatus(status) {
@@ -707,15 +769,18 @@ function buildMainPayload() {
     payload.date_from = localDateStr(payload.date_from);
     payload.date_to = localDateStr(payload.date_to);
 
-    payload.employees = selectedEmployees.value.map(buildEmployeeItem);
+    payload.employees = selectedEmployees.value.map((employee, index) => buildEmployeeItem(employee, index));
 
     return payload;
 }
 
-function buildEmployeeItem(emp) {
+function buildEmployeeItem(emp, index) {
     const recordId = emp.employee_record_id ?? emp.id;
+    const sortOrder = index + 1;
+
     return {
         employee_record_id: recordId ?? null,
+        sort_order: sortOrder,
         payee_name: emp.full_name || emp.payee_name || '',
         payee_address: emp.address || emp.payee_address || '',
         office: emp.office || '',
@@ -730,6 +795,58 @@ function buildEmployeeItem(emp) {
         deduction_hdmf: emp.deduction_hdmf ? parseFloat(emp.deduction_hdmf) : null,
         lost_hour_minutes: normalizeLostHourMinutes(emp.lost_hour_minutes),
     };
+}
+
+function selectedEmployeeKey(emp) {
+    return emp.employee_record_id ?? emp.id ?? emp.employee_id ?? emp.payee_name;
+}
+
+function onSelectedEmployeeDragStart(index, event) {
+    if (selectedEmployees.value.length < 2) {
+        event.preventDefault();
+        return;
+    }
+
+    if (event.target?.closest('input, textarea, select, button, .p-inputnumber, .p-inputtext')) {
+        event.preventDefault();
+        return;
+    }
+
+    draggedEmployeeIndex.value = index;
+    dragOverEmployeeIndex.value = index;
+
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(index));
+    }
+}
+
+function onSelectedEmployeeDragOver(index, event) {
+    if (draggedEmployeeIndex.value === null) return;
+
+    event.dataTransfer.dropEffect = 'move';
+    dragOverEmployeeIndex.value = index;
+}
+
+function onSelectedEmployeeDrop(index, event) {
+    event.preventDefault();
+
+    if (draggedEmployeeIndex.value === null || draggedEmployeeIndex.value === index) {
+        onSelectedEmployeeDragEnd();
+        return;
+    }
+
+    const reordered = [...selectedEmployees.value];
+    const [movedEmployee] = reordered.splice(draggedEmployeeIndex.value, 1);
+
+    reordered.splice(index, 0, movedEmployee);
+    selectedEmployees.value = reordered;
+    onSelectedEmployeeDragEnd();
+}
+
+function onSelectedEmployeeDragEnd() {
+    draggedEmployeeIndex.value = null;
+    dragOverEmployeeIndex.value = null;
 }
 
 // ── Helpers ──

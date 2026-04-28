@@ -10,6 +10,7 @@ class FundTransactionEmployee extends Model
 
     protected $fillable = [
         'fund_transaction_id',
+        'sort_order',
         'employee_record_id',
         'payee_name',
         'payee_address',
@@ -27,6 +28,7 @@ class FundTransactionEmployee extends Model
     ];
 
     protected $casts = [
+        'sort_order'             => 'integer',
         'swa'                  => 'boolean',
         'amount'               => 'decimal:2',
         'monthly_compensation' => 'decimal:2',

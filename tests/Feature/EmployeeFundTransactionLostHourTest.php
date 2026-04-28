@@ -55,6 +55,74 @@ class EmployeeFundTransactionLostHourTest extends TestCase
         ]);
     }
 
+    public function test_it_persists_selected_employee_sort_order_for_cwa_listing(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+        $responsibilityCenter = ResponsibilityCenter::query()->create([
+            'code' => 'RC-ORDER',
+            'name' => 'Scholarship Program',
+            'fiscal_year' => '2026',
+        ]);
+        $firstEmployee = Employee::query()->create([
+            'employee_no' => 'EMP-ORDER-1',
+            'first_name' => 'Aaron',
+            'last_name' => 'Dela Cruz',
+            'office' => 'Scholarship Program',
+            'employee_type' => 'contract_of_service',
+            'monthly_compensation' => 10000,
+            'is_active' => true,
+        ]);
+        $secondEmployee = Employee::query()->create([
+            'employee_no' => 'EMP-ORDER-2',
+            'first_name' => 'Bianca',
+            'last_name' => 'Reyes',
+            'office' => 'Scholarship Program',
+            'employee_type' => 'contract_of_service',
+            'monthly_compensation' => 20000,
+            'is_active' => true,
+        ]);
+
+        $payload = [
+            'employee_type' => 'contract_of_service',
+            'payee_name' => 'Scholarship Program Payroll',
+            'responsibility_center' => $responsibilityCenter->id,
+            'employees' => [
+                [
+                    'employee_record_id' => $firstEmployee->id,
+                    'sort_order' => 2,
+                    'payee_name' => 'Aaron Dela Cruz',
+                    'office' => 'Scholarship Program',
+                    'monthly_compensation' => 10000,
+                ],
+                [
+                    'employee_record_id' => $secondEmployee->id,
+                    'sort_order' => 1,
+                    'payee_name' => 'Bianca Reyes',
+                    'office' => 'Scholarship Program',
+                    'monthly_compensation' => 20000,
+                ],
+            ],
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/api/employee-fund-transactions', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.employees.0.employee_record_id', $secondEmployee->id)
+            ->assertJsonPath('data.employees.0.sort_order', 1)
+            ->assertJsonPath('data.employees.1.employee_record_id', $firstEmployee->id)
+            ->assertJsonPath('data.employees.1.sort_order', 2);
+
+        $this->assertDatabaseHas('fund_transaction_employees', [
+            'employee_record_id' => $firstEmployee->id,
+            'sort_order' => 2,
+        ]);
+        $this->assertDatabaseHas('fund_transaction_employees', [
+            'employee_record_id' => $secondEmployee->id,
+            'sort_order' => 1,
+        ]);
+    }
+
     public function test_it_persists_payee_and_agency_for_project_based_transactions(): void
     {
         /** @var User $user */

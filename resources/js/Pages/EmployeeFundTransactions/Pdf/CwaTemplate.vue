@@ -456,7 +456,18 @@ const sig = (part) => {
 };
 
 const sortedEmployees = computed(() =>
-    [...props.employees].sort((a, b) => Number(b.monthly_compensation ?? 0) - Number(a.monthly_compensation ?? 0))
+    [...props.employees].sort((left, right) => {
+        const leftOrder = employeeListSortOrder(left);
+        const rightOrder = employeeListSortOrder(right);
+
+        if (leftOrder !== null || rightOrder !== null) {
+            if (leftOrder === null) return 1;
+            if (rightOrder === null) return -1;
+            if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        }
+
+        return Number(right.monthly_compensation ?? 0) - Number(left.monthly_compensation ?? 0);
+    })
 );
 
 const totalMonthlyComp = computed(() => props.employees.reduce((s, e) => s + Number(e.monthly_compensation ?? 0), 0));
@@ -499,6 +510,12 @@ const money = (val) => {
         minimumFractionDigits: 2,
     }).format(Number(val));
 };
+
+function employeeListSortOrder(employee) {
+    const sortOrder = Number(employee?.sort_order ?? employee?.sortOrder);
+
+    return Number.isFinite(sortOrder) && sortOrder > 0 ? sortOrder : null;
+}
 
 const formatLostHour = (minutes) => {
     const totalMinutes = Number(minutes ?? 0);

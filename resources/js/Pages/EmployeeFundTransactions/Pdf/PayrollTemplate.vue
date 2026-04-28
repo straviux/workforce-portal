@@ -269,7 +269,24 @@ const props = defineProps({
 const explanation = props.voucher.explanation || props.voucher.particulars_description || null;
 
 const sortedEmployees = computed(() =>
-    [...props.employees].sort((a, b) => (a.payee_name ?? '').localeCompare(b.payee_name ?? ''))
+    [...props.employees].sort((left, right) => {
+        const leftOrder = employeeListSortOrder(left);
+        const rightOrder = employeeListSortOrder(right);
+
+        if (leftOrder !== null || rightOrder !== null) {
+            if (leftOrder === null) return 1;
+            if (rightOrder === null) return -1;
+            if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        }
+
+        const compensationDifference = employeeCompensationValue(right) - employeeCompensationValue(left);
+
+        if (compensationDifference !== 0) {
+            return compensationDifference;
+        }
+
+        return String(left?.payee_name ?? '').localeCompare(String(right?.payee_name ?? ''));
+    })
 );
 
 const EMPLOYEES_PER_PAGE = 10;
@@ -339,6 +356,22 @@ function employeePayrollAmount(employee) {
         ?? employee.monthly_compensation
         ?? 0
     );
+}
+
+function employeeCompensationValue(employee) {
+    return Number(
+        employee.monthly_compensation
+        ?? employee.employee_record?.monthly_compensation
+        ?? employee.employeeRecord?.monthly_compensation
+        ?? employeePayrollAmount(employee)
+        ?? 0
+    );
+}
+
+function employeeListSortOrder(employee) {
+    const sortOrder = Number(employee?.sort_order ?? employee?.sortOrder);
+
+    return Number.isFinite(sortOrder) && sortOrder > 0 ? sortOrder : null;
 }
 
 function signatoryByPart(part) {

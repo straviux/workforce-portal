@@ -85,7 +85,9 @@ class EmployeeFundTransaction extends Model
 
     public function employees()
     {
-        return $this->hasMany(FundTransactionEmployee::class, 'fund_transaction_id');
+        return $this->hasMany(FundTransactionEmployee::class, 'fund_transaction_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function employeeRecord()

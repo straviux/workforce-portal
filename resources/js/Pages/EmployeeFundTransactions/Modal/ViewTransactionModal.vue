@@ -99,7 +99,7 @@
                             <div class="ios-card p-4 flex-1">
                                 <p class="text-xs text-surface-400 uppercase tracking-wide pb-2">Payee</p>
                                 <!-- <p>{{ transaction.employees || '—' }}</p> -->
-                                <p v-for="(emp, idx) in transaction.employees" :key="`emp_` + emp.id"
+                                <p v-for="(emp, idx) in sortedEmployees" :key="`emp_` + emp.id"
                                     class="text-xs py-1 font-semibold">{{
                                         idx + 1 }}. {{
                                         emp.payee_name }}</p>
@@ -149,6 +149,10 @@ const dragStart = ref(null);
 const modalStyle = computed(() => ({
     transform: `translate(${dragOffset.value.x}px, ${dragOffset.value.y}px)`,
 }));
+
+const sortedEmployees = computed(() =>
+    sortEmployeesForDisplay(props.transaction?.employees ?? [])
+);
 
 function onDragStart(e) {
     if (e.target.closest('button, input, select, textarea, .p-editor, .p-select')) return;
@@ -208,5 +212,44 @@ function formatTransactionStatus(status) {
 function formatEmployeeType(type) {
     if (!type) return '—';
     return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function sortEmployeesForDisplay(employees) {
+    return [...(Array.isArray(employees) ? employees : [])].sort((left, right) => {
+        const leftOrder = employeeListSortOrder(left);
+        const rightOrder = employeeListSortOrder(right);
+
+        if (leftOrder !== null || rightOrder !== null) {
+            if (leftOrder === null) return 1;
+            if (rightOrder === null) return -1;
+            if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        }
+
+        const compensationDifference = employeeCompensationValue(right) - employeeCompensationValue(left);
+
+        if (compensationDifference !== 0) {
+            return compensationDifference;
+        }
+
+        return String(left?.payee_name ?? '').localeCompare(String(right?.payee_name ?? ''));
+    });
+}
+
+function employeeCompensationValue(employee) {
+    return Number(
+        employee?.monthly_compensation
+        ?? employee?.employee_record?.monthly_compensation
+        ?? employee?.employeeRecord?.monthly_compensation
+        ?? employee?.amount
+        ?? employee?.employee_record?.amount
+        ?? employee?.employeeRecord?.amount
+        ?? 0
+    );
+}
+
+function employeeListSortOrder(employee) {
+    const sortOrder = Number(employee?.sort_order ?? employee?.sortOrder);
+
+    return Number.isFinite(sortOrder) && sortOrder > 0 ? sortOrder : null;
 }
 </script>
