@@ -16,8 +16,10 @@ class UpdateNonRosCertificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'subject_name' => ['required', 'string', 'max:255'],
             'subject_honorific' => ['nullable', 'string', 'max:50'],
+            'subject_firstname' => ['required', 'string', 'max:255'],
+            'subject_middlename' => ['nullable', 'string', 'max:255'],
+            'subject_lastname' => ['required', 'string', 'max:255'],
             'designation' => ['required', 'string', 'max:255'],
             'office' => ['required', 'string', 'max:255'],
             'issued_date' => ['required', 'date'],

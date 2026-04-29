@@ -31,7 +31,7 @@
                     <div class="ios-section pb-4">
                         <p class="ios-section-label">Certification Details</p>
                         <div class="ios-card p-4 space-y-3">
-                            <div class="grid md:grid-cols-[180px_minmax(0,1fr)] gap-3">
+                            <div class="grid md:grid-cols-2 gap-3">
                                 <div class="ios-form-group">
                                     <label class="ios-label">Honorific</label>
                                     <InputText v-model="form.subject_honorific" placeholder="e.g. Mr., Ms., Dr."
@@ -41,11 +41,29 @@
                                 </div>
 
                                 <div class="ios-form-group">
-                                    <label class="ios-label">Name <span class="text-red-500">*</span></label>
-                                    <InputText v-model="form.subject_name" placeholder="e.g. Juan Santos"
+                                    <label class="ios-label">First Name <span class="text-red-500">*</span></label>
+                                    <InputText v-model="form.subject_firstname" placeholder="e.g. Juan"
                                         class="w-full" />
-                                    <span v-if="errors.subject_name" class="ios-hint ios-error">{{ errors.subject_name
-                                        }}</span>
+                                    <span v-if="errors.subject_firstname" class="ios-hint ios-error">{{
+                                        errors.subject_firstname }}</span>
+                                </div>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div class="ios-form-group">
+                                    <label class="ios-label">Middle Name</label>
+                                    <InputText v-model="form.subject_middlename" placeholder="e.g. Reyes"
+                                        class="w-full" />
+                                    <span v-if="errors.subject_middlename" class="ios-hint ios-error">{{
+                                        errors.subject_middlename }}</span>
+                                </div>
+
+                                <div class="ios-form-group">
+                                    <label class="ios-label">Last Name <span class="text-red-500">*</span></label>
+                                    <InputText v-model="form.subject_lastname" placeholder="e.g. Santos"
+                                        class="w-full" />
+                                    <span v-if="errors.subject_lastname" class="ios-hint ios-error">{{
+                                        errors.subject_lastname }}</span>
                                 </div>
                             </div>
 
@@ -119,6 +137,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
+import { resolveCertificationSubjectParts } from '@/Pages/Certifications/support/subjectName';
 
 const props = defineProps({
     show: Boolean,
@@ -134,8 +153,10 @@ const saving = ref(false);
 const errors = ref({});
 
 const defaultForm = () => ({
-    subject_name: '',
     subject_honorific: '',
+    subject_firstname: '',
+    subject_middlename: '',
+    subject_lastname: '',
     designation: '',
     office: '',
     issued_date: new Date(),
@@ -156,8 +177,12 @@ watch(() => props.show, (visible) => {
     errors.value = {};
 
     if (props.mode === 'edit' && props.certification) {
-        form.subject_name = props.certification.subject_name ?? '';
+        const subjectParts = resolveCertificationSubjectParts(props.certification);
+
         form.subject_honorific = props.certification.subject_honorific ?? '';
+        form.subject_firstname = subjectParts.firstname;
+        form.subject_middlename = subjectParts.middlename;
+        form.subject_lastname = subjectParts.lastname;
         form.designation = props.certification.designation ?? '';
         form.office = props.certification.office ?? '';
         form.issued_date = parseDate(props.certification.issued_date) ?? new Date();
@@ -196,8 +221,10 @@ async function submit() {
     errors.value = {};
 
     const payload = {
-        subject_name: form.subject_name,
         subject_honorific: form.subject_honorific,
+        subject_firstname: form.subject_firstname,
+        subject_middlename: form.subject_middlename,
+        subject_lastname: form.subject_lastname,
         designation: form.designation,
         office: form.office,
         issued_date: formatDateForApi(form.issued_date),

@@ -24,6 +24,9 @@ class CertificationController extends Controller
             if ($search = trim((string) $request->get('search', ''))) {
                 $query->where(function ($certificationQuery) use ($search) {
                     $certificationQuery->where('subject_name', 'like', "%{$search}%")
+                        ->orWhere('subject_firstname', 'like', "%{$search}%")
+                        ->orWhere('subject_middlename', 'like', "%{$search}%")
+                        ->orWhere('subject_lastname', 'like', "%{$search}%")
                         ->orWhere('subject_honorific', 'like', "%{$search}%")
                         ->orWhere('designation', 'like', "%{$search}%")
                         ->orWhere('office', 'like', "%{$search}%")
@@ -164,13 +167,21 @@ class CertificationController extends Controller
         $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
             ? 'office_first'
             : 'designation_first';
+        $subjectFirstName = trim((string) $validated['subject_firstname']);
+        $subjectMiddleName = filled($validated['subject_middlename'] ?? null)
+            ? trim((string) $validated['subject_middlename'])
+            : null;
+        $subjectLastName = trim((string) $validated['subject_lastname']);
 
         return [
             'certification_type' => 'non_ros',
-            'subject_name' => $validated['subject_name'],
+            'subject_name' => $this->buildSubjectName($subjectFirstName, $subjectMiddleName, $subjectLastName),
             'subject_honorific' => filled($validated['subject_honorific'] ?? null)
                 ? trim((string) $validated['subject_honorific'])
                 : null,
+            'subject_firstname' => $subjectFirstName,
+            'subject_middlename' => $subjectMiddleName,
+            'subject_lastname' => $subjectLastName,
             'designation' => $validated['designation'],
             'office' => $validated['office'],
             'issued_date' => $validated['issued_date'],
@@ -183,5 +194,12 @@ class CertificationController extends Controller
             'signatory_show_office' => $showOffice,
             'signatory_info_order' => $infoOrder,
         ];
+    }
+
+    private function buildSubjectName(string $subjectFirstName, ?string $subjectMiddleName, string $subjectLastName): string
+    {
+        return collect([$subjectFirstName, $subjectMiddleName, $subjectLastName])
+            ->filter(fn ($value) => filled($value))
+            ->implode(' ');
     }
 }

@@ -122,7 +122,7 @@
                                     </div>
                                 </template>
 
-                                <Column field="subject_name" header="Name" style="min-width:220px;">
+                                <Column field="subject_lastname" header="Name" style="min-width:220px;">
                                     <template #body="{ data }">
                                         <div>
                                             <p class="font-medium text-surface-800 dark:text-surface-100">{{
@@ -204,6 +204,10 @@ import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewMo
 import DeleteConfirmModal from '@/Pages/Certifications/Modal/DeleteConfirmModal.vue';
 import NonRosCertificationModal from '@/Pages/Certifications/Modal/NonRosCertificationModal.vue';
 import NonRosCertificationTemplate from '@/Pages/Certifications/Pdf/NonRosCertificationTemplate.vue';
+import {
+    buildCertificationSubjectDisplayName,
+    buildCertificationSubjectName,
+} from '@/Pages/Certifications/support/subjectName';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -431,7 +435,8 @@ function printCertification(certification) {
 
     const bodyHtml = '<style>@page { margin: 12mm 22mm; } @media screen { body { padding: 12mm 22mm; font-family: Verdana, Geneva, sans-serif; } } @media print { body { padding: 0; font-family: Verdana, Geneva, sans-serif; } }</style>' + certificationHtml;
 
-    const safeName = String(certification.subject_name ?? `Certification_${certification.id}`)
+    const subjectName = buildCertificationSubjectName(certification) || String(certification.subject_name ?? '').trim();
+    const safeName = String(subjectName || `Certification_${certification.id}`)
         .replace(/\s+/g, '_');
 
     pdfPreview.title = `Non-ROS-Certification-${safeName}`;
@@ -441,10 +446,7 @@ function printCertification(certification) {
 }
 
 function formatSubjectDisplayName(certification) {
-    const honorific = String(certification?.subject_honorific ?? '').trim();
-    const name = String(certification?.subject_name ?? '').trim();
-
-    return [honorific, name].filter(Boolean).join(' ') || '—';
+    return buildCertificationSubjectDisplayName(certification);
 }
 
 function formatDate(value) {

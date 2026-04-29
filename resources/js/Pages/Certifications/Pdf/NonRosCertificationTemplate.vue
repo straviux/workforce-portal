@@ -68,6 +68,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import {
+    buildCertificationSubjectDisplayName,
+    buildCertificationSubjectShortReference,
+} from '@/Pages/Certifications/support/subjectName';
 
 const props = defineProps({
     certification: { type: Object, required: true },
@@ -75,23 +79,15 @@ const props = defineProps({
 
 const logoUrl = '/images/pgp-logo.svg';
 
-const subjectName = computed(() => props.certification?.subject_name || '—');
-const subjectHonorific = computed(() => normalizeText(props.certification?.subject_honorific));
+const subjectDisplayName = computed(() => buildCertificationSubjectDisplayName(props.certification));
 const designation = computed(() => props.certification?.designation || '—');
 const office = computed(() => props.certification?.office || '—');
 
-const subjectDisplayName = computed(() => {
-    if (subjectName.value === '—') return '—';
-
-    return [subjectHonorific.value, subjectName.value].filter(Boolean).join(' ');
-});
-
 const subjectReference = computed(() => subjectDisplayName.value === '—' ? 'the requesting party' : subjectDisplayName.value);
 const subjectShortReference = computed(() => {
-    if (subjectName.value === '—') return 'the requesting party';
+    const value = buildCertificationSubjectShortReference(props.certification);
 
-    const shortenedName = removeFirstName(subjectName.value);
-    return [subjectHonorific.value, shortenedName].filter(Boolean).join(' ') || subjectDisplayName.value;
+    return value === '—' ? 'the requesting party' : value;
 });
 
 const formattedIssuedDate = computed(() => {
@@ -163,16 +159,6 @@ function uniqueTextLines(lines) {
             seen.add(key);
             return true;
         });
-}
-
-function removeFirstName(value) {
-    const parts = String(value).trim().split(/\s+/).filter(Boolean);
-
-    if (parts.length <= 1) {
-        return parts[0] ?? '';
-    }
-
-    return parts.slice(1).join(' ');
 }
 
 function formatOrdinal(value) {

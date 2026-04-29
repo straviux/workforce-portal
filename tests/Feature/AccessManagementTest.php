@@ -140,8 +140,10 @@ class AccessManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->postJson('/api/certifications/non-ros', [
-                'subject_name' => 'Maria Santos',
                 'subject_honorific' => 'Ms.',
+                'subject_firstname' => 'Maria',
+                'subject_middlename' => 'Mae',
+                'subject_lastname' => 'Santos',
                 'designation' => 'Administrative Aide VI',
                 'office' => 'Human Resource Management Office',
                 'issued_date' => '2026-04-24',
@@ -153,8 +155,11 @@ class AccessManagementTest extends TestCase
                 'signatory_info_order' => 'office_first',
             ])
             ->assertCreated()
-            ->assertJsonPath('data.subject_name', 'Maria Santos')
+            ->assertJsonPath('data.subject_name', 'Maria Mae Santos')
             ->assertJsonPath('data.subject_honorific', 'Ms.')
+            ->assertJsonPath('data.subject_firstname', 'Maria')
+            ->assertJsonPath('data.subject_middlename', 'Mae')
+            ->assertJsonPath('data.subject_lastname', 'Santos')
             ->assertJsonPath('data.signatory_name', 'Juan Dela Cruz')
             ->assertJsonPath('data.signatory_titles', [])
             ->assertJsonPath('data.signatory_name_underline', true)
@@ -164,8 +169,11 @@ class AccessManagementTest extends TestCase
 
         $this->assertDatabaseHas('certifications', [
             'certification_type' => 'non_ros',
-            'subject_name' => 'Maria Santos',
+            'subject_name' => 'Maria Mae Santos',
             'subject_honorific' => 'Ms.',
+            'subject_firstname' => 'Maria',
+            'subject_middlename' => 'Mae',
+            'subject_lastname' => 'Santos',
             'designation' => 'Administrative Aide VI',
             'office' => 'Human Resource Management Office',
         ]);
@@ -182,8 +190,11 @@ class AccessManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('filtered_total', 1)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.subject_name', 'Maria Santos')
+            ->assertJsonPath('data.0.subject_name', 'Maria Mae Santos')
             ->assertJsonPath('data.0.subject_honorific', 'Ms.')
+            ->assertJsonPath('data.0.subject_firstname', 'Maria')
+            ->assertJsonPath('data.0.subject_middlename', 'Mae')
+            ->assertJsonPath('data.0.subject_lastname', 'Santos')
             ->assertJsonPath('data.0.signatory_titles', [])
             ->assertJsonPath('data.0.signatory_name_underline', true)
             ->assertJsonPath('data.0.signatory_show_designation', false)
@@ -214,8 +225,11 @@ class AccessManagementTest extends TestCase
 
         $certification = Certification::query()->create([
             'certification_type' => 'non_ros',
-            'subject_name' => 'Ana Lopez',
+            'subject_name' => 'Ana Marie Lopez',
             'subject_honorific' => 'Ms.',
+            'subject_firstname' => 'Ana',
+            'subject_middlename' => 'Marie',
+            'subject_lastname' => 'Lopez',
             'designation' => 'Administrative Officer II',
             'office' => 'Human Resource Management Office',
             'issued_date' => '2026-04-24',
@@ -232,8 +246,10 @@ class AccessManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->putJson("/api/certifications/non-ros/{$certification->id}", [
-                'subject_name' => 'Ana Lopez',
                 'subject_honorific' => 'Ms.',
+                'subject_firstname' => 'Ana',
+                'subject_middlename' => 'Marie',
+                'subject_lastname' => 'Lopez',
                 'designation' => 'Administrative Officer II',
                 'office' => 'Human Resource Management Office',
                 'issued_date' => '2026-04-24',
@@ -245,6 +261,10 @@ class AccessManagementTest extends TestCase
                 'signatory_info_order' => 'office_first',
             ])
             ->assertOk()
+            ->assertJsonPath('data.subject_name', 'Ana Marie Lopez')
+            ->assertJsonPath('data.subject_firstname', 'Ana')
+            ->assertJsonPath('data.subject_middlename', 'Marie')
+            ->assertJsonPath('data.subject_lastname', 'Lopez')
             ->assertJsonPath('data.signatory_name', 'Maria R. Perez')
             ->assertJsonPath('data.signatory_titles', [])
             ->assertJsonPath('data.signatory_name_underline', false)
@@ -255,6 +275,10 @@ class AccessManagementTest extends TestCase
         $certification->refresh();
 
         $this->assertSame($updatedOfficeHead->id, $certification->office_head_signatory_id);
+    $this->assertSame('Ana Marie Lopez', $certification->subject_name);
+    $this->assertSame('Ana', $certification->subject_firstname);
+    $this->assertSame('Marie', $certification->subject_middlename);
+    $this->assertSame('Lopez', $certification->subject_lastname);
         $this->assertSame('Maria R. Perez', $certification->signatory_name);
         $this->assertSame('Provincial Administrator Office', $certification->signatory_office);
         $this->assertSame([], $certification->signatory_titles);
@@ -277,8 +301,11 @@ class AccessManagementTest extends TestCase
 
         $certification = Certification::query()->create([
             'certification_type' => 'non_ros',
-            'subject_name' => 'Ana Lopez',
+            'subject_name' => 'Ana Marie Lopez',
             'subject_honorific' => 'Ms.',
+            'subject_firstname' => 'Ana',
+            'subject_middlename' => 'Marie',
+            'subject_lastname' => 'Lopez',
             'designation' => 'Administrative Officer II',
             'office' => 'Human Resource Management Office',
             'issued_date' => '2026-04-24',
