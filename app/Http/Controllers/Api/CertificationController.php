@@ -199,7 +199,7 @@ class CertificationController extends Controller
     private function buildSubjectName(string $subjectFirstName, ?string $subjectMiddleName, string $subjectLastName): string
     {
         return collect([$subjectFirstName, $subjectMiddleName, $subjectLastName])
-            ->filter(fn ($value) => filled($value))
+            ->filter(fn($value) => filled($value))
             ->implode(' ');
     }
 }

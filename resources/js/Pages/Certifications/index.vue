@@ -128,7 +128,7 @@
                                             <p class="font-medium text-surface-800 dark:text-surface-100">{{
                                                 formatSubjectDisplayName(data) }}</p>
                                             <p class="text-xs text-surface-400">Saved {{ formatDateTime(data.created_at)
-                                                }}</p>
+                                            }}</p>
                                         </div>
                                     </template>
                                 </Column>

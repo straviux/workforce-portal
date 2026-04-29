@@ -73,7 +73,7 @@
                                     <InputText v-model="form.designation" placeholder="e.g. Administrative Aide VI"
                                         class="w-full" />
                                     <span v-if="errors.designation" class="ios-hint ios-error">{{ errors.designation
-                                        }}</span>
+                                    }}</span>
                                 </div>
 
                                 <div class="ios-form-group">
@@ -90,7 +90,7 @@
                                     <DatePicker v-model="form.issued_date" class="w-full" showIcon fluid
                                         dateFormat="MM d, yy" />
                                     <span v-if="errors.issued_date" class="ios-hint ios-error">{{ errors.issued_date
-                                        }}</span>
+                                    }}</span>
                                 </div>
                             </div>
                         </div>

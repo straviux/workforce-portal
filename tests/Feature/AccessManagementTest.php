@@ -275,10 +275,10 @@ class AccessManagementTest extends TestCase
         $certification->refresh();
 
         $this->assertSame($updatedOfficeHead->id, $certification->office_head_signatory_id);
-    $this->assertSame('Ana Marie Lopez', $certification->subject_name);
-    $this->assertSame('Ana', $certification->subject_firstname);
-    $this->assertSame('Marie', $certification->subject_middlename);
-    $this->assertSame('Lopez', $certification->subject_lastname);
+        $this->assertSame('Ana Marie Lopez', $certification->subject_name);
+        $this->assertSame('Ana', $certification->subject_firstname);
+        $this->assertSame('Marie', $certification->subject_middlename);
+        $this->assertSame('Lopez', $certification->subject_lastname);
         $this->assertSame('Maria R. Perez', $certification->signatory_name);
         $this->assertSame('Provincial Administrator Office', $certification->signatory_office);
         $this->assertSame([], $certification->signatory_titles);
