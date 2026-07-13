@@ -322,7 +322,8 @@
                                         <input v-if="taskValue.task_type === 'countable'"
                                             v-model.number="taskValue.cell.numeric_value" v-keyfilter.int type="text"
                                             class="w-1/3 justify-center rounded border border-surface-300 bg-white px-3 py-2 text-right text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100 cursor-pointer"
-                                            :disabled="!canManage || isSavingReport" />
+                                            :disabled="!canManage || isSavingReport"
+                                            @blur="taskValue.cell.numeric_value = coerceNumericDisplayValue(taskValue.cell.numeric_value)" />
 
                                         <button v-else type="button"
                                             class="w-1/3 justify-center rounded border  px-3 py-2  text-sm font-semibold transition cursor-pointer"
@@ -574,6 +575,8 @@ const normalizedTasks = computed(() => taskRows.value.map((row) => ({
     sort_order: row.sort_order,
     task_name: String(row.task_name ?? '').trim(),
     task_type: row.task_type,
+    auto_min: Number.isFinite(row.auto_min) ? row.auto_min : DEFAULT_COUNTABLE_MIN,
+    auto_max: Number.isFinite(row.auto_max) ? row.auto_max : DEFAULT_COUNTABLE_MAX,
 })));
 const subjectMetaLine = computed(() => {
     if (!props.subject) return 'Select a subject to encode tasks and generate SWA.';
@@ -1197,6 +1200,7 @@ function isCountableRangeInvalid(row) {
     return !Number.isFinite(row.auto_min)
         || !Number.isFinite(row.auto_max)
         || row.auto_min < 0
+        || row.auto_max < 0
         || row.auto_max < row.auto_min;
 }
 
@@ -1273,6 +1277,16 @@ function randomCountableValue(row) {
     const { min, max } = resolveCountableRange(row);
 
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Coerce a numeric value for display: negative → 0, NaN → 0.
+ * Zero values will display as '-' in the report template.
+ */
+function coerceNumericDisplayValue(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue) || numericValue < 0) return 0;
+    return numericValue;
 }
 
 function randomMarkValue() {

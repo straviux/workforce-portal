@@ -1,6 +1,6 @@
 <template>
     <Dialog :visible="show" @update:visible="value => emit('update:show', value)" modal :draggable="false"
-        :closable="false" :pt="{ root: { class: 'ios-dialog-root' }, mask: { class: 'ios-dialog-mask' } }">
+        :closable="false" :closeOnEscape="false" :pt="{ root: { class: 'ios-dialog-root' }, mask: { class: 'ios-dialog-mask' } }">
         <template #container>
             <div class="ios-modal w-[96vw] max-w-[1380px]" :style="modalStyle">
                 <div class="ios-nav-bar cursor-grab active:cursor-grabbing select-none" @pointerdown="onDragStart">

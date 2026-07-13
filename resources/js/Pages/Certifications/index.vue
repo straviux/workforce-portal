@@ -42,6 +42,7 @@
     </div>
 
     <Dialog v-model:visible="showNonRosRegistry" modal :draggable="false" :closable="false"
+        :closeOnEscape="!showCertificationModal && !showDeleteModal && !pdfPreview.show && !contextMenuCertification"
         :pt="{ root: { class: 'ios-dialog-root' }, mask: { class: 'ios-dialog-mask' } }">
         <template #container>
             <div class="ios-modal w-[98vw] max-w-370" :style="registryModalStyle">

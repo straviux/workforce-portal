@@ -1,5 +1,5 @@
 <template>
-    <div class="swa-sheet">
+    <div class="swa-sheet" style="margin-top:0 !important">
         <div class="swa-sheet__header">
             <img :src="logoUrl" alt="PGP Logo" class="swa-sheet__logo" />
             <p class="swa-sheet__line">Provincial Government of Palawan</p>
@@ -193,6 +193,7 @@ function formatNumericValue(value) {
 
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) return String(value);
+    if (numericValue === 0) return '-';
 
     return Number.isInteger(numericValue)
         ? String(numericValue)
