@@ -68,7 +68,7 @@
                             </button>
 
                             <span v-else class="swa-value-text">{{ taskValue.cell.mark_value === 'check' ? '✓' : '-'
-                            }}</span>
+                                }}</span>
                         </td>
                         <td class="swa-value-cell"></td>
                     </template>

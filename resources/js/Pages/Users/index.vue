@@ -10,6 +10,8 @@
             </p>
         </div>
         <div v-if="canManageUsers" class="flex flex-wrap items-center justify-end gap-2">
+            <Button icon="pi pi-image" label="Office Logo" severity="secondary" outlined class="rounded"
+                @click="openLogoDialog" />
             <Button icon="pi pi-database" label="Import Scholarship Users" severity="secondary" outlined class="rounded"
                 @click="showImportDialog = true" />
             <Button icon="pi pi-plus" label="New User" class="rounded" @click="openCreate" />
@@ -205,6 +207,51 @@
                 @click="importScholarshipUsers" />
         </template>
     </Dialog>
+
+    <!-- Office Logo Modal -->
+    <Dialog v-model:visible="showLogoDialog" modal header="Office Logo" :style="{ width: '30rem' }" :draggable="false">
+        <div class="space-y-4">
+            <p class="text-sm text-surface-500">
+                This logo is used for official documents and branding. It is separate from the PGP logo.
+            </p>
+
+            <!-- Current Logo Preview -->
+            <div class="flex flex-col items-center gap-3">
+                <div
+                    class="w-full h-40 rounded-2xl border-2 border-dashed border-surface-200 dark:border-surface-700 flex items-center justify-center bg-surface-50 dark:bg-surface-900/40 overflow-hidden">
+                    <img v-if="currentLogoUrl" :src="currentLogoUrl" alt="Office Logo"
+                        class="max-w-full max-h-full object-contain p-4" />
+                    <div v-else class="text-center text-surface-400">
+                        <i class="pi pi-image text-3xl block mb-2"></i>
+                        <span class="text-sm">No logo uploaded</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="space-y-2">
+                <label class="ios-label">Upload New Logo</label>
+                <div
+                    class="rounded-2xl border border-surface-200 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-900/40">
+                    <input ref="fileInputRef" type="file" accept="image/*" class="w-full text-sm"
+                        @change="onFileSelected" />
+                    <p class="text-xs text-surface-400 mt-1.5">
+                        Supported: JPEG, PNG, GIF, SVG, WebP (max 5 MB)
+                    </p>
+                </div>
+            </div>
+        </div>
+        <template #footer>
+            <Button v-if="currentLogoUrl" label="Remove Logo" icon="pi pi-trash" severity="danger" text class="rounded"
+                :loading="logoDeleting" @click="removeLogo"
+                :disabled="logoUploading" />
+            <div class="flex-1"></div>
+            <Button label="Cancel" severity="secondary" text class="rounded" @click="showLogoDialog = false"
+                :disabled="logoUploading || logoDeleting" />
+            <Button label="Upload Logo" icon="pi pi-upload" class="rounded" :loading="logoUploading"
+                @click="uploadLogo" :disabled="!selectedFile || logoDeleting" />
+        </template>
+    </Dialog>
 </template>
 
 <script setup>
@@ -242,11 +289,19 @@ const filters = reactive({
 const showCreateEdit = ref(false);
 const showDelete = ref(false);
 const showImportDialog = ref(false);
+const showLogoDialog = ref(false);
 const modalMode = ref('create');
 const selectedUser = ref(null);
 const rowMenuRef = ref(null);
 const rowMenuItems = ref([]);
 const formErrors = ref({});
+
+// Office logo state
+const currentLogoUrl = ref(null);
+const selectedFile = ref(null);
+const fileInputRef = ref(null);
+const logoUploading = ref(false);
+const logoDeleting = ref(false);
 
 const defaultForm = () => ({
     name: '',
@@ -464,6 +519,97 @@ async function confirmDelete() {
         toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not delete user.', life: 3500 });
     } finally {
         deleting.value = false;
+    }
+}
+
+// --- Office Logo ---
+
+async function fetchLogo() {
+    try {
+        const { data } = await axios.get('/api/settings/office-logo');
+        currentLogoUrl.value = data.logo_url;
+    } catch {
+        // Silently ignore — logo remains null
+    }
+}
+
+async function openLogoDialog() {
+    selectedFile.value = null;
+    if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+    }
+    await fetchLogo();
+    showLogoDialog.value = true;
+}
+
+function onFileSelected(event) {
+    const file = event.target.files?.[0] ?? null;
+    selectedFile.value = file;
+}
+
+async function uploadLogo() {
+    if (!selectedFile.value) return;
+
+    logoUploading.value = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('logo', selectedFile.value);
+
+        const { data } = await axios.post('/api/settings/office-logo', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        currentLogoUrl.value = data.logo_url + '?t=' + Date.now();
+        selectedFile.value = null;
+        if (fileInputRef.value) {
+            fileInputRef.value.value = '';
+        }
+
+        toast.add({
+            severity: 'success',
+            summary: 'Logo Updated',
+            detail: 'Office logo has been updated.',
+            life: 3000,
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Upload Failed',
+            detail: error.response?.data?.message || 'Could not upload logo.',
+            life: 4000,
+        });
+    } finally {
+        logoUploading.value = false;
+    }
+}
+
+async function removeLogo() {
+    logoDeleting.value = true;
+
+    try {
+        await axios.delete('/api/settings/office-logo');
+        currentLogoUrl.value = null;
+        selectedFile.value = null;
+        if (fileInputRef.value) {
+            fileInputRef.value.value = '';
+        }
+
+        toast.add({
+            severity: 'success',
+            summary: 'Logo Removed',
+            detail: 'Office logo has been removed.',
+            life: 3000,
+        });
+    } catch (error) {
+        toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: error.response?.data?.message || 'Could not remove logo.',
+            life: 4000,
+        });
+    } finally {
+        logoDeleting.value = false;
     }
 }
 

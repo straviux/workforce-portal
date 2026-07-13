@@ -1,75 +1,108 @@
-function normalizeText(value) {
-	return typeof value === 'string' ? value.trim() : '';
+/**
+ * Certification subject name helpers.
+ *
+ * Expected certification fields:
+ *   subject_name       — pre-computed full name (fallback)
+ *   subject_honorific  — e.g. Mr., Ms., Dr.
+ *   subject_firstname  — e.g. Juan
+ *   subject_middlename — e.g. Reyes
+ *   subject_lastname   — e.g. Dela Cruz
+ */
+
+/**
+ * Return a human-readable display name for the certification subject.
+ * Includes honorific if present.
+ *
+ * @param {Object} cert
+ * @returns {string}
+ */
+export function buildCertificationSubjectDisplayName(cert) {
+    if (!cert) return '—';
+
+    const parts = [
+        cert.subject_honorific || '',
+        cert.subject_firstname || '',
+        cert.subject_middlename || '',
+        cert.subject_lastname || '',
+    ]
+        .map((s) => (typeof s === 'string' ? s.trim() : ''))
+        .filter(Boolean);
+
+    return parts.length > 0 ? parts.join(' ') : (cert.subject_name || '—');
 }
 
-function splitLegacySubjectName(value) {
-	const parts = normalizeText(value).split(/\s+/).filter(Boolean);
+/**
+ * Return the full subject name (no honorific).
+ * Used for filename generation.
+ *
+ * @param {Object} cert
+ * @returns {string}
+ */
+export function buildCertificationSubjectName(cert) {
+    if (!cert) return '—';
 
-	if (!parts.length) {
-		return {
-			firstname: '',
-			middlename: '',
-			lastname: '',
-		};
-	}
+    const parts = [
+        cert.subject_firstname || '',
+        cert.subject_middlename || '',
+        cert.subject_lastname || '',
+    ]
+        .map((s) => (typeof s === 'string' ? s.trim() : ''))
+        .filter(Boolean);
 
-	if (parts.length === 1) {
-		return {
-			firstname: parts[0],
-			middlename: '',
-			lastname: '',
-		};
-	}
-
-	return {
-		firstname: parts[0],
-		middlename: parts.slice(1, -1).join(' '),
-		lastname: parts[parts.length - 1],
-	};
+    return parts.length > 0 ? parts.join(' ') : (cert.subject_name || '—');
 }
 
-function lastToken(value) {
-	const parts = normalizeText(value).split(/\s+/).filter(Boolean);
+/**
+ * Return a short reference for the subject (honorific + lastname).
+ * e.g. "Mr. Dela Cruz"
+ *
+ * @param {Object} cert
+ * @returns {string}
+ */
+export function buildCertificationSubjectShortReference(cert) {
+    if (!cert) return '—';
 
-	return parts.length ? parts[parts.length - 1] : '';
+    const honorific = typeof cert.subject_honorific === 'string'
+        ? cert.subject_honorific.trim()
+        : '';
+    const lastname = typeof cert.subject_lastname === 'string'
+        ? cert.subject_lastname.trim()
+        : '';
+
+    if (honorific && lastname) return `${honorific} ${lastname}`;
+    if (lastname) return lastname;
+    if (honorific) return honorific;
+
+    return buildCertificationSubjectName(cert);
 }
 
-export function resolveCertificationSubjectParts(certification) {
-	const firstname = normalizeText(certification?.subject_firstname);
-	const middlename = normalizeText(certification?.subject_middlename);
-	const lastname = normalizeText(certification?.subject_lastname);
+/**
+ * Resolve subject name parts from a certification object.
+ * Used to pre-populate the edit form.
+ *
+ * @param {Object} cert
+ * @returns {{ firstname: string, middlename: string, lastname: string }}
+ */
+export function resolveCertificationSubjectParts(cert) {
+    if (!cert) return { firstname: '', middlename: '', lastname: '' };
 
-	if (firstname || middlename || lastname) {
-		return {
-			firstname,
-			middlename,
-			lastname,
-		};
-	}
+    const firstname = cert.subject_firstname ?? '';
+    const middlename = cert.subject_middlename ?? '';
+    const lastname = cert.subject_lastname ?? '';
 
-	return splitLegacySubjectName(certification?.subject_name);
-}
+    // Fallback: parse subject_name if individual fields are missing
+    if (!firstname && !middlename && !lastname && cert.subject_name) {
+        const nameParts = String(cert.subject_name).trim().split(/\s+/);
+        return {
+            firstname: nameParts[0] ?? '',
+            middlename: nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : '',
+            lastname: nameParts.length > 1 ? nameParts[nameParts.length - 1] : '',
+        };
+    }
 
-export function buildCertificationSubjectName(certification) {
-	const { firstname, middlename, lastname } = resolveCertificationSubjectParts(certification);
-
-	return [firstname, middlename, lastname].filter(Boolean).join(' ');
-}
-
-export function buildCertificationSubjectDisplayName(certification) {
-	const honorific = normalizeText(certification?.subject_honorific);
-	const subjectName = buildCertificationSubjectName(certification);
-
-	return [honorific, subjectName].filter(Boolean).join(' ') || '—';
-}
-
-export function buildCertificationSubjectShortReference(certification) {
-	const honorific = normalizeText(certification?.subject_honorific);
-	const { lastname } = resolveCertificationSubjectParts(certification);
-	const shortName = lastname || lastToken(buildCertificationSubjectName(certification));
-
-	return (
-		[honorific, shortName].filter(Boolean).join(' ') ||
-		buildCertificationSubjectDisplayName(certification)
-	);
+    return {
+        firstname: typeof firstname === 'string' ? firstname.trim() : '',
+        middlename: typeof middlename === 'string' ? middlename.trim() : '',
+        lastname: typeof lastname === 'string' ? lastname.trim() : '',
+    };
 }

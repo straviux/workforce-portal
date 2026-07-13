@@ -247,6 +247,17 @@ const pdfPreview = reactive({
     size: 'a4',
 });
 
+const officeLogoForPdf = ref(null);
+
+onMounted(async () => {
+    try {
+        const { data } = await axios.get('/api/settings/office-logo');
+        officeLogoForPdf.value = data.logo_url;
+    } catch {
+        // Logo stays null
+    }
+});
+
 const paginatorFirst = computed(() => (pagination.current_page - 1) * pagination.per_page);
 const currentPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageCertifications = computed(() => currentPermissions.value.includes('certifications.manage'));
@@ -431,6 +442,7 @@ async function handleDelete() {
 function printCertification(certification) {
     const certificationHtml = renderVueTemplate(NonRosCertificationTemplate, {
         certification,
+        officeLogoUrl: officeLogoForPdf.value,
     });
 
     const bodyHtml = '<style>@page { margin: 12mm 22mm; } @media screen { body { padding: 12mm 22mm; font-family: Verdana, Geneva, sans-serif; } } @media print { body { padding: 0; font-family: Verdana, Geneva, sans-serif; } }</style>' + certificationHtml;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeFundTransactionController;
 use App\Http\Controllers\Api\ResponsibilityCenterController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SignatoryController;
 use App\Http\Controllers\Api\SwaController;
 use App\Http\Controllers\Api\UserController;
@@ -139,4 +140,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:roles.manage');
     Route::delete('/roles/{id}', [RoleController::class, 'destroy'])
         ->middleware('check.permission:roles.manage');
+
+    // Settings – Office Logo
+    Route::get('/settings/office-logo', [SettingsController::class, 'getOfficeLogo']);
+    Route::post('/settings/office-logo', [SettingsController::class, 'uploadOfficeLogo'])
+        ->middleware('check.permission:users.manage');
+    Route::delete('/settings/office-logo', [SettingsController::class, 'deleteOfficeLogo'])
+        ->middleware('check.permission:users.manage');
 });

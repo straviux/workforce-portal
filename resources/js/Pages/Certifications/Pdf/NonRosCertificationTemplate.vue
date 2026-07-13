@@ -2,10 +2,14 @@
     <div
         style="max-width:950px;margin:0 auto;background:#fff;font-family:Verdana,Geneva,sans-serif;font-size:11pt;line-height:1.55;color:#333;">
 
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
-            <img :src="logoUrl" alt="PGP Logo" style="width:82pt;height:auto;margin-bottom:10pt;" />
+        <div style="display:flex;align-items:center;justify-content:center;gap:14pt;padding:4pt 0;margin-top:12pt;">
+            <!-- PGP Logo (left) -->
+            <div style="flex-shrink:0;text-align:center;">
+                <img :src="pgpLogoUrl" alt="PGP Logo" style="width:68pt;height:auto;" />
+            </div>
 
-            <div>
+            <!-- Header Text (center) -->
+            <div style="text-align:center;">
                 <p style="font-size:11.5pt;">Republic of the Philippines</p>
                 <p style="font-size:11.5pt;margin-top: -2pt !important;">Provincial Government of Palawan</p>
                 <p style="font-size:11.5pt;font-weight: 700;margin-top: -2pt !important;">Office of the Governor</p>
@@ -13,13 +17,19 @@
                     Princesa
                     City</p>
             </div>
+
+            <!-- Office Logo (right) -->
+            <div style="flex-shrink:0;text-align:center;">
+                <img v-if="officeLogoUrl" :src="officeLogoUrl" alt="Office Logo"
+                    style="width:72pt;height:auto;" />
+            </div>
         </div>
 
-        <div style="text-align:center;margin-top:28pt;">
+        <div style="text-align:center;margin-top:30pt;">
             <p style="font-size:18pt;font-weight:700;letter-spacing:2.7pt;">CERTIFICATION</p>
         </div>
 
-        <div style="margin-top:30pt;font-size:11.5pt;line-height:1.9;text-align:justify;">
+        <div style="margin-top:34pt;font-size:11.5pt;line-height:1.9;text-align:justify;">
             <p style="text-indent:40pt;">
                 THIS IS TO CERTIFY that <strong>{{ subjectDisplayName }},</strong> {{
                     designation }} of {{ office }}, is not a scholar/beneficiary under the <strong>Provincial Government of
@@ -27,7 +37,7 @@
                     YAKAP sa Edukasyon Scholarship Program</strong>
             </p>
 
-            <p style="text-indent:40pt;margin-top:14pt !important;">
+            <p style="text-indent:40pt;margin-top:16pt !important;">
                 Based on program records, {{ subjectReference }} has not received any form of educational financial
                 assistance, grant, or scholarship support from this Office. Accordingly, {{ subjectReference }} does
                 not have any contractual obligations, including but not limited to Return -of- Service (ROS)
@@ -35,26 +45,26 @@
                 Palawan.
             </p>
 
-            <p style="text-indent:40pt;margin-top:14pt !important;">
+            <p style="text-indent:40pt;margin-top:16pt !important;">
                 Further, this is to certify that {{ subjectShortReference }} is hereby cleared of any and all
                 obligations
                 and accountabilities in relation to the Provincial Government of Palawan YAKAP sa Edukasyon Scholarship
                 Program.
             </p>
 
-            <p style="text-indent:40pt;margin-top:14pt !important;">
+            <p style="text-indent:40pt;margin-top:16pt !important;">
                 This certification is issued upon the request of <strong>{{ subjectShortReference }}</strong> for
                 whatever legal or official purpose it may serve.
             </p>
 
-            <p style="text-indent:40pt;margin-top:14pt !important;">
+            <p style="text-indent:40pt;margin-top:16pt !important;">
                 Issued this <span v-html="formattedIssuedDate" /> at the Provincial Government of Palawan, Puerto
                 Princesa City,
                 Philippines.
             </p>
         </div>
 
-        <div style="margin-top:54pt;display:flex;justify-content:flex-end;">
+        <div style="margin-top:64pt;display:flex;justify-content:flex-end;">
             <div>
                 <p style="font-weight: 700;">Certified Correct:</p>
                 <p :style="signatoryNameStyle">{{
@@ -75,9 +85,10 @@ import {
 
 const props = defineProps({
     certification: { type: Object, required: true },
+    officeLogoUrl: { type: String, default: null },
 });
 
-const logoUrl = '/images/pgp-logo.svg';
+const pgpLogoUrl = '/images/pgp-logo.svg';
 
 const subjectDisplayName = computed(() => buildCertificationSubjectDisplayName(props.certification));
 const designation = computed(() => props.certification?.designation || '—');
@@ -121,8 +132,8 @@ const signatoryInfoOrder = computed(() => props.certification?.signatory_info_or
     ? 'office_first'
     : 'designation_first');
 const signatoryNameStyle = computed(() => signatoryNameUnderline.value
-    ? 'font-weight:700;font-size:11pt;margin-top: 42pt !important;display:inline-block;padding-bottom:2pt;border-bottom:1pt solid currentColor;'
-    : 'font-weight:700;font-size:11pt;margin-top: 42pt !important;');
+    ? 'font-weight:700;font-size:11pt;margin-top: 44pt !important;display:inline-block;padding-bottom:2pt;border-bottom:1pt solid currentColor;'
+    : 'font-weight:700;font-size:11pt;margin-top: 44pt !important;');
 const signatoryDetailLines = computed(() => {
     const designationLines = showSignatoryDesignation.value
         ? signatoryTitles.value.filter((title) => normalizeText(title))
