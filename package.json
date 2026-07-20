@@ -5,7 +5,7 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "startlocal": "concurrently \"npm run dev\" \"php artisan serve\""
+        "startlocal": "concurrently \"npm run dev\" \"php artisan serve --port=8002\""
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.2.2",

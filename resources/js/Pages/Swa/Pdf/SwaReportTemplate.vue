@@ -1,13 +1,19 @@
 <template>
     <div class="swa-sheet" style="margin-top:0 !important">
         <div class="swa-sheet__header">
-            <img :src="logoUrl" alt="PGP Logo" class="swa-sheet__logo" />
-            <p class="swa-sheet__line">Provincial Government of Palawan</p>
-            <p class="swa-sheet__line swa-sheet__line--program">{{ preparedByOffice }}</p>
-            <p class="swa-sheet__line swa-sheet__line--title">STATEMENT OF WORK ACCOMPLISHED</p>
-            <p class="swa-sheet__line swa-sheet__line--name">{{ preparedByName }}</p>
-            <p class="swa-sheet__line swa-sheet__line--designation">{{ preparedByTitle }}</p>
-            <p class="swa-sheet__line swa-sheet__line--period">For the Period: {{ documentPeriodLabel }}</p>
+            <div class="swa-sheet__header-logos">
+                <img :src="pgpLogoUrl" alt="PGP Logo" class="swa-sheet__logo swa-sheet__logo--left" />
+                <div class="swa-sheet__header-text">
+                    <p class="swa-sheet__line">Republic of the Philippines</p>
+                    <p class="swa-sheet__line">Provincial Government of Palawan</p>
+                    <p class="swa-sheet__line swa-sheet__line--program">{{ preparedByOffice }}</p>
+                    <p class="swa-sheet__line swa-sheet__line--title">STATEMENT OF WORK ACCOMPLISHED</p>
+                    <p class="swa-sheet__line swa-sheet__line--name">{{ preparedByName }}</p>
+                    <p class="swa-sheet__line swa-sheet__line--designation">{{ preparedByTitle }}</p>
+                    <p class="swa-sheet__line swa-sheet__line--period">For the Period: {{ documentPeriodLabel }}</p>
+                </div>
+                <img :src="yakapLogoUrl" alt="YAKAP Logo" class="swa-sheet__logo swa-sheet__logo--right" />
+            </div>
         </div>
 
         <table class="swa-layout-table">
@@ -138,7 +144,8 @@ const props = defineProps({
     isSavingReport: { type: Boolean, default: false },
 });
 
-const logoUrl = '/images/pgp-logo.svg';
+const pgpLogoUrl = '/images/pgp-logo.svg';
+const yakapLogoUrl = '/images/yakap-logo.png';
 const reviewerDetailLines = computed(() => buildReviewerDetailLines(
     props.reviewerTitles,
     props.reviewerOffice,

@@ -768,8 +768,8 @@ async function openSavedReportPreview(report) {
         const bodyHtml = `<style>@page { margin: 8mm 8mm; } @media screen { body { padding: 8mm 8mm; font-family: Arial, Helvetica, sans-serif; } } @media print { body { padding: 0; font-family: Arial, Helvetica, sans-serif; } } ${swaReportTemplateCss}</style>${reportHtml}`;
 
         pdfPreview.title = title;
-        pdfPreview.size = 'a4';
-        pdfPreview.html = buildHtmlDoc(bodyHtml, title, 'a4');
+        pdfPreview.size = 'long';
+        pdfPreview.html = buildHtmlDoc(bodyHtml, title, 'long');
         pdfPreview.show = true;
     } catch (error) {
         toast.add({
