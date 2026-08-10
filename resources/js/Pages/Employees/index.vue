@@ -10,10 +10,11 @@
                 {{ pagination.filtered_total }} record{{ pagination.filtered_total !== 1 ? 's' : '' }}
             </p>
         </div>
-        <div v-if="canManageEmployees" class="flex items-center gap-2">
-            <Button icon="pi pi-users" label="Match Users" severity="secondary" outlined class="rounded"
+        <div class="flex items-center gap-2">
+            <Button v-if="isAdmin" icon="pi pi-users" label="Match Users" severity="secondary" outlined class="rounded"
                 @click="showUserMatch = true" />
-            <Button icon="pi pi-plus" label="New Employee" class="rounded" @click="openCreate" />
+            <Button v-if="canManageEmployees" icon="pi pi-plus" label="New Employee" class="rounded"
+                @click="openCreate" />
         </div>
     </div>
 
@@ -198,6 +199,7 @@ const rowMenuItems = ref([]);
 const userPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageEmployees = computed(() => userPermissions.value.includes('employees.manage'));
 const canDeleteEmployees = computed(() => userPermissions.value.includes('employees.delete'));
+const isAdmin = computed(() => (page.props.auth?.user?.roles ?? []).includes('admin'));
 
 function setRowMenuItems(emp) {
     selectedEmployee.value = emp;

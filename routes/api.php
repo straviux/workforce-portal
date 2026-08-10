@@ -56,9 +56,9 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Employees
     Route::get('/employees/user-matches', [EmployeeUserMatchController::class, 'index'])
-        ->middleware('check.permission:employees.manage');
+        ->middleware('check.role:admin');
     Route::post('/employees/user-matches', [EmployeeUserMatchController::class, 'store'])
-        ->middleware('check.permission:employees.manage');
+        ->middleware('check.role:admin');
     Route::get('/employees', [EmployeeController::class, 'index'])
         ->middleware('check.permission:employees.view');
     Route::post('/employees', [EmployeeController::class, 'store'])
