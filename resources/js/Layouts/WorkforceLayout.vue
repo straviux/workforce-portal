@@ -109,7 +109,7 @@ onMounted(async () => {
 
         <!-- Floating Sidebar -->
         <aside
-            class="fixed z-30 md:z-20 top-0 left-0 md:top-20 md:left-4 flex flex-col bg-[#222831] shadow-xl backdrop-blur-xl transition-[width,transform] duration-300 rounded-4xl min-w-0 h-full md:h-[calc(100vh-96px)]"
+            class="sidebar-shell fixed z-30 md:z-20 top-0 left-0 md:top-20 md:left-4 flex flex-col bg-[#222831] shadow-xl backdrop-blur-xl transition-[width,transform] duration-300 rounded-4xl min-w-0 h-full md:h-[calc(100vh-96px)]"
             :class="[
                 sidebarMinimized ? 'md:w-[110px]' : 'md:w-[220px]',
                 toggleMenu ? 'w-[280px] translate-x-0' : '-translate-x-full md:translate-x-0',

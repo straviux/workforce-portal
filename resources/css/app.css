@@ -60,3 +60,24 @@
 		'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
 		'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* ============================================
+   125% DPI compensation (zoom: 0.8 on <body>)
+   zoom also scales viewport-relative units, so 100vh renders at 80%
+   of the real viewport and full-height layouts fall short. Counter it
+   by inflating viewport units by the inverse factor (1 / 0.8 = 1.25).
+   ============================================ */
+.dpr-zoom .h-screen {
+	height: 125vh;
+}
+.dpr-zoom .min-h-screen {
+	min-height: 125vh;
+}
+@media (min-width: 768px) {
+	.dpr-zoom .sidebar-shell {
+		height: calc(125vh - 96px);
+	}
+}
+.dpr-zoom .floating-drawer.p-drawer {
+	height: calc(125vh - 2rem) !important;
+}
