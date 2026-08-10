@@ -65,6 +65,11 @@ function handleLogout() {
     });
 }
 
+function goToProfile() {
+    userMenuRef.value?.hide();
+    router.visit(route('profile.edit'));
+}
+
 function toggleDark() {
     isDark.value = document.documentElement.classList.toggle('dark');
     localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
@@ -309,6 +314,10 @@ onMounted(async () => {
                             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                                 <p class="text-sm font-semibold">{{ user?.name ?? 'User' }}</p>
                                 <p class="text-xs opacity-60 mt-0.5">{{ userRole }}</p>
+                            </div>
+                            <div class="px-2 py-2">
+                                <Button @click="goToProfile" label="Edit Profile" icon="pi pi-user-edit"
+                                    severity="secondary" variant="text" class="w-full !justify-start" />
                             </div>
                             <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
                                 <Button @click="handleLogout" label="Sign Out" icon="pi pi-sign-out" severity="danger"

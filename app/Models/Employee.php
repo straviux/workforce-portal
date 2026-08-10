@@ -14,6 +14,7 @@ class Employee extends Model
 
     protected $fillable = [
         'employee_no',
+        'user_id',
         'first_name',
         'middle_name',
         'last_name',
@@ -41,17 +42,17 @@ class Employee extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim("{$this->first_name} " . ($this->middle_name ? "{$this->middle_name} " : '') . "{$this->last_name}" . ($this->name_extension ? " {$this->name_extension}" : ''));
+        return trim("{$this->first_name} ".($this->middle_name ? "{$this->middle_name} " : '')."{$this->last_name}".($this->name_extension ? " {$this->name_extension}" : ''));
     }
 
     protected $casts = [
-        'swa'                  => 'boolean',
-        'is_active'            => 'boolean',
-        'amount'               => 'decimal:2',
+        'swa' => 'boolean',
+        'is_active' => 'boolean',
+        'amount' => 'decimal:2',
         'monthly_compensation' => 'decimal:2',
-        'deduction_sss'        => 'decimal:2',
+        'deduction_sss' => 'decimal:2',
         'deduction_philhealth' => 'decimal:2',
-        'deduction_hdmf'       => 'decimal:2',
+        'deduction_hdmf' => 'decimal:2',
     ];
 
     protected static function boot(): void
@@ -69,6 +70,11 @@ class Employee extends Model
     public function responsibilityCenter()
     {
         return $this->belongsTo(ResponsibilityCenter::class, 'responsibility_center_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function creator()

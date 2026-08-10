@@ -18,7 +18,7 @@ class EmployeeController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Employee::with(['responsibilityCenter', 'creator'])->latest();
+            $query = Employee::with(['responsibilityCenter', 'creator', 'user:id,name,username'])->latest();
 
             if ($search = $request->get('search')) {
                 $query->where(function ($q) use ($search) {
@@ -42,15 +42,16 @@ class EmployeeController extends Controller
             $paginated = $query->paginate($perPage);
 
             return response()->json([
-                'data'           => $paginated->items(),
-                'total'          => Employee::count(),
+                'data' => $paginated->items(),
+                'total' => Employee::count(),
                 'filtered_total' => $paginated->total(),
-                'per_page'       => $paginated->perPage(),
-                'current_page'   => $paginated->currentPage(),
-                'last_page'      => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching employees', ['error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Error fetching employees'], 500);
         }
     }
@@ -60,16 +61,19 @@ class EmployeeController extends Controller
         try {
             $employee = $this->service->create($request->validated());
             $employee->load(['responsibilityCenter', 'creator']);
+
             return response()->json(['data' => $employee, 'message' => 'Employee created.'], 201);
         } catch (\Exception $e) {
             Log::error('Error creating employee', ['error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Error creating employee'], 500);
         }
     }
 
     public function show(int $id): JsonResponse
     {
-        $employee = Employee::with(['responsibilityCenter', 'creator', 'updater'])->findOrFail($id);
+        $employee = Employee::with(['responsibilityCenter', 'creator', 'updater', 'user:id,name,username'])->findOrFail($id);
+
         return response()->json(['data' => $employee]);
     }
 
@@ -79,9 +83,11 @@ class EmployeeController extends Controller
             $employee = Employee::findOrFail($id);
             $updated = $this->service->update($employee, $request->validated());
             $updated->load(['responsibilityCenter', 'creator']);
+
             return response()->json(['data' => $updated, 'message' => 'Employee updated.']);
         } catch (\Exception $e) {
             Log::error('Error updating employee', ['id' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Error updating employee'], 500);
         }
     }
@@ -91,6 +97,7 @@ class EmployeeController extends Controller
         try {
             $employee = Employee::findOrFail($id);
             $updated = $this->service->toggleActive($employee);
+
             return response()->json(['data' => $updated, 'message' => $updated->is_active ? 'Employee activated.' : 'Employee deactivated.']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error updating status'], 500);
@@ -102,9 +109,11 @@ class EmployeeController extends Controller
         try {
             $employee = Employee::findOrFail($id);
             $this->service->delete($employee);
+
             return response()->json(['message' => 'Employee deleted.']);
         } catch (\Exception $e) {
             Log::error('Error deleting employee', ['id' => $id, 'error' => $e->getMessage()]);
+
             return response()->json(['message' => 'Error deleting employee'], 500);
         }
     }

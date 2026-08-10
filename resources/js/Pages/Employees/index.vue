@@ -10,7 +10,11 @@
                 {{ pagination.filtered_total }} record{{ pagination.filtered_total !== 1 ? 's' : '' }}
             </p>
         </div>
-        <Button v-if="canManageEmployees" icon="pi pi-plus" label="New Employee" class="rounded" @click="openCreate" />
+        <div v-if="canManageEmployees" class="flex items-center gap-2">
+            <Button icon="pi pi-users" label="Match Users" severity="secondary" outlined class="rounded"
+                @click="showUserMatch = true" />
+            <Button icon="pi pi-plus" label="New Employee" class="rounded" @click="openCreate" />
+        </div>
     </div>
 
     <!-- Filter Toolbar -->
@@ -109,6 +113,13 @@
                 </template>
             </Column>
 
+            <Column field="user" header="Portal User" style="min-width:150px;">
+                <template #body="{ data }">
+                    <Tag v-if="data.user" :value="`@${data.user.username}`" severity="info" />
+                    <span v-else class="text-surface-300 text-xs">Not linked</span>
+                </template>
+            </Column>
+
             <Column header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                 <template #body="{ data }">
                     <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small"
@@ -126,6 +137,7 @@
     <ViewModal v-model:show="showView" :employee="selectedEmployee" @edit="onEditFromView" />
     <DeleteConfirmModal v-model:show="showDelete" :employee="selectedEmployee ?? ''" :is-deleting="isDeleting"
         @confirm-delete="confirmDelete" />
+    <UserMatchModal v-model:show="showUserMatch" @matched="fetchEmployees(pagination.current_page)" />
 </template>
 
 <script setup>
@@ -136,6 +148,7 @@ import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import CreateEditModal from './Modal/CreateEditModal.vue';
 import ViewModal from './Modal/ViewModal.vue';
 import DeleteConfirmModal from './Modal/DeleteConfirmModal.vue';
+import UserMatchModal from './Modal/UserMatchModal.vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
@@ -174,6 +187,7 @@ const activeOptions = [
 const showCreateEdit = ref(false);
 const showView = ref(false);
 const showDelete = ref(false);
+const showUserMatch = ref(false);
 const selectedEmployee = ref(null);
 const modalMode = ref('create');
 const contextMenuEmployee = ref(null);

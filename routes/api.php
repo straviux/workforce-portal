@@ -1,9 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\CertificationController;
 use App\Http\Controllers\Api\CalendarController;
+use App\Http\Controllers\Api\CertificationController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeFundTransactionController;
+use App\Http\Controllers\Api\EmployeeUserMatchController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ResponsibilityCenterController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingsController;
@@ -14,6 +16,13 @@ use Illuminate\Support\Facades\Route;
 
 // All API routes require auth via the web guard (shared session cookie)
 Route::middleware(['web', 'auth'])->group(function () {
+    // Profile (self-service, no permission gate — any authenticated user)
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto']);
+    Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto']);
+
     // Employee Fund Transactions
     Route::get('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'index']);
     Route::post('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'store']);
@@ -46,6 +55,10 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:responsibility_centers.delete');
 
     // Employees
+    Route::get('/employees/user-matches', [EmployeeUserMatchController::class, 'index'])
+        ->middleware('check.permission:employees.manage');
+    Route::post('/employees/user-matches', [EmployeeUserMatchController::class, 'store'])
+        ->middleware('check.permission:employees.manage');
     Route::get('/employees', [EmployeeController::class, 'index'])
         ->middleware('check.permission:employees.view');
     Route::post('/employees', [EmployeeController::class, 'store'])

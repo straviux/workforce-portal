@@ -20,6 +20,10 @@
 	gap: 8px;
 }
 
+.swa-sheet__header-logos--stacked {
+	flex-direction: column;
+}
+
 .swa-sheet__header-text {
 	/* flex: 1 removed so logos stay close to header text */
 }

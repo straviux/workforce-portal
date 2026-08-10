@@ -1,7 +1,8 @@
 <template>
     <div class="swa-sheet" style="margin-top:0 !important">
         <div class="swa-sheet__header">
-            <div class="swa-sheet__header-logos">
+            <div class="swa-sheet__header-logos"
+                :class="{ 'swa-sheet__header-logos--stacked': !isScholarshipProgramOffice }">
                 <img :src="pgpLogoUrl" alt="PGP Logo" class="swa-sheet__logo swa-sheet__logo--left" />
                 <div class="swa-sheet__header-text">
                     <p class="swa-sheet__line">Republic of the Philippines</p>
@@ -12,7 +13,8 @@
                     <p class="swa-sheet__line swa-sheet__line--designation">{{ preparedByTitle }}</p>
                     <p class="swa-sheet__line swa-sheet__line--period">For the Period: {{ documentPeriodLabel }}</p>
                 </div>
-                <img :src="yakapLogoUrl" alt="YAKAP Logo" class="swa-sheet__logo swa-sheet__logo--right" />
+                <img v-if="isScholarshipProgramOffice" :src="yakapLogoUrl" alt="YAKAP Logo"
+                    class="swa-sheet__logo swa-sheet__logo--right" />
             </div>
         </div>
 
@@ -25,12 +27,49 @@
                         </div>
 
                     </th>
-                    <th v-for="task in draftRows" :key="task.sort_order" class="swa-task-header"
-                        style="border-left: none !important;">
+                    <th
+                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
                         <div
                             style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div class="swa-task-header__text">
-                            <span>{{ task.task_name }}</span>
+                        <div
+                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
+                            <span>{{ task1?.task_name }}</span>
+                        </div>
+                    </th>
+                    <th
+                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
+                        <div
+                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
+                        <div
+                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
+                            <span>{{ task2?.task_name }}</span>
+                        </div>
+                    </th>
+                    <th
+                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
+                        <div
+                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
+                        <div
+                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
+                            <span>{{ task3?.task_name }}</span>
+                        </div>
+                    </th>
+                    <th
+                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
+                        <div
+                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
+                        <div
+                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
+                            <span>{{ task4?.task_name }}</span>
+                        </div>
+                    </th>
+                    <th
+                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
+                        <div
+                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
+                        <div
+                            style="position: absolute; text-indent:-15px;padding-left:15px;left:45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
+                            <span>{{ task5?.task_name }}</span>
                         </div>
                     </th>
                     <th class="swa-task-header" style="border-left: none !important;">
@@ -58,24 +97,106 @@
                     </td>
 
                     <template v-else>
-                        <td v-for="taskValue in documentRow.task_values"
-                            :key="`${documentRow.key}-${taskValue.sort_order}`" class="swa-value-cell">
-                            <input v-if="taskValue.task_type === 'countable' && editable"
-                                v-model.number="taskValue.cell.numeric_value" v-keyfilter.int class="swa-value-input"
+                        <td style="text-align: center;">
+                            <input v-if="taskValueAt(documentRow, 1)?.task_type === 'countable' && editable"
+                                v-model.number="taskValueAt(documentRow, 1).cell.numeric_value" v-keyfilter.int
+                                style="width: 100%; min-width: 56px; border: none; background: transparent; text-align: center; font-size: 11px; outline: none; color: #111827; opacity: 1;"
                                 :disabled="!canManage || isSavingReport" />
-
-                            <span v-else-if="taskValue.task_type === 'countable'" class="swa-value-text">
-                                {{ formatNumericValue(taskValue.cell.numeric_value) }}
+                            <span v-else-if="taskValueAt(documentRow, 1)?.task_type === 'countable'"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">
+                                {{ formatNumericValue(taskValueAt(documentRow, 1)?.cell.numeric_value) }}
                             </span>
-
-                            <button v-else-if="editable" type="button" class="swa-mark-btn"
-                                :disabled="!canManage || isSavingReport" @click="toggleMarkValue(taskValue.cell)">
-                                {{ taskValue.cell.mark_value === 'check' ? '✓' : '-' }}
+                            <button v-else-if="editable" type="button"
+                                style="width: 100%; min-height: 20px; border: none; background: transparent; font-size: 14px; font-weight: 700; line-height: 1; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport"
+                                @click="toggleMarkValue(taskValueAt(documentRow, 1).cell)">
+                                {{ taskValueAt(documentRow, 1)?.cell.mark_value === 'check' ? '✓' : '-' }}
                             </button>
-
-                            <span v-else class="swa-value-text">{{ taskValue.cell.mark_value === 'check' ? '✓' : '-'
-                                }}</span>
+                            <span v-else
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">{{
+                                taskValueAt(documentRow, 1)?.cell.mark_value === 'check' ? '✓' : '-' }}</span>
                         </td>
+
+                        <td style="text-align: center;">
+                            <input v-if="taskValueAt(documentRow, 2)?.task_type === 'countable' && editable"
+                                v-model.number="taskValueAt(documentRow, 2).cell.numeric_value" v-keyfilter.int
+                                style="width: 100%; min-width: 56px; border: none; background: transparent; text-align: center; font-size: 11px; outline: none; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport" />
+                            <span v-else-if="taskValueAt(documentRow, 2)?.task_type === 'countable'"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">
+                                {{ formatNumericValue(taskValueAt(documentRow, 2)?.cell.numeric_value) }}
+                            </span>
+                            <button v-else-if="editable" type="button"
+                                style="width: 100%; min-height: 20px; border: none; background: transparent; font-size: 14px; font-weight: 700; line-height: 1; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport"
+                                @click="toggleMarkValue(taskValueAt(documentRow, 2).cell)">
+                                {{ taskValueAt(documentRow, 2)?.cell.mark_value === 'check' ? '✓' : '-' }}
+                            </button>
+                            <span v-else
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">{{
+                                taskValueAt(documentRow, 2)?.cell.mark_value === 'check' ? '✓' : '-' }}</span>
+                        </td>
+
+                        <td style="text-align: center;">
+                            <input v-if="taskValueAt(documentRow, 3)?.task_type === 'countable' && editable"
+                                v-model.number="taskValueAt(documentRow, 3).cell.numeric_value" v-keyfilter.int
+                                style="width: 100%; min-width: 56px; border: none; background: transparent; text-align: center; font-size: 11px; outline: none; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport" />
+                            <span v-else-if="taskValueAt(documentRow, 3)?.task_type === 'countable'"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">
+                                {{ formatNumericValue(taskValueAt(documentRow, 3)?.cell.numeric_value) }}
+                            </span>
+                            <button v-else-if="editable" type="button"
+                                style="width: 100%; min-height: 20px; border: none; background: transparent; font-size: 14px; font-weight: 700; line-height: 1; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport"
+                                @click="toggleMarkValue(taskValueAt(documentRow, 3).cell)">
+                                {{ taskValueAt(documentRow, 3)?.cell.mark_value === 'check' ? '✓' : '-' }}
+                            </button>
+                            <span v-else
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">{{
+                                taskValueAt(documentRow, 3)?.cell.mark_value === 'check' ? '✓' : '-' }}</span>
+                        </td>
+
+                        <td style="text-align: center;">
+                            <input v-if="taskValueAt(documentRow, 4)?.task_type === 'countable' && editable"
+                                v-model.number="taskValueAt(documentRow, 4).cell.numeric_value" v-keyfilter.int
+                                style="width: 100%; min-width: 56px; border: none; background: transparent; text-align: center; font-size: 11px; outline: none; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport" />
+                            <span v-else-if="taskValueAt(documentRow, 4)?.task_type === 'countable'"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">
+                                {{ formatNumericValue(taskValueAt(documentRow, 4)?.cell.numeric_value) }}
+                            </span>
+                            <button v-else-if="editable" type="button"
+                                style="width: 100%; min-height: 20px; border: none; background: transparent; font-size: 14px; font-weight: 700; line-height: 1; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport"
+                                @click="toggleMarkValue(taskValueAt(documentRow, 4).cell)">
+                                {{ taskValueAt(documentRow, 4)?.cell.mark_value === 'check' ? '✓' : '-' }}
+                            </button>
+                            <span v-else
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">{{
+                                taskValueAt(documentRow, 4)?.cell.mark_value === 'check' ? '✓' : '-' }}</span>
+                        </td>
+
+                        <td style="text-align: center;">
+                            <input v-if="taskValueAt(documentRow, 5)?.task_type === 'countable' && editable"
+                                v-model.number="taskValueAt(documentRow, 5).cell.numeric_value" v-keyfilter.int
+                                style="width: 100%; min-width: 56px; border: none; background: transparent; text-align: center; font-size: 11px; outline: none; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport" />
+                            <span v-else-if="taskValueAt(documentRow, 5)?.task_type === 'countable'"
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">
+                                {{ formatNumericValue(taskValueAt(documentRow, 5)?.cell.numeric_value) }}
+                            </span>
+                            <button v-else-if="editable" type="button"
+                                style="width: 100%; min-height: 20px; border: none; background: transparent; font-size: 14px; font-weight: 700; line-height: 1; color: #111827; opacity: 1;"
+                                :disabled="!canManage || isSavingReport"
+                                @click="toggleMarkValue(taskValueAt(documentRow, 5).cell)">
+                                {{ taskValueAt(documentRow, 5)?.cell.mark_value === 'check' ? '✓' : '-' }}
+                            </button>
+                            <span v-else
+                                style="display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 20px; font-size: 11px; font-weight: 600;">{{
+                                taskValueAt(documentRow, 5)?.cell.mark_value === 'check' ? '✓' : '-' }}</span>
+                        </td>
+
                         <td class="swa-value-cell"></td>
                     </template>
 
@@ -146,6 +267,29 @@ const props = defineProps({
 
 const pgpLogoUrl = '/images/pgp-logo.svg';
 const yakapLogoUrl = '/images/yakap-logo.png';
+
+// The YAKAP (scholarship program) logo only applies to Scholarship Program reports.
+// Other offices show just the PGP logo, stacked above the header text instead of beside it.
+const isScholarshipProgramOffice = computed(
+    () => props.preparedByOffice.trim().toUpperCase() === 'SCHOLARSHIP PROGRAM',
+);
+
+// Every SWA report has exactly 5 tasks (sort_order 1-5) — loaded individually
+// instead of via v-for so each column's header markup can be styled independently.
+const task1 = computed(() => findTaskBySortOrder(1));
+const task2 = computed(() => findTaskBySortOrder(2));
+const task3 = computed(() => findTaskBySortOrder(3));
+const task4 = computed(() => findTaskBySortOrder(4));
+const task5 = computed(() => findTaskBySortOrder(5));
+
+function findTaskBySortOrder(sortOrder) {
+    return props.draftRows.find((task) => task.sort_order === sortOrder) ?? null;
+}
+
+function taskValueAt(documentRow, sortOrder) {
+    return (documentRow.task_values ?? []).find((taskValue) => taskValue.sort_order === sortOrder) ?? null;
+}
+
 const reviewerDetailLines = computed(() => buildReviewerDetailLines(
     props.reviewerTitles,
     props.reviewerOffice,
