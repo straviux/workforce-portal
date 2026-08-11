@@ -178,6 +178,10 @@
                                         class="min-w-[110px] border border-surface-200 dark:border-surface-700 px-3 py-2 text-center font-semibold text-surface-700 dark:text-surface-100">
                                         {{ column.label }}
                                     </th>
+                                    <th
+                                        class="min-w-[180px] border border-surface-200 dark:border-surface-700 px-3 py-2 text-center font-semibold text-surface-700 dark:text-surface-100">
+                                        Travel / OB
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -195,11 +199,19 @@
                                         class="border border-surface-200 dark:border-surface-700 px-3 py-2 align-middle text-center">
                                         <input v-if="column.type === 'number'" v-model.number="row[column.field]"
                                             type="number" :min="column.min" :max="column.max"
-                                            class="w-full rounded border border-surface-300 bg-white px-2 py-1.5 text-center text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100"
-                                            :disabled="!canManage || isSavingReport" />
+                                            class="w-full rounded border border-surface-300 bg-white px-2 py-1.5 text-center text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100 disabled:opacity-40"
+                                            :disabled="!canManage || isSavingReport || Boolean(row.travel_label)" />
                                         <input v-else v-model="row[column.field]" type="time"
+                                            class="w-full rounded border border-surface-300 bg-white px-2 py-1.5 text-center text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100 disabled:opacity-40"
+                                            :disabled="!canManage || isSavingReport || Boolean(row.travel_label)" />
+                                    </td>
+
+                                    <td
+                                        class="border border-surface-200 dark:border-surface-700 px-3 py-2 align-middle text-center">
+                                        <input v-model="row.travel_label" type="text" placeholder="e.g. El Nido, Dumaran"
                                             class="w-full rounded border border-surface-300 bg-white px-2 py-1.5 text-center text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100"
-                                            :disabled="!canManage || isSavingReport" />
+                                            :disabled="!canManage || isSavingReport"
+                                            v-tooltip.top="'Marks this day as Official Business — consecutive days with the same text merge into one OB row on the DTR.'" />
                                     </td>
                                 </tr>
                             </tbody>
@@ -373,17 +385,17 @@ const blockedDateSet = computed(() => new Set(blockedEventsInRange.value.map((ev
 const preparedByOffice = computed(() => formatUpperText(props.subject?.office) || 'SCHOLARSHIP PROGRAM');
 const preparedByName = computed(() => formatUpperText(props.subject?.display_name) || '______________________________');
 const preparedByTitle = computed(() => formatUpperText(props.subject?.designation || props.subject?.secondary_label) || '______________________________');
-const reviewerName = computed(() => formatUpperText(selectedOfficeHead.value?.name || page.props.auth?.user?.name) || '______________________________');
+const reviewerName = computed(() => formatPlainText(selectedOfficeHead.value?.name || page.props.auth?.user?.name) || '______________________________');
 const reviewerTitles = computed(() => {
     if (selectedOfficeHead.value) {
-        return formatTitleCaseList(selectedOfficeHeadTitles.value);
+        return formatPlainList(selectedOfficeHeadTitles.value);
     }
 
-    const fallbackTitle = formatTitleCaseText(page.props.auth?.user?.designation || page.props.auth?.user?.office_designation) || 'Program Manager';
+    const fallbackTitle = formatPlainText(page.props.auth?.user?.designation || page.props.auth?.user?.office_designation) || 'Program Manager';
 
     return [fallbackTitle];
 });
-const reviewerOffice = computed(() => formatUpperText(selectedOfficeHead.value?.office || page.props.auth?.user?.office));
+const reviewerOffice = computed(() => formatPlainText(selectedOfficeHead.value?.office || page.props.auth?.user?.office));
 const dtrSignatorySnapshotForm = computed(() => ({
     office_head_id: selectedOfficeHeadId.value,
     signatory_titles: [...selectedOfficeHeadTitles.value],
@@ -535,11 +547,11 @@ async function openSavedReportPreview(report) {
             preparedByOffice: preparedByOffice.value,
             preparedByName: preparedByName.value,
             preparedByTitle: preparedByTitle.value,
-            reviewerName: formatUpperText(reportDetail.signatory_name) || reviewerName.value,
+            reviewerName: formatPlainText(reportDetail.signatory_name) || reviewerName.value,
             reviewerTitles: reportDetail.office_head_signatory_id
-                ? formatTitleCaseList(reportDetail.signatory_titles)
+                ? formatPlainList(reportDetail.signatory_titles)
                 : reviewerTitles.value,
-            reviewerOffice: formatUpperText(reportDetail.signatory_office) || reviewerOffice.value,
+            reviewerOffice: formatPlainText(reportDetail.signatory_office) || reviewerOffice.value,
             reviewerNameUnderline: reportDetail.signatory_name_underline !== false,
             reviewerShowDesignation: reportDetail.signatory_show_designation !== false,
             reviewerShowOffice: reportDetail.signatory_show_office !== false,
@@ -588,6 +600,7 @@ function emitSaveReport() {
             pm_departure: row.pm_departure || null,
             undertime_hours: Number(row.undertime_hours) || 0,
             undertime_minutes: Number(row.undertime_minutes) || 0,
+            travel_label: formatPlainText(row.travel_label) || null,
         })),
     };
 
@@ -649,6 +662,7 @@ function createEmptyDraftRow(workDate) {
         pm_departure: '',
         undertime_hours: 0,
         undertime_minutes: 0,
+        travel_label: '',
     };
 }
 
@@ -657,7 +671,7 @@ function autoFillRandomHours() {
 
     const [pmDepartureStart, pmDepartureEnd] = activePmDepartureRange.value;
 
-    draftValues.value = draftValues.value.map((row) => ({
+    draftValues.value = draftValues.value.map((row) => (row.travel_label ? row : {
         ...row,
         am_arrival: randomTimeBetween(...RANDOM_TIME_RANGES.am_arrival),
         am_departure: randomTimeBetween(...RANDOM_TIME_RANGES.am_departure),
@@ -720,6 +734,7 @@ function cloneDraftValues(rows) {
         pm_departure: row.pm_departure ?? '',
         undertime_hours: row.undertime_hours ?? 0,
         undertime_minutes: row.undertime_minutes ?? 0,
+        travel_label: row.travel_label ?? '',
     }));
 }
 
@@ -761,8 +776,8 @@ function applyOfficeHeadSelection(officeHeadId, selectedTitles = null) {
 }
 
 function buildOrderedSignatoryDetailLines(titles, office, showDesignation = true, showOffice = true, infoOrder = 'designation_first') {
-    const designationLines = showDesignation ? formatTitleCaseList(titles) : [];
-    const officeLines = showOffice && formatUpperText(office) ? [formatUpperText(office)] : [];
+    const designationLines = showDesignation ? formatPlainList(titles) : [];
+    const officeLines = showOffice && formatPlainText(office) ? [formatPlainText(office)] : [];
 
     return uniqueTextLines(infoOrder === 'office_first'
         ? [...officeLines, ...designationLines]
@@ -832,21 +847,62 @@ function buildDtrDocumentRows(startValue, endValue, workDays, rows, blockedEvent
                 day_number: cursor.date(),
                 label: blockedEvent.event_type === 'work_suspension' ? 'WORK SUSPENSION' : 'HOLIDAY',
             });
-        } else if (!selectedDays.has(weekday)) {
+            cursor = cursor.add(1, 'day');
+            continue;
+        }
+
+        if (!selectedDays.has(weekday)) {
             documentRows.push({
                 key: `special-${workDate}`,
                 kind: 'offday',
                 day_number: cursor.date(),
                 label: cursor.format('dddd').toUpperCase(),
             });
-        } else {
-            documentRows.push({
-                key: `work-${workDate}`,
-                kind: 'work',
-                day_number: cursor.date(),
-                values: valuesByDate.get(workDate) ?? createEmptyDraftRow(workDate),
-            });
+            cursor = cursor.add(1, 'day');
+            continue;
         }
+
+        const travelLabel = formatPlainText(valuesByDate.get(workDate)?.travel_label);
+
+        if (travelLabel) {
+            const runCursors = [cursor];
+            let next = cursor.add(1, 'day');
+
+            // Extend the run while adjacent days are still scheduled work days
+            // carrying the exact same travel note — each keeps its own day row,
+            // only the note cell merges (rowspan) across the run.
+            while (!next.isAfter(end, 'day')) {
+                const nextDate = next.format('YYYY-MM-DD');
+                const nextWeekday = next.format('dddd').toLowerCase();
+
+                if (blockedEventMap.has(nextDate) || !selectedDays.has(nextWeekday)) break;
+                if (formatPlainText(valuesByDate.get(nextDate)?.travel_label) !== travelLabel) break;
+
+                runCursors.push(next);
+                next = next.add(1, 'day');
+            }
+
+            runCursors.forEach((dayCursor, index) => {
+                documentRows.push({
+                    key: `travel-${dayCursor.format('YYYY-MM-DD')}`,
+                    kind: 'travel',
+                    day_number: dayCursor.date(),
+                    label: index === 0 ? `OB - ${travelLabel}` : null,
+                    rowspan: index === 0 ? runCursors.length : null,
+                    merged: index !== 0,
+                });
+            });
+
+            cursor = runCursors[runCursors.length - 1].add(1, 'day');
+            continue;
+        }
+
+        documentRows.push({
+            key: `work-${workDate}`,
+            kind: 'work',
+            day_number: cursor.date(),
+            values: valuesByDate.get(workDate) ?? createEmptyDraftRow(workDate),
+        });
 
         cursor = cursor.add(1, 'day');
     }
@@ -900,18 +956,13 @@ function formatUpperList(values) {
         .filter(Boolean);
 }
 
-function formatTitleCaseText(value) {
-    const text = String(value ?? '').trim();
-    if (!text) return '';
-
-    return text
-        .toLowerCase()
-        .replace(/(^|\s|[-/])([a-z])/g, (match, boundary, letter) => boundary + letter.toUpperCase());
+function formatPlainText(value) {
+    return String(value ?? '').trim();
 }
 
-function formatTitleCaseList(values) {
+function formatPlainList(values) {
     return (Array.isArray(values) ? values : [])
-        .map((value) => formatTitleCaseText(value))
+        .map((value) => formatPlainText(value))
         .filter(Boolean);
 }
 

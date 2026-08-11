@@ -1,13 +1,13 @@
 <template>
     <div class="dtr-sheet" style="margin-top:0 !important">
         <div style="display: flex;flex-direction: column; align-items: center; justify-content: center; ">
-            <div style="align-self: flex-start;font-size:5pt">National Form No. 48</div>
-            <div style="font-size: 11pt; font-weight: bold;margin-top:6pt">DAILY TIME RECORD</div>
+            <div style="align-self: flex-start;font-size:6.5pt;margin-top: 2pt;">National Form No. 48</div>
+            <div style="font-size: 13pt; font-weight: bold;margin-top:10pt;letter-spacing: 1pt;">DAILY TIME RECORD</div>
             <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt"><span style="font-size:9pt;font-style: italic;">NAME:</span> 
                 <div style="border-bottom: 1px solid #111;font-size: 8pt;width:80% !important;font-weight: bold;text-align:center">{{ preparedByName }}</div>
             </div>
             <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt"><span style="font-size:9pt;font-style: italic;">For the month of:</span> 
-                <div style="border-bottom: 1px solid #111;font-size: 7pt;font-weight: bold;text-align:center;width: 65% !important;">{{ documentPeriodLabel }}</div>
+                <div style="border-bottom: 1px solid #111;font-size: 6.5pt;font-weight: bold;text-align:center;width: 65% !important;">{{ documentPeriodLabel }}</div>
             </div>
 
             <div style="display:flex;width:100%;justify-content: space-between;margin-top:8pt"><span style="font-size:7pt;font-style: italic;">Office Hour of Arrival</span> 
@@ -50,6 +50,11 @@
                     <td v-else-if="documentRow.kind === 'offday'" class="dtr-special-row" colspan="6">
                         {{ documentRow.label }}
                     </td>
+                    <td v-else-if="documentRow.kind === 'travel' && !documentRow.merged" class="dtr-special-row"
+                        :rowspan="documentRow.rowspan" colspan="6">
+                        {{ documentRow.label }}
+                    </td>
+                    <template v-else-if="documentRow.kind === 'travel' && documentRow.merged"></template>
 
                     <template v-else>
                         <td class="dtr-value-cell">{{ formatTime(documentRow.values.am_arrival) }}</td>
@@ -63,19 +68,19 @@
             </tbody>
         </table>
 
-        <div style="font-size: 6.5pt;text-align: justify;margin-top: 10pt">
+        <div style="font-size: 6.5pt;text-align: justify;margin-top: 6pt;line-height: 9pt">
             I CERTIFY on my honor that the above is true and correct on office the hours of work performed and 
             record of which was made daily the time of arrival and departure from office.
         </div>
         <div style="text-align: right;width:100%;font-size:5pt;margin-top:14pt">.............................................................</div>
-        <div style="border-top: 1px solid #111; width: 100%;font-size:6pt;margin-top:10pt;padding-top: 2.5pt;">Verified as to prescribed Office hours:</div>
+        <div style="border-top: 1px solid #111; width: 100%;font-size:6pt;margin-top:10pt;padding-top: 2pt;font-weight: 600;">Verified as to prescribed Office hours:</div>
         <div style="display: flex; justify-content: center; margin-top: 18pt;">
           
-            <div style="display: flex; flex-direction: column; align-items: center;font-weight: 600; border-top: 1px solid #111;  width: 80%;font-size: 7pt;padding-top: 3pt;">
+            <div style="display: flex; flex-direction: column; align-items: center;font-weight: 600; border-top: 1px solid #111;  width: 80%;font-size: 9pt;padding-top: 3pt;">
                 <p >{{
                     reviewerName }}
                 </p>
-                <p v-for="line in reviewerDetailLines" :key="line" style="font-size: 7pt;text-transform: capitalize !important;">{{ line }}</p>
+                <p v-for="line in reviewerDetailLines" :key="line" style="font-size: 7pt;">{{ line }}</p>
             </div>
         </div>
     </div>

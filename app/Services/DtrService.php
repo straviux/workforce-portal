@@ -254,21 +254,42 @@ class DtrService
             ...collect(self::TIME_FIELDS)->mapWithKeys(fn ($field) => [$field => $value->{$field}])->all(),
             'undertime_hours' => $value->undertime_hours,
             'undertime_minutes' => $value->undertime_minutes,
+            'travel_label' => $value->travel_label,
         ];
     }
 
     private function dailyFieldsFromRow(array $row): array
     {
+        $travelLabel = $this->normalizeTravelLabel($row['travel_label'] ?? null);
+
+        // A travel/OB day has no time-in/out — it's rendered as a merged note instead.
+        if ($travelLabel !== null) {
+            return [
+                ...collect(self::TIME_FIELDS)->mapWithKeys(fn ($field) => [$field => null])->all(),
+                'undertime_hours' => 0,
+                'undertime_minutes' => 0,
+                'travel_label' => $travelLabel,
+            ];
+        }
+
         return [
             ...collect(self::TIME_FIELDS)
                 ->mapWithKeys(fn ($field) => [$field => $this->normalizeTime($row[$field] ?? null)])
                 ->all(),
             'undertime_hours' => $this->normalizeUndertimeUnit($row['undertime_hours'] ?? null),
             'undertime_minutes' => $this->normalizeUndertimeUnit($row['undertime_minutes'] ?? null),
+            'travel_label' => null,
         ];
     }
 
     private function normalizeTime(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : null;
+    }
+
+    private function normalizeTravelLabel(?string $value): ?string
     {
         $value = trim((string) $value);
 

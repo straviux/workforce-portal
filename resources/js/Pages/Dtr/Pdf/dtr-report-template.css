@@ -7,15 +7,16 @@
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
+	font-family: 'Open Sans', 'Helvetica Neue', sans-serif, Helvetica, sans-serif;
 	width: 100%;
 }
 
 .dtr-card {
-	width: 80mm;
+	width: 85mm;
 	height: 21cm;
 	box-sizing: border-box;
 	border: 0.5pt dotted #111827;
-	padding: 6mm 5mm;
+	padding: 2mm 3mm;
 	overflow: hidden;
 }
 
@@ -83,42 +84,42 @@
 .dtr-layout-table th,
 .dtr-layout-table td {
 	border: 0.5pt solid #111827;
-	padding: 1px;
+	padding: 2px;
 	font-weight: 600;
 }
 
 .dtr-day-col {
-	width: 14pt;
+	width: 15pt;
 }
 
 .dtr-group-header {
 	text-align: center;
-	font-size: 6pt;
+	font-size: 7pt;
 	letter-spacing: 0;
 }
 
 .dtr-sub-header {
 	text-align: center;
-	font-size: 5pt;
+	font-size: 7pt;
 }
 
 .dtr-date-cell {
 	text-align: center;
 	font-weight: 700;
-	font-size: 6pt;
+	font-size: 7pt;
 }
 
 .dtr-value-cell {
 	text-align: center;
 	height: 14px;
-	font-size: 6pt;
+	font-size: 7pt;
 }
 
 .dtr-special-row {
 	text-align: center;
 	font-weight: 700;
 	letter-spacing: 0;
-	font-size: 6pt;
+	font-size: 7pt;
 	height: 14px;
 }
 

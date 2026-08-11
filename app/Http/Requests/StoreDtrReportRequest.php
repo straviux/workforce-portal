@@ -35,6 +35,7 @@ class StoreDtrReportRequest extends FormRequest
             'daily_values.*.pm_departure' => ['nullable', 'date_format:H:i'],
             'daily_values.*.undertime_hours' => ['nullable', 'integer', 'min:0', 'max:23'],
             'daily_values.*.undertime_minutes' => ['nullable', 'integer', 'min:0', 'max:59'],
+            'daily_values.*.travel_label' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

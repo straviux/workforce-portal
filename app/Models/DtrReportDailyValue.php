@@ -16,6 +16,7 @@ class DtrReportDailyValue extends Model
         'pm_departure',
         'undertime_hours',
         'undertime_minutes',
+        'travel_label',
     ];
 
     protected $casts = [
