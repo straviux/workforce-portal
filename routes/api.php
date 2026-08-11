@@ -25,17 +25,26 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/profile/photo', [ProfileController::class, 'deletePhoto']);
 
     // Employee Fund Transactions
-    Route::get('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'index']);
-    Route::post('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'store']);
-    Route::get('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'show']);
-    Route::put('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'update']);
-    Route::patch('/employee-fund-transactions/{id}/update-status', [EmployeeFundTransactionController::class, 'updateStatus']);
+    Route::get('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'index'])
+        ->middleware('check.permission:employee_fund_transactions.view');
+    Route::post('/employee-fund-transactions', [EmployeeFundTransactionController::class, 'store'])
+        ->middleware('check.permission:employee_fund_transactions.manage');
+    Route::get('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'show'])
+        ->middleware('check.permission:employee_fund_transactions.view');
+    Route::put('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'update'])
+        ->middleware('check.permission:employee_fund_transactions.manage');
+    Route::patch('/employee-fund-transactions/{id}/update-status', [EmployeeFundTransactionController::class, 'updateStatus'])
+        ->middleware('check.permission:employee_fund_transactions.manage');
     Route::delete('/employee-fund-transactions/{id}', [EmployeeFundTransactionController::class, 'destroy'])
         ->middleware('check.permission:employee_fund_transactions.delete');
-    Route::get('/employee-fund-transactions/{id}/dv-pdf', [EmployeeFundTransactionController::class, 'generateDVPdf']);
-    Route::get('/employee-fund-transactions/{id}/obr-pdf', [EmployeeFundTransactionController::class, 'generateOBRPdf']);
-    Route::get('/employee-fund-transactions/{id}/payroll-pdf', [EmployeeFundTransactionController::class, 'generatePayrollPdf']);
-    Route::get('/obr-tracking-info', [EmployeeFundTransactionController::class, 'getObrTrackingInfo']);
+    Route::get('/employee-fund-transactions/{id}/dv-pdf', [EmployeeFundTransactionController::class, 'generateDVPdf'])
+        ->middleware('check.permission:employee_fund_transactions.view');
+    Route::get('/employee-fund-transactions/{id}/obr-pdf', [EmployeeFundTransactionController::class, 'generateOBRPdf'])
+        ->middleware('check.permission:employee_fund_transactions.view');
+    Route::get('/employee-fund-transactions/{id}/payroll-pdf', [EmployeeFundTransactionController::class, 'generatePayrollPdf'])
+        ->middleware('check.permission:employee_fund_transactions.view');
+    Route::get('/obr-tracking-info', [EmployeeFundTransactionController::class, 'getObrTrackingInfo'])
+        ->middleware('check.permission:employee_fund_transactions.view');
 
     // Responsibility Centers
     Route::get('/responsibility-centers', [ResponsibilityCenterController::class, 'index'])

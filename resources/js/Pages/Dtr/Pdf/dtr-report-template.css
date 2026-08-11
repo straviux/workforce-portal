@@ -15,7 +15,7 @@
 	width: 85mm;
 	height: 21cm;
 	box-sizing: border-box;
-	border: 0.5pt dotted #111827;
+	border: 0.5pt solid #111827;
 	padding: 2mm 3mm;
 	overflow: hidden;
 }

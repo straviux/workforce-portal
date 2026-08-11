@@ -111,14 +111,14 @@
                     <div class="ios-section pb-4">
                         <p class="ios-section-label">Particulars Description</p>
                         <div class="ios-card prose prose-sm max-w-none p-4"
-                            v-html="transaction.particulars_description">
+                            v-safe-html="transaction.particulars_description">
                         </div>
                     </div>
 
                     <!-- Remarks -->
                     <div class="ios-section pb-4" v-if="transaction.remarks">
                         <p class="ios-section-label">Remarks</p>
-                        <div class="ios-card prose prose-sm max-w-none p-4" v-html="transaction.remarks"></div>
+                        <div class="ios-card prose prose-sm max-w-none p-4" v-safe-html="transaction.remarks"></div>
                     </div>
 
                 </div>

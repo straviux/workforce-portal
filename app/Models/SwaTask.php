@@ -33,7 +33,7 @@ class SwaTask extends Model
         parent::boot();
 
         static::creating(function (self $model) {
-            $model->created_by = $model->created_by ?? Auth::id();
+            $model->created_by = Auth::id();
             $model->updated_by = Auth::id();
         });
 

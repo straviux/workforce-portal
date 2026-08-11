@@ -37,7 +37,7 @@ class SettingsController extends Controller
         }
 
         return response()->json([
-            'logo_url' => asset(self::DIRECTORY . '/' . $files[0]->getFilename()),
+            'logo_url' => asset(self::DIRECTORY.'/'.$files[0]->getFilename()),
         ]);
     }
 
@@ -47,7 +47,7 @@ class SettingsController extends Controller
     public function uploadOfficeLogo(Request $request): JsonResponse
     {
         $request->validate([
-            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:5120'],
+            'logo' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
         ]);
 
         $file = $request->file('logo');
@@ -61,11 +61,11 @@ class SettingsController extends Controller
 
         // Store new logo with original extension
         $extension = $file->getClientOriginalExtension();
-        $filename = 'office-logo.' . $extension;
+        $filename = 'office-logo.'.$extension;
         $file->move($dir, $filename);
 
         return response()->json([
-            'logo_url' => asset(self::DIRECTORY . '/' . $filename),
+            'logo_url' => asset(self::DIRECTORY.'/'.$filename),
             'message' => 'Office logo updated successfully.',
         ]);
     }

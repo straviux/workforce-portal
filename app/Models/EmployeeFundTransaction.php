@@ -60,8 +60,8 @@ class EmployeeFundTransaction extends Model
         'deduction_hdmf' => 'decimal:2',
         'upload_token_expires_at' => 'datetime',
         'date_obligated' => 'date',
-        'date_from'      => 'date',
-        'date_to'        => 'date',
+        'date_from' => 'date',
+        'date_to' => 'date',
     ];
 
     protected static function boot(): void
@@ -69,7 +69,7 @@ class EmployeeFundTransaction extends Model
         parent::boot();
 
         static::creating(function (self $model) {
-            $model->created_by = $model->created_by ?? Auth::id();
+            $model->created_by = Auth::id();
             $model->updated_by = Auth::id();
         });
 

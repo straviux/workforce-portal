@@ -58,7 +58,10 @@
             </p>
 
             <p style="text-indent:40pt;margin-top:16pt !important;">
-                Issued this <span v-html="formattedIssuedDate" /> at the Provincial Government of Palawan, Puerto
+                Issued this
+                <span v-if="formattedIssuedDate.fallback">{{ formattedIssuedDate.fallback }}</span>
+                <template v-else><strong>{{ formattedIssuedDate.day }} day </strong> of <strong>{{ formattedIssuedDate.month }}, {{ formattedIssuedDate.year }}</strong></template>
+                at the Provincial Government of Palawan, Puerto
                 Princesa City,
                 Philippines.
             </p>
@@ -103,18 +106,18 @@ const subjectShortReference = computed(() => {
 
 const formattedIssuedDate = computed(() => {
     const value = props.certification?.issued_date;
-    if (!value) return '__________ day of __________, ______';
+    if (!value) return { fallback: '__________ day of __________, ______' };
 
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) {
-        return value;
+        return { fallback: value };
     }
 
-    const day = parsed.getDate();
-    const month = parsed.toLocaleDateString('en-PH', { month: 'long' });
-    const year = parsed.getFullYear();
-
-    return `<strong>${formatOrdinal(day)} day </strong> of <strong>${month}, ${year}</strong>`;
+    return {
+        day: formatOrdinal(parsed.getDate()),
+        month: parsed.toLocaleDateString('en-PH', { month: 'long' }),
+        year: parsed.getFullYear(),
+    };
 });
 
 const signatoryTitles = computed(() => {

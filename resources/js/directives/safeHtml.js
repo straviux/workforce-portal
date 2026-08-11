@@ -1,14 +1,17 @@
+import DOMPurify from 'dompurify';
+
 /**
  * v-safe-html directive
- * Renders trusted HTML content (e.g. Quill output) into an element's innerHTML.
- * Only use with content that has been sanitised server-side.
+ * Renders rich-text HTML content (e.g. Quill output) into an element's
+ * innerHTML, sanitised client-side with DOMPurify. Use this instead of
+ * Vue's raw v-html for any user-authored HTML.
  */
 const safeHtmlDirective = {
 	mounted(el, binding) {
-		el.innerHTML = binding.value ?? '';
+		el.innerHTML = DOMPurify.sanitize(binding.value ?? '');
 	},
 	updated(el, binding) {
-		el.innerHTML = binding.value ?? '';
+		el.innerHTML = DOMPurify.sanitize(binding.value ?? '');
 	},
 };
 
