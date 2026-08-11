@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
@@ -36,7 +37,7 @@ class User extends Authenticatable
 
     public function getProfilePhotoUrlAttribute(): ?string
     {
-        return $this->profile_photo ? asset('storage/' . $this->profile_photo) : null;
+        return $this->profile_photo ? asset('storage/'.$this->profile_photo) : null;
     }
 
     public function getOfficeDesignationAttribute($value): ?string
@@ -55,18 +56,18 @@ class User extends Authenticatable
 
     public function hasProfilePhoto(): bool
     {
-        return !empty($this->profile_photo);
+        return ! empty($this->profile_photo);
     }
 
     /**
      * Get all permissions via assigned roles only (no direct user permissions).
      */
-    public function getAllPermissions(): \Illuminate\Support\Collection
+    public function getAllPermissions(): Collection
     {
         return $this->roles()
             ->with('permissions')
             ->get()
-            ->flatMap(fn($role) => $role->permissions)
+            ->flatMap(fn ($role) => $role->permissions)
             ->unique('id')
             ->values();
     }
@@ -100,5 +101,15 @@ class User extends Authenticatable
     public function generatedSwaReports()
     {
         return $this->hasMany(SwaReport::class, 'generated_by')->latest();
+    }
+
+    public function dtrReports()
+    {
+        return $this->morphMany(DtrReport::class, 'subject')->latest();
+    }
+
+    public function generatedDtrReports()
+    {
+        return $this->hasMany(DtrReport::class, 'generated_by')->latest();
     }
 }

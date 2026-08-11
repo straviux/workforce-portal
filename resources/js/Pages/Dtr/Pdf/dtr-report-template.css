@@ -1,0 +1,171 @@
+/* Physical form size: 8cm × 21cm — a narrow card, not a full page.
+   Printed two-up on an A4 portrait sheet (see .dtr-print-sheet/.dtr-card
+   below); each card keeps the original 6mm top/bottom, 5mm left/right inset
+   so the ~70mm usable width used throughout this file stays unchanged. */
+
+.dtr-print-sheet {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	width: 100%;
+}
+
+.dtr-card {
+	width: 80mm;
+	height: 21cm;
+	box-sizing: border-box;
+	border: 0.5pt dotted #111827;
+	padding: 6mm 5mm;
+	overflow: hidden;
+}
+
+.dtr-sheet {
+	width: 100%;
+	max-width: 100%;
+	margin: 0 auto;
+	background: #ffffff;
+	color: #111827;
+	font-family: Arial, Helvetica, sans-serif;
+	padding: 0;
+}
+
+.dtr-sheet__header {
+	text-align: center;
+	margin-bottom: 4px;
+}
+
+.dtr-sheet__header-logos {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+}
+
+.dtr-sheet__header-logos--stacked {
+	flex-direction: column;
+}
+
+.dtr-sheet__header-text {
+	width: 100%;
+}
+
+.dtr-sheet__logo {
+	width: 20px;
+	height: 20px;
+	object-fit: contain;
+	flex-shrink: 0;
+}
+
+.dtr-sheet__line {
+	font-size: 5.5pt;
+	line-height: 1.2;
+}
+
+.dtr-sheet__line--title,
+.dtr-sheet__line--name {
+	font-weight: 700;
+	font-size: 6.5pt;
+}
+
+.dtr-sheet__line--designation,
+.dtr-sheet__line--period {
+	font-size: 5pt;
+}
+
+.dtr-layout-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-size: 6pt;
+	margin: 5px auto 0;
+}
+
+.dtr-layout-table th,
+.dtr-layout-table td {
+	border: 0.5pt solid #111827;
+	padding: 1px;
+	font-weight: 600;
+}
+
+.dtr-day-col {
+	width: 14pt;
+}
+
+.dtr-group-header {
+	text-align: center;
+	font-size: 6pt;
+	letter-spacing: 0;
+}
+
+.dtr-sub-header {
+	text-align: center;
+	font-size: 5pt;
+}
+
+.dtr-date-cell {
+	text-align: center;
+	font-weight: 700;
+	font-size: 6pt;
+}
+
+.dtr-value-cell {
+	text-align: center;
+	height: 14px;
+	font-size: 6pt;
+}
+
+.dtr-special-row {
+	text-align: center;
+	font-weight: 700;
+	letter-spacing: 0;
+	font-size: 6pt;
+	height: 14px;
+}
+
+.dtr-certification {
+	width: 100%;
+	margin: 5px auto 0 !important;
+	text-indent: 8px;
+	padding: 0;
+	font-size: 4.5pt;
+	line-height: 1.25;
+	text-align: justify;
+}
+
+.dtr-signatures {
+	width: 100%;
+	margin: 0 auto;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.dtr-signature-label {
+	font-size: 5pt;
+	margin-bottom: 12px !important;
+}
+
+.dtr-signature-line {
+	min-height: 8px;
+	border-bottom: 0.5pt solid #111827;
+	padding-bottom: 1px;
+	text-align: center;
+	font-size: 5pt;
+	font-weight: 700;
+}
+
+.dtr-signature-line--plain {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.dtr-signature-title {
+	margin-top: 1px;
+	text-align: center;
+	font-size: 4.5pt;
+}
+
+.dtr-signature-title + .dtr-signature-title {
+	margin-top: 1px;
+}

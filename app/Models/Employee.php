@@ -96,4 +96,9 @@ class Employee extends Model
     {
         return $this->morphMany(SwaReport::class, 'subject')->latest();
     }
+
+    public function dtrReports()
+    {
+        return $this->morphMany(DtrReport::class, 'subject')->latest();
+    }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class PermissionsSeeder extends Seeder
 {
@@ -14,7 +15,7 @@ class PermissionsSeeder extends Seeder
     public function run(): void
     {
         // Flush permission cache before seeding
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // ── Permissions ──────────────────────────────────────────
         $permissions = [
@@ -34,6 +35,8 @@ class PermissionsSeeder extends Seeder
             'calendar.manage',
             'swa.view',
             'swa.manage',
+            'dtr.view',
+            'dtr.manage',
             'signatories.view',
             'signatories.manage',
             'users.view',

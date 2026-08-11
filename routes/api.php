@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\CertificationController;
+use App\Http\Controllers\Api\DtrController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeFundTransactionController;
 use App\Http\Controllers\Api\EmployeeUserMatchController;
@@ -119,6 +120,30 @@ Route::middleware(['web', 'auth'])->group(function () {
         ->middleware('check.permission:swa.manage');
     Route::delete('/swa/employees/{id}/reports/{reportId}', [SwaController::class, 'deleteEmployeeReport'])
         ->middleware('check.permission:swa.manage');
+
+    // DTR
+    Route::get('/dtr/personal', [DtrController::class, 'personal'])
+        ->middleware('check.permission:dtr.view');
+    Route::post('/dtr/personal/reports', [DtrController::class, 'storePersonalReport'])
+        ->middleware('check.permission:dtr.manage');
+    Route::get('/dtr/personal/reports/{id}', [DtrController::class, 'personalReport'])
+        ->middleware('check.permission:dtr.view');
+    Route::put('/dtr/personal/reports/{id}', [DtrController::class, 'updatePersonalReport'])
+        ->middleware('check.permission:dtr.manage');
+    Route::delete('/dtr/personal/reports/{id}', [DtrController::class, 'deletePersonalReport'])
+        ->middleware('check.permission:dtr.manage');
+    Route::get('/dtr/employees', [DtrController::class, 'employees'])
+        ->middleware('check.permission:dtr.view');
+    Route::get('/dtr/employees/{id}', [DtrController::class, 'employee'])
+        ->middleware('check.permission:dtr.view');
+    Route::post('/dtr/employees/{id}/reports', [DtrController::class, 'storeEmployeeReport'])
+        ->middleware('check.permission:dtr.manage');
+    Route::get('/dtr/employees/{id}/reports/{reportId}', [DtrController::class, 'employeeReport'])
+        ->middleware('check.permission:dtr.view');
+    Route::put('/dtr/employees/{id}/reports/{reportId}', [DtrController::class, 'updateEmployeeReport'])
+        ->middleware('check.permission:dtr.manage');
+    Route::delete('/dtr/employees/{id}/reports/{reportId}', [DtrController::class, 'deleteEmployeeReport'])
+        ->middleware('check.permission:dtr.manage');
 
     // Signatories
     Route::get('/signatories', [SignatoryController::class, 'index'])

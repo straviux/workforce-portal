@@ -173,6 +173,7 @@ export const PAPER_SIZES = {
 	a4: { w: 794, h: 1123, cssSize: 'A4', label: 'A4 — 210 × 297 mm' },
 	long: { w: 816, h: 1248, cssSize: '8.5in 13in', label: 'Long — 8.5 × 13 in' },
 	landscape: { w: 1248, h: 816, cssSize: '13in 8.5in', label: 'Long Landscape — 13 × 8.5 in' },
+	dtr: { w: 302, h: 794, cssSize: '80mm 210mm', label: 'DTR Card — 8 × 21 cm' },
 };
 
 // Body min-width so the screen preview matches the paper width (margins: 5mm×2 = 10mm)
@@ -180,12 +181,14 @@ const BODY_MIN_WIDTHS = {
 	a4: 'calc(210mm - 10mm)',
 	long: 'calc(8.5in - 10mm)',
 	landscape: 'calc(13in - 10mm)',
+	dtr: 'calc(80mm - 10mm)',
 };
 
 const PAGE_HEIGHTS = {
 	a4: 'calc(297mm - 12mm)',
 	long: 'calc(13in - 12mm)',
 	landscape: 'calc(8.5in - 12mm)',
+	dtr: 'calc(210mm - 12mm)',
 };
 
 export const getPdfCss = (paperSize = 'a4') => {

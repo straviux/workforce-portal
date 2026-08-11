@@ -184,6 +184,10 @@ onMounted(async () => {
                         <i class="pi pi-briefcase mr-3 text-base"></i>
                         <span class="text-sm font-medium">SWA</span>
                     </SidebarLink>
+                    <SidebarLink v-if="hasPermission('dtr.view')" :href="route('dtr.index')" :active="isActive('dtr')">
+                        <i class="pi pi-clock mr-3 text-base"></i>
+                        <span class="text-sm font-medium">DTR</span>
+                    </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
                         :active="isActive('settings.signatories')">
                         <i class="pi pi-pen-to-square mr-3 text-base"></i>
@@ -242,6 +246,11 @@ onMounted(async () => {
                     <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
                         <span class="w-full flex justify-center">
                             <i class="pi pi-briefcase text-xl"></i>
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('dtr.view')" :href="route('dtr.index')" :active="isActive('dtr')">
+                        <span class="w-full flex justify-center">
+                            <i class="pi pi-clock text-xl"></i>
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
