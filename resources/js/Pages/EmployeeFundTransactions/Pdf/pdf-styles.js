@@ -1,5 +1,5 @@
 /**
- * PDF Print CSS Library — Workforce Portal
+ * PDF Print CSS Library — Workforcify
  */
 
 const PDF_CSS = `

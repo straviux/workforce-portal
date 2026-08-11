@@ -298,12 +298,12 @@ onMounted(async () => {
                     <!-- Brand -->
                     <div class="flex items-center gap-3 flex-1 min-w-0">
                         <div
-                            class="w-8 h-8 rounded-xl bg-linear-to-br from-[#2b5876] to-[#4e4376] flex items-center justify-center shrink-0 overflow-hidden">
+                            class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
                             <img v-if="officeLogoUrl" :src="officeLogoUrl" alt="Office Logo"
                                 class="w-full h-full object-contain" />
                             <i v-else class="pi pi-briefcase text-white text-sm"></i>
                         </div>
-                        <span class="text-white font-semibold text-sm hidden sm:inline">Workforce Portal</span>
+                        <span class="text-white font-semibold text-sm hidden sm:inline">Workforcify</span>
                         <div class="hidden md:block w-px h-5 bg-white/10"></div>
                         <span class="text-gray-500 text-xs hidden md:inline">PGP – Office of the Governor</span>
                         <!-- Office Logo (right side of brand) -->

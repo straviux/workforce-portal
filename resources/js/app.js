@@ -82,7 +82,7 @@ import SignatorySnapshotModal from '@/Components/SignatorySnapshotModal.vue';
 import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
 import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Workforce Portal';
+const appName = import.meta.env.VITE_APP_NAME || 'Workforcify';
 
 const Noir = definePreset(Aura, {
 	semantic: {

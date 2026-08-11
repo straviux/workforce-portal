@@ -190,11 +190,11 @@
         :draggable="false">
         <div class="space-y-3 text-sm text-surface-600 dark:text-surface-300">
             <p>
-                Import all user accounts from the Scholarship system into Workforce Portal.
+                Import all user accounts from the Scholarship system into Workforcify.
             </p>
             <div
                 class="rounded-2xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-900/40 p-4 space-y-2">
-                <p>Matching usernames will be updated in Workforce Portal.</p>
+                <p>Matching usernames will be updated in Workforcify.</p>
                 <p>Imported accounts default to <span class="font-semibold">Staff</span>.</p>
                 <p>The imported <span class="font-semibold">admin</span> account will be assigned the <span
                         class="font-semibold">Admin</span> role.</p>

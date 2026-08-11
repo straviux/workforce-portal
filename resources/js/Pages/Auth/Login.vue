@@ -35,7 +35,7 @@ const submit = () => {
 
             <div class="flex flex-col items-center w-full">
                 <h1 class="text-[22px] font-semibold tracking-tight m-0 mb-1 text-center text-gray-900">
-                    Workforce Portal
+                    Workforcify
                 </h1>
                 <p class="text-[13px] mt-0 mb-7 font-normal text-gray-500">Sign in to continue</p>
 
@@ -91,7 +91,7 @@ const submit = () => {
             </div>
 
             <div class="mt-10 flex items-center gap-1.5 text-[11px] text-gray-400">
-                <span>Workforce Portal</span>
+                <span>Workforcify</span>
                 <span class="text-sm leading-none">·</span>
                 <span>© {{ new Date().getFullYear() }}</span>
             </div>
