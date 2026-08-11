@@ -84,23 +84,26 @@
 .dtr-layout-table th,
 .dtr-layout-table td {
 	border: 0.5pt solid #111827;
-	padding: 2px;
-	font-weight: 600;
+	padding-top: 1px;
+	vertical-align: middle;
 }
 
 .dtr-day-col {
 	width: 15pt;
+	font-weight: normal !important;
 }
 
 .dtr-group-header {
 	text-align: center;
 	font-size: 7pt;
 	letter-spacing: 0;
+	font-weight: normal !important;
 }
 
 .dtr-sub-header {
 	text-align: center;
-	font-size: 7pt;
+	font-size: 6.5pt;
+	font-weight: normal !important;
 }
 
 .dtr-date-cell {
@@ -112,6 +115,7 @@
 .dtr-value-cell {
 	text-align: center;
 	height: 14px;
+	font-weight: 700;
 	font-size: 7pt;
 }
 

@@ -2,18 +2,23 @@
     <div class="dtr-sheet" style="margin-top:0 !important">
         <div style="display: flex;flex-direction: column; align-items: center; justify-content: center; ">
             <div style="align-self: flex-start;font-size:6.5pt;margin-top: 2pt;">National Form No. 48</div>
-            <div style="font-size: 13pt; font-weight: bold;margin-top:10pt;letter-spacing: 1pt;">DAILY TIME RECORD</div>
-            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt"><span style="font-size:9pt;font-style: italic;">NAME:</span> 
-                <div style="border-bottom: 1px solid #111;font-size: 8pt;width:80% !important;font-weight: bold;text-align:center">{{ preparedByName }}</div>
+            <div style="font-size: 13pt; font-weight: bold;margin-top:8pt;letter-spacing: 1pt;">DAILY TIME RECORD</div>
+            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt;padding-left:16pt"><span style="font-size:8pt;font-style: italic;">NAME:</span> 
+                <div style="border-bottom: 1px solid #111;font-size: 8pt;width:85% !important;font-weight: bold;
+                text-align:center;padding-bottom: 1pt;margin-top:2pt;">
+                    {{ preparedByName }}</div>
             </div>
-            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt"><span style="font-size:9pt;font-style: italic;">For the month of:</span> 
-                <div style="border-bottom: 1px solid #111;font-size: 6.5pt;font-weight: bold;text-align:center;width: 65% !important;">{{ documentPeriodLabel }}</div>
+            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt;padding-left:16pt">
+                <span style="font-size:8pt;font-style: italic;">For the month of:</span> 
+                <div style="border-bottom: 1px solid #111;font-size: 6pt;font-weight: bold;text-align:center;
+                width: 65% !important;padding-bottom: 1pt;margin-top:2pt;">
+                    {{ documentPeriodLabel }}</div>
             </div>
 
-            <div style="display:flex;width:100%;justify-content: space-between;margin-top:8pt"><span style="font-size:7pt;font-style: italic;">Office Hour of Arrival</span> 
+            <div style="display:flex;width:100%;justify-content: space-between;margin-top:8pt;padding-left:16pt"><span style="font-size:7pt;font-style: italic;">Office Hour of Arrival</span> 
                 <div style="font-size: 6pt;text-align:right;width: 50% !important;font-style: italic;">Regular Days ____________</div>
             </div>
-            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt"><span style="font-size:7pt;font-style: italic;">And Departure</span> 
+            <div style="display:flex;width:100%;justify-content: space-between;margin-top:4pt;padding-left:16pt"><span style="font-size:7pt;font-style: italic;">And Departure</span> 
                 <div style="font-size: 6pt;text-align:right;width: 50% !important;font-style: italic;">Saturdays ____________</div>
             </div>
           
@@ -25,7 +30,7 @@
                     <th class="dtr-day-col" rowspan="2">Day</th>
                     <th class="dtr-group-header" colspan="2">AM</th>
                     <th class="dtr-group-header" colspan="2">PM</th>
-                    <th class="" colspan="2">Undertime</th>
+                    <th class="dtr-group-header" colspan="2">Undertime</th>
                 </tr>
                 <tr>
                     <th class="dtr-sub-header">Arrival</th>
@@ -64,6 +69,12 @@
                         <td class="dtr-value-cell">{{ formatUndertimeUnit(documentRow.values.undertime_hours) }}</td>
                         <td class="dtr-value-cell">{{ formatUndertimeUnit(documentRow.values.undertime_minutes) }}</td>
                     </template>
+                </tr>
+
+                <tr>
+                    <td class="dtr-special-row" colspan="5">TOTAL</td>
+                    <td class="dtr-value-cell">{{ formatUndertimeUnit(totalUndertimeHours) }}</td>
+                    <td class="dtr-value-cell">{{ formatUndertimeUnit(totalUndertimeMinutes) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -159,10 +170,9 @@ function formatTime(value) {
 
     if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
 
-    const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 === 0 ? 12 : hour % 12;
 
-    return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+    return `${displayHour}:${String(minute).padStart(2, '0')}`;
 }
 
 function formatUndertimeUnit(value) {
@@ -170,6 +180,15 @@ function formatUndertimeUnit(value) {
 
     return Number.isFinite(numericValue) && numericValue > 0 ? String(numericValue) : '';
 }
+
+function sumUndertimeField(field) {
+    return props.documentRows
+        .filter((documentRow) => documentRow.kind === 'work' && documentRow.values)
+        .reduce((total, documentRow) => total + (Number(documentRow.values[field]) || 0), 0);
+}
+
+const totalUndertimeHours = computed(() => sumUndertimeField('undertime_hours'));
+const totalUndertimeMinutes = computed(() => sumUndertimeField('undertime_minutes'));
 </script>
 
 <style scoped src="./dtr-report-template.css"></style>
