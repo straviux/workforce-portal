@@ -195,18 +195,36 @@
                     ></template>
 
                     <template v-else>
-                        <td class="dtr-value-cell">
-                            {{ formatTime(documentRow.values.am_arrival) }}
+                        <td
+                            v-if="documentRow.half_day_portion === 'am'"
+                            class="dtr-special-row"
+                            colspan="2"
+                        >
+                            {{ documentRow.half_day_label }}
                         </td>
-                        <td class="dtr-value-cell">
-                            {{ formatTime(documentRow.values.am_departure) }}
+                        <template v-else>
+                            <td class="dtr-value-cell">
+                                {{ formatTime(documentRow.values.am_arrival) }}
+                            </td>
+                            <td class="dtr-value-cell">
+                                {{ formatTime(documentRow.values.am_departure) }}
+                            </td>
+                        </template>
+                        <td
+                            v-if="documentRow.half_day_portion === 'pm'"
+                            class="dtr-special-row"
+                            colspan="2"
+                        >
+                            {{ documentRow.half_day_label }}
                         </td>
-                        <td class="dtr-value-cell">
-                            {{ formatTime(documentRow.values.pm_arrival) }}
-                        </td>
-                        <td class="dtr-value-cell">
-                            {{ formatTime(documentRow.values.pm_departure) }}
-                        </td>
+                        <template v-else>
+                            <td class="dtr-value-cell">
+                                {{ formatTime(documentRow.values.pm_arrival) }}
+                            </td>
+                            <td class="dtr-value-cell">
+                                {{ formatTime(documentRow.values.pm_departure) }}
+                            </td>
+                        </template>
                         <td class="dtr-value-cell">
                             {{
                                 formatUndertimeUnit(

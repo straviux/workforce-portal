@@ -98,6 +98,7 @@ class DtrService
                 'event_date' => optional($event->event_date)->toDateString(),
                 'title' => $event->title,
                 'event_type' => $event->event_type,
+                'day_portion' => $event->day_portion ?? 'full',
                 'description' => $event->description,
                 'is_system' => $event->is_system,
             ])
@@ -168,7 +169,9 @@ class DtrService
             ]);
         }
 
-        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $signatory, $dailyValuesByDate) {
+        $halfDays = $this->halfDayPortions((string) $validated['period_start_date'], (string) $validated['period_end_date']);
+
+        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $signatory, $dailyValuesByDate, $halfDays) {
             $report = DtrReport::query()->create([
                 'module_type' => $moduleType,
                 'subject_type' => $subject->getMorphClass(),
@@ -182,7 +185,7 @@ class DtrService
             foreach ($expectedDates as $date) {
                 $report->dailyValues()->create([
                     'work_date' => $date,
-                    ...$this->dailyFieldsFromRow($dailyValuesByDate->get($date, [])),
+                    ...$this->dailyFieldsFromRow($dailyValuesByDate->get($date, []), $halfDays[$date] ?? null),
                 ]);
             }
 
@@ -219,7 +222,9 @@ class DtrService
             ]);
         }
 
-        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $signatory, $dailyValuesByDate) {
+        $halfDays = $this->halfDayPortions((string) $validated['period_start_date'], (string) $validated['period_end_date']);
+
+        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $signatory, $dailyValuesByDate, $halfDays) {
             $report->update([
                 ...$signatory,
                 'period_start_date' => $validated['period_start_date'],
@@ -232,7 +237,7 @@ class DtrService
             foreach ($expectedDates as $date) {
                 $report->dailyValues()->create([
                     'work_date' => $date,
-                    ...$this->dailyFieldsFromRow($dailyValuesByDate->get($date, [])),
+                    ...$this->dailyFieldsFromRow($dailyValuesByDate->get($date, []), $halfDays[$date] ?? null),
                 ]);
             }
 
@@ -258,7 +263,21 @@ class DtrService
         ];
     }
 
-    private function dailyFieldsFromRow(array $row): array
+    /**
+     * Active half-day calendar events in range, keyed by date => 'am'|'pm'.
+     */
+    private function halfDayPortions(string $startDate, string $endDate): array
+    {
+        return CalendarEvent::query()
+            ->active()
+            ->whereIn('day_portion', ['am', 'pm'])
+            ->betweenDates(Carbon::parse($startDate)->toDateString(), Carbon::parse($endDate)->toDateString())
+            ->get(['event_date', 'day_portion'])
+            ->mapWithKeys(fn (CalendarEvent $event) => [$event->event_date->toDateString() => $event->day_portion])
+            ->all();
+    }
+
+    private function dailyFieldsFromRow(array $row, ?string $blockedPortion = null): array
     {
         $travelLabel = $this->normalizeTravelLabel($row['travel_label'] ?? null);
 
@@ -272,9 +291,18 @@ class DtrService
             ];
         }
 
+        // A half-day holiday/suspension leaves that half without time-in/out.
+        $blockedFields = match ($blockedPortion) {
+            'am' => ['am_arrival', 'am_departure'],
+            'pm' => ['pm_arrival', 'pm_departure'],
+            default => [],
+        };
+
         return [
             ...collect(self::TIME_FIELDS)
-                ->mapWithKeys(fn ($field) => [$field => $this->normalizeTime($row[$field] ?? null)])
+                ->mapWithKeys(fn ($field) => [
+                    $field => in_array($field, $blockedFields, true) ? null : $this->normalizeTime($row[$field] ?? null),
+                ])
                 ->all(),
             'undertime_hours' => $this->normalizeUndertimeUnit($row['undertime_hours'] ?? null),
             'undertime_minutes' => $this->normalizeUndertimeUnit($row['undertime_minutes'] ?? null),
@@ -345,6 +373,7 @@ class DtrService
         $allowedDays = $workDays->map(fn ($day) => strtolower((string) $day))->values();
         $blockedDates = CalendarEvent::query()
             ->active()
+            ->fullDay()
             ->betweenDates($start->toDateString(), $end->toDateString())
             ->pluck('event_date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())

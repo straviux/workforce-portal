@@ -37,6 +37,14 @@
                             </div>
 
                             <div class="ios-form-group">
+                                <label class="ios-label">Coverage <span class="text-red-500">*</span></label>
+                                <Select v-model="form.day_portion" :options="dayPortionOptions" optionLabel="label"
+                                    optionValue="value" class="w-full" />
+                                <span v-if="errors.day_portion" class="ios-hint ios-error">{{ errors.day_portion
+                                    }}</span>
+                            </div>
+
+                            <div class="ios-form-group">
                                 <label class="ios-label">Title <span class="text-red-500">*</span></label>
                                 <InputText v-model="form.title" class="w-full"
                                     placeholder="e.g. Founding Anniversary Holiday" />
@@ -73,8 +81,8 @@
                             class="ios-card p-4 border border-sky-200 bg-sky-50 dark:border-sky-400/20 dark:bg-sky-950/20">
                             <p class="text-sm font-medium text-sky-900 dark:text-sky-100">Used by SWA generation</p>
                             <p class="text-sm text-sky-800/80 dark:text-sky-100/80 mt-1">
-                                Active dates here are automatically excluded from SWA draft values inside the selected
-                                report period.
+                                Active full-day dates are automatically excluded from SWA and DTR drafts. Half-day events
+                                keep the date in the DTR but leave the AM or PM time-in/out blank.
                             </p>
                         </div>
                     </div>
@@ -108,10 +116,17 @@ const eventTypeOptions = [
     { label: 'Work Suspension', value: 'work_suspension' },
 ];
 
+const dayPortionOptions = [
+    { label: 'Full Day', value: 'full' },
+    { label: 'Half Day — Morning (AM)', value: 'am' },
+    { label: 'Half Day — Afternoon (PM)', value: 'pm' },
+];
+
 const defaultForm = () => ({
     event_date: new Date(),
     title: '',
     event_type: 'local_holiday',
+    day_portion: 'full',
     description: '',
     is_active: true,
 });
@@ -127,6 +142,7 @@ watch(() => props.show, (visible) => {
         form.event_date = parseDate(props.event.event_date) ?? new Date();
         form.title = props.event.title ?? '';
         form.event_type = props.event.event_type ?? 'local_holiday';
+        form.day_portion = props.event.day_portion ?? 'full';
         form.description = props.event.description ?? '';
         form.is_active = props.event.is_active ?? true;
     } else {
@@ -144,6 +160,7 @@ async function submit() {
         event_date: formatDateForApi(form.event_date),
         title: form.title,
         event_type: form.event_type,
+        day_portion: form.day_portion,
         description: form.description,
         is_active: !!form.is_active,
     };

@@ -101,6 +101,7 @@ class SwaService
     {
         return CalendarEvent::query()
             ->active()
+            ->fullDay()
             ->orderBy('event_date')
             ->orderBy('title')
             ->get()
@@ -472,6 +473,7 @@ class SwaService
         $allowedDays = $workDays->map(fn($day) => strtolower((string) $day))->values();
         $blockedDates = CalendarEvent::query()
             ->active()
+            ->fullDay()
             ->betweenDates($start->toDateString(), $end->toDateString())
             ->pluck('event_date')
             ->map(fn($date) => Carbon::parse($date)->toDateString())

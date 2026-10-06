@@ -19,6 +19,7 @@ class StoreCalendarEventRequest extends FormRequest
             'event_date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
             'event_type' => ['required', Rule::in(['legal_holiday', 'local_holiday', 'work_suspension'])],
+            'day_portion' => ['sometimes', Rule::in(['full', 'am', 'pm'])],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ];

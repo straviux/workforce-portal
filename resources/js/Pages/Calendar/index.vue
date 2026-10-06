@@ -108,7 +108,7 @@
                                                 {{ event.title }}
                                             </p>
                                             <p class="text-[9px] sm:text-[10px] mt-0.5 opacity-80 truncate">{{
-                                                formatEventType(event.event_type) }}</p>
+                                                formatEventType(event.event_type) }}{{ formatPortion(event.day_portion) }}</p>
                                         </div>
                                         <i v-if="event.is_system"
                                             class="pi pi-lock text-[9px] sm:text-[10px] opacity-70 mt-0.5 shrink-0"></i>
@@ -211,7 +211,12 @@
 
                 <Column header="Type" style="min-width:180px;">
                     <template #body="{ data }">
-                        <Tag :value="formatEventType(data.event_type)" :severity="eventTypeSeverity(data.event_type)" />
+                        <div class="flex flex-wrap gap-2">
+                            <Tag :value="formatEventType(data.event_type)"
+                                :severity="eventTypeSeverity(data.event_type)" />
+                            <Tag :value="{ full: 'Full Day', am: 'Half Day · AM', pm: 'Half Day · PM' }[data.day_portion ?? 'full']"
+                                severity="secondary" />
+                        </div>
                     </template>
                 </Column>
 
@@ -466,6 +471,7 @@ async function toggleActive(event) {
             event_date: dayjs(event.event_date).format('YYYY-MM-DD'),
             title: event.title,
             event_type: event.event_type,
+            day_portion: event.day_portion ?? 'full',
             description: event.description,
             is_active: !event.is_active,
         });
@@ -520,6 +526,10 @@ function formatEventType(value) {
         local_holiday: 'Local Holiday',
         work_suspension: 'Work Suspension',
     }[value] ?? value;
+}
+
+function formatPortion(value) {
+    return { am: ' · Half day AM', pm: ' · Half day PM' }[value] ?? '';
 }
 
 function eventTypeSeverity(value) {

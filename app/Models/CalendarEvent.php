@@ -16,6 +16,7 @@ class CalendarEvent extends Model
         'event_date',
         'title',
         'event_type',
+        'day_portion',
         'description',
         'is_system',
         'is_active',
@@ -46,6 +47,11 @@ class CalendarEvent extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeFullDay(Builder $query): Builder
+    {
+        return $query->where('day_portion', 'full');
     }
 
     public function scopeBetweenDates(Builder $query, string $startDate, string $endDate): Builder

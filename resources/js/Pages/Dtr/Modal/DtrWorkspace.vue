@@ -131,11 +131,13 @@
                     class="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/20 dark:bg-amber-950/20 p-4">
                     <p class="text-sm font-medium text-amber-900 dark:text-amber-100">Excluded Calendar Dates</p>
                     <p class="text-sm text-amber-800/80 dark:text-amber-100/80 mt-1">
-                        These holiday or suspension dates will be skipped from the DTR draft.
+                        Full-day holidays or suspensions are skipped from the DTR draft. Half-day ones keep the date
+                        but leave the AM or PM time blank.
                     </p>
                     <div class="mt-3 flex flex-wrap gap-2">
                         <Tag v-for="event in blockedEventsInRange" :key="`${event.event_date}-${event.title}`"
-                            :value="`${formatShortDate(event.event_date)} · ${event.title}`" severity="warn" />
+                            :value="`${formatShortDate(event.event_date)} · ${event.title}${isHalfDayEvent(event) ? ` (${event.day_portion.toUpperCase()} only)` : ''}`"
+                            severity="warn" />
                     </div>
                 </div>
 
@@ -203,7 +205,7 @@
                                             :disabled="!canManage || isSavingReport || Boolean(row.travel_label)" />
                                         <input v-else v-model="row[column.field]" type="time"
                                             class="w-full rounded border border-surface-300 bg-white px-2 py-1.5 text-center text-sm text-surface-800 outline-none transition focus:border-sky-500 dark:border-surface-700 dark:bg-surface-950 dark:text-surface-100 disabled:opacity-40"
-                                            :disabled="!canManage || isSavingReport || Boolean(row.travel_label)" />
+                                            :disabled="!canManage || isSavingReport || Boolean(row.travel_label) || isHalfDayBlockedField(row.work_date, column.field)" />
                                     </td>
 
                                     <td
@@ -381,7 +383,13 @@ const autoFillTooltip = computed(() => {
         + ` (${generation.work_days.length}-day week). Undertime set to 0h 0m.`;
 });
 const blockedEventsInRange = computed(() => getBlockedEventsInRange(generation.period_start_date, generation.period_end_date));
-const blockedDateSet = computed(() => new Set(blockedEventsInRange.value.map((event) => event.event_date)));
+const isHalfDayEvent = (event) => ['am', 'pm'].includes(event.day_portion);
+const blockedDateSet = computed(() => new Set(blockedEventsInRange.value
+    .filter((event) => !isHalfDayEvent(event))
+    .map((event) => event.event_date)));
+const halfDayPortionByDate = computed(() => new Map(blockedEventsInRange.value
+    .filter(isHalfDayEvent)
+    .map((event) => [event.event_date, event.day_portion])));
 const preparedByOffice = computed(() => formatUpperText(props.subject?.office) || 'SCHOLARSHIP PROGRAM');
 const preparedByName = computed(() => formatUpperText(props.subject?.display_name) || '______________________________');
 const preparedByTitle = computed(() => formatUpperText(props.subject?.designation || props.subject?.secondary_label) || '______________________________');
@@ -650,7 +658,21 @@ function rebuildDraftValues() {
     const workDates = buildWorkDates();
     const existingByDate = new Map(draftValues.value.map((row) => [row.work_date, row]));
 
-    draftValues.value = workDates.map((workDate) => existingByDate.get(workDate) ?? createEmptyDraftRow(workDate));
+    draftValues.value = workDates.map((workDate) => clearHalfDayFields(existingByDate.get(workDate) ?? createEmptyDraftRow(workDate)));
+}
+
+function isHalfDayBlockedField(workDate, field) {
+    const portion = halfDayPortionByDate.value.get(workDate);
+
+    return Boolean(portion) && String(field).startsWith(`${portion}_`);
+}
+
+function clearHalfDayFields(row) {
+    const portion = halfDayPortionByDate.value.get(row.work_date);
+
+    if (!portion) return row;
+
+    return { ...row, [`${portion}_arrival`]: '', [`${portion}_departure`]: '' };
 }
 
 function createEmptyDraftRow(workDate) {
@@ -671,7 +693,7 @@ function autoFillRandomHours() {
 
     const [pmDepartureStart, pmDepartureEnd] = activePmDepartureRange.value;
 
-    draftValues.value = draftValues.value.map((row) => (row.travel_label ? row : {
+    draftValues.value = draftValues.value.map((row) => (row.travel_label ? row : clearHalfDayFields({
         ...row,
         am_arrival: randomTimeBetween(...RANDOM_TIME_RANGES.am_arrival),
         am_departure: randomTimeBetween(...RANDOM_TIME_RANGES.am_departure),
@@ -679,7 +701,7 @@ function autoFillRandomHours() {
         pm_departure: randomTimeBetween(pmDepartureStart, pmDepartureEnd),
         undertime_hours: 0,
         undertime_minutes: 0,
-    }));
+    })));
 
     toast.add({
         severity: 'success',
@@ -829,7 +851,8 @@ function buildDtrDocumentRows(startValue, endValue, workDays, rows, blockedEvent
     if (!startValue || !endValue) return [];
 
     const selectedDays = new Set((workDays ?? []).map((day) => String(day).toLowerCase()));
-    const blockedEventMap = new Map(blockedEvents.map((event) => [event.event_date, event]));
+    const blockedEventMap = new Map(blockedEvents.filter((event) => !isHalfDayEvent(event)).map((event) => [event.event_date, event]));
+    const halfDayEventMap = new Map(blockedEvents.filter(isHalfDayEvent).map((event) => [event.event_date, event]));
     const valuesByDate = new Map((rows ?? []).map((row) => [row.work_date, row]));
     const documentRows = [];
     let cursor = dayjs(startValue).startOf('day');
@@ -897,11 +920,17 @@ function buildDtrDocumentRows(startValue, endValue, workDays, rows, blockedEvent
             continue;
         }
 
+        const halfDayEvent = halfDayEventMap.get(workDate);
+
         documentRows.push({
             key: `work-${workDate}`,
             kind: 'work',
             day_number: cursor.date(),
             values: valuesByDate.get(workDate) ?? createEmptyDraftRow(workDate),
+            half_day_portion: halfDayEvent?.day_portion ?? null,
+            half_day_label: halfDayEvent
+                ? (halfDayEvent.event_type === 'work_suspension' ? 'WORK SUSPENSION' : 'HOLIDAY')
+                : null,
         });
 
         cursor = cursor.add(1, 'day');
