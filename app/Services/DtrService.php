@@ -7,7 +7,7 @@ use App\Models\DtrReport;
 use App\Models\DtrReportDailyValue;
 use App\Models\Employee;
 use App\Models\Signatory;
-use App\Models\SignatoryDocumentDefault;
+use App\Models\Office;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -333,15 +333,14 @@ class DtrService
 
     /**
      * Client-supplied signatory fields are ignored: the snapshot comes
-     * from the Part A office head matching the subject's effective office
-     * (office of assignment when set, else office), falling back to the
-     * centrally configured DTR preset (or the first Part A office head
-     * when no preset exists). Refuses generation when no Part A office
-     * head exists at all, rather than writing a blank signature block.
+     * from the Offices module (the subject office's assigned head, else
+     * its main office's head), falling back to the first Part A office
+     * head. Refuses generation when no Part A office head exists at all,
+     * rather than writing a blank signature block.
      */
     private function resolveSignatory(array $validated, ?Model $subject = null): array
     {
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('dtr', $subject ? SignatoryDocumentDefault::effectiveOffice($subject) : null);
+        $signatory = Office::resolveSnapshot($subject ? Office::effectiveOffice($subject) : null);
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

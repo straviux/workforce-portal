@@ -7,7 +7,7 @@ use App\Http\Requests\StoreNonRosCertificationRequest;
 use App\Http\Requests\UpdateNonRosCertificationRequest;
 use App\Models\Certification;
 use App\Models\Signatory;
-use App\Models\SignatoryDocumentDefault;
+use App\Models\Office;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -150,10 +150,9 @@ class CertificationController extends Controller
     {
         // Client-supplied signatory fields are ignored: the snapshot comes
         // from the Offices module (the office's assigned head, else its
-        // main office's head), falling back to the centrally configured
-        // certification preset (or the first Part A office head when no
-        // preset exists).
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('certification', trim((string) ($validated['office'] ?? '')) ?: null);
+        // main office's head), falling back to the first Part A office
+        // head.
+        $signatory = Office::resolveSnapshot(trim((string) ($validated['office'] ?? '')) ?: null);
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

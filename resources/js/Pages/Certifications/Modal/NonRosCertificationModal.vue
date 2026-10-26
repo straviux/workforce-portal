@@ -116,13 +116,11 @@
                                 <p v-else class="text-surface-400">No office head is available for the certification
                                     footer.</p>
                                 <p class="text-xs text-surface-400 mt-2">
-                                    {{ !centralDefaultLoaded
-                                        ? 'Loading the signatory default…'
-                                        : centralDisplay?.saved
-                                            ? 'Signatory configured in Settings > Signatories. Saving applies that default.'
-                                            : centralDisplay
-                                                ? 'No default saved yet in Settings > Signatories. Saving will use the first office head until a default is saved.'
-                                                : 'Add at least one Part A office head in Signatories before saving a certification.' }}
+                                    {{ !centralOfficesLoaded
+                                        ? 'Loading offices…'
+                                        : centralDisplay
+                                            ? 'Signatory from the Offices module: the office head, else its main office head, else the first office head.'
+                                            : 'Add at least one Part A office head in Signatories before saving a certification.' }}
                                 </p>
                             </div>
                         </div>
@@ -140,7 +138,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { resolveCertificationSubjectParts } from '@/Pages/Certifications/support/subjectName';
-import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
+import { fetchOffices, resolveOfficeDisplay, defaultDisplayLines } from '@/Composables/officeSignatory';
 import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
@@ -173,26 +171,22 @@ const defaultForm = () => ({
 });
 
 const form = reactive(defaultForm());
-// Central Certification default from Settings > Signatories, fetched when
-// the modal opens. The backend resolves the saved certification's
-// signature block from this default, so the modal never sends signatory
+// Central offices from the Offices module, fetched when the modal
+// opens. The backend resolves the saved certification's signature
+// block from the Offices module, so the modal never sends signatory
 // fields of its own.
-const centralCertificationDefault = ref(null);
 const centralOffices = ref([]);
-const centralDefaultLoaded = ref(false);
-const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false, form.office, centralOffices.value));
+const centralOfficesLoaded = ref(false);
+const centralDisplay = computed(() => resolveOfficeDisplay(props.officeHeads, centralOffices.value, form.office));
 
-async function loadCentralCertificationDefault() {
-    centralDefaultLoaded.value = false;
+async function loadCentralOffices() {
+    centralOfficesLoaded.value = false;
     try {
-        const defaults = await fetchSignatoryDefaults();
-        centralCertificationDefault.value = defaults.certification;
-        centralOffices.value = defaults.offices;
+        centralOffices.value = await fetchOffices();
     } catch {
-        centralCertificationDefault.value = null;
         centralOffices.value = [];
     } finally {
-        centralDefaultLoaded.value = true;
+        centralOfficesLoaded.value = true;
     }
 }
 
@@ -201,7 +195,7 @@ watch(() => props.show, (visible) => {
 
     errors.value = {};
 
-    loadCentralCertificationDefault();
+    loadCentralOffices();
 
     if (props.mode === 'edit' && props.certification) {
         const subjectParts = resolveCertificationSubjectParts(props.certification);
@@ -249,13 +243,10 @@ const existingDisplay = computed(() => {
         showDesignation: existingSnapshot.value.signatory_show_designation,
         showOffice: existingSnapshot.value.signatory_show_office,
         infoOrder: existingSnapshot.value.signatory_info_order,
-        saved: false,
-        stale: false,
     };
 });
 const displaySignatory = computed(() => {
     if (centralDisplay.value?.head) return centralDisplay.value.head;
-    if (centralDisplay.value?.stale) return null;
     if (existingDisplay.value?.head) return existingDisplay.value.head;
     return props.officeHeads[0] ?? null;
 });
@@ -266,7 +257,6 @@ const displaySignatoryUnderline = computed(() => {
 });
 const signatoryPreviewLines = computed(() => {
     if (centralDisplay.value?.head) return defaultDisplayLines(centralDisplay.value);
-    if (centralDisplay.value?.stale) return [];
     if (existingDisplay.value?.head) return defaultDisplayLines(existingDisplay.value);
     const firstHead = props.officeHeads[0];
     if (!firstHead) return [];

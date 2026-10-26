@@ -76,14 +76,6 @@
                     </p>
                 </div>
 
-                <div v-else-if="centralSignatoryDisplay?.stale"
-                    class="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/20 dark:bg-amber-950/20 p-4">
-                    <p class="text-sm font-medium text-amber-900 dark:text-amber-100">Saved signatory default no longer exists</p>
-                    <p class="text-sm text-amber-800/80 dark:text-amber-100/80 mt-1">
-                        The office head saved as the DTR default in Signatories was removed. Choose a new default there before generating DTR.
-                    </p>
-                </div>
-
                 <div v-else class="ios-card p-4">
                     <div class="space-y-1 text-sm">
                         <p class="font-medium text-surface-800 dark:text-surface-100" :style="signatoryNameUnderline
@@ -98,9 +90,7 @@
                             </p>
                         </template>
                         <p class="text-xs text-surface-400 mt-2">
-                            {{ centralSignatoryDisplay?.saved
-                                ? 'Signatory configured in Settings > Signatories.'
-                                : 'No default saved yet in Settings > Signatories. This report will use the first office head until a default is saved.' }}
+                            Signatory from the Offices module: the office head, else its main office head, else the first office head.
                         </p>
                     </div>
                 </div>
@@ -264,7 +254,7 @@ import ContextMenu from 'primevue/contextmenu';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewModal.vue';
 import DtrReportTemplate from '@/Pages/Dtr/Pdf/DtrReportTemplate.vue';
-import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
+import { fetchOffices, resolveOfficeDisplay, defaultDisplayLines } from '@/Composables/officeSignatory';
 import dtrReportTemplateCss from '@/Pages/Dtr/Pdf/dtr-report-template.css?raw';
 
 const props = defineProps({
@@ -386,21 +376,17 @@ function openRowMenu(mouseEvent, report) {
 }
 const draftValues = ref([]);
 const editingReportId = ref(null);
-// Central DTR default from Settings > Signatories (fetched when the
-// workspace opens and whenever the generate dialog opens). The backend
-// resolves the saved report's signature block from this default, so the
+// Central offices from the Offices module (fetched when the workspace
+// opens and whenever the generate dialog opens). The backend resolves
+// the saved report's signature block from the Offices module, so the
 // workspace never sends signatory fields of its own.
-const centralDtrDefault = ref(null);
 const centralOffices = ref([]);
-const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true, props.subject?.office_of_assignment || props.subject?.office || null, centralOffices.value));
+const centralSignatoryDisplay = computed(() => resolveOfficeDisplay(officeHeads.value, centralOffices.value, props.subject?.office_of_assignment || props.subject?.office || null));
 
-async function loadCentralDtrDefault() {
+async function loadCentralOffices() {
     try {
-        const defaults = await fetchSignatoryDefaults();
-        centralDtrDefault.value = defaults.dtr;
-        centralOffices.value = defaults.offices;
+        centralOffices.value = await fetchOffices();
     } catch {
-        centralDtrDefault.value = null;
         centralOffices.value = [];
     }
 }
@@ -438,10 +424,6 @@ const generateDialogTitle = computed(() => isEditingReport.value ? 'Update Gener
 const generateDialogHint = computed(() => {
     if (!officeHeads.value.length) {
         return 'Add at least one Part A office head signatory before generating DTR.';
-    }
-
-    if (centralSignatoryDisplay.value?.stale) {
-        return 'The saved DTR signatory default no longer exists. Update it in Settings > Signatories before generating DTR.';
     }
 
     if (!selectedOfficeHead.value) {
@@ -510,7 +492,7 @@ const workspaceHint = computed(() => {
     return 'Generate DTR from the action on the right.';
 });
 
-onMounted(loadCentralDtrDefault);
+onMounted(loadCentralOffices);
 
 // NOTE: no reports-length auto-close here on purpose. The create path
 // closes via the onSuccess callback the parent invokes only after the
@@ -530,7 +512,7 @@ watch(
 function openGenerateDialog() {
     if (!canOpenGenerateDialog.value) return;
 
-    loadCentralDtrDefault();
+    loadCentralOffices();
     resetReportEditState();
     draftValues.value = [];
     showGenerateDialog.value = true;

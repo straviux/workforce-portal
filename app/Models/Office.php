@@ -62,6 +62,24 @@ class Office extends Model
     }
 
     /**
+     * The office a document resolves against, for a document subject:
+     * an employee's office of assignment when one is set, else the
+     * employee's regular office; any other subject's office. Null when
+     * the subject carries no office at all.
+     */
+    public static function effectiveOffice(Model $subject): ?string
+    {
+        if ($subject instanceof Employee) {
+            $office = trim((string) ($subject->office_of_assignment ?? ''))
+                ?: trim((string) ($subject->office ?? ''));
+        } else {
+            $office = trim((string) ($subject->office ?? ''));
+        }
+
+        return $office === '' ? null : $office;
+    }
+
+    /**
      * The live Part A head for an office name, or null when the office
      * is unknown or carries no head anywhere up its chain: the office's
      * own head first, then its main office's head. Matching is
@@ -85,5 +103,53 @@ class Office extends Model
         }
 
         return $record->officeHeadSignatory ?? $record->parent?->officeHeadSignatory;
+    }
+
+    /**
+     * Resolve an office name to the 8 shared snapshot columns
+     * (HasSignatorySnapshot), frozen into the document at creation time.
+     *
+     * Name, office and titles come from the live Signatory row at
+     * generation time, never from client input. The office head is
+     * picked in this order:
+     * 1. The head of the document's office in the Offices module: the
+     *    assignment's own head, else its main office's head.
+     * 2. The first Part A office head (fallback when the office is
+     *    unknown or carries no head).
+     * Titles are always all of the resolved head's current titles, and
+     * the display flags are fixed (no underline, show designation and
+     * office, designation first): per-document-type defaults were
+     * deleted, so there is nothing left to configure per type.
+     *
+     * Returns null when no Part A office head exists at all; callers must
+     * refuse generation in that case (there is no signatory to freeze).
+     */
+    public static function resolveSnapshot(?string $office = null): ?array
+    {
+        $office = trim((string) $office);
+
+        $head = $office !== '' ? self::headForOffice($office) : null;
+        $head ??= Signatory::query()->where('part', 'A')->orderBy('id')->first();
+
+        if ($head === null) {
+            return null;
+        }
+
+        $titles = collect($head->title ?? [])
+            ->map(fn ($title) => trim((string) $title))
+            ->filter()
+            ->values()
+            ->all();
+
+        return [
+            'office_head_signatory_id' => $head->id,
+            'signatory_name' => $head->name,
+            'signatory_office' => $head->office,
+            'signatory_titles' => $titles,
+            'signatory_name_underline' => false,
+            'signatory_show_designation' => true,
+            'signatory_show_office' => true,
+            'signatory_info_order' => 'designation_first',
+        ];
     }
 }

@@ -1,10 +1,10 @@
 /**
  * Signatory configuration status only.
  *
- * The per-report signatory pickers and their presets are gone: all
- * signatory configuration lives in the Signatories module as central
- * per-document-type defaults (see Composables/signatoryDefaults.js), and
- * the backend resolves each document's signature block server-side.
+ * The per-report signatory pickers are gone: all signatory configuration
+ * lives in the Signatories module (office heads) and the Offices module
+ * (which head signs for each office), and the backend resolves each
+ * document's signature block server-side.
  *
  * What remains here is signatoryConfigurationStatus(), the client-side
  * mirror of Signatory::configurationStatus(), kept as the completeness

@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\ResponsibilityCenterController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SignatoryController;
-use App\Http\Controllers\Api\SignatoryDefaultController;
 use App\Http\Controllers\Api\SwaController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -166,12 +165,6 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::patch('/signatories/office-heads/{id}', [SignatoryController::class, 'updateOfficeHead'])
         ->middleware('check.permission:signatories.manage');
     Route::delete('/signatories/office-heads/{id}', [SignatoryController::class, 'destroyOfficeHead'])
-        ->middleware('check.permission:signatories.manage');
-
-    // Signatory defaults (central per-document-type presets)
-    Route::get('/signatory-defaults', [SignatoryDefaultController::class, 'index'])
-        ->middleware('check.permission:signatories.view');
-    Route::put('/signatory-defaults', [SignatoryDefaultController::class, 'update'])
         ->middleware('check.permission:signatories.manage');
 
     // Offices (main offices with their assignments; assignments live here now, not in Settings)

@@ -182,7 +182,7 @@ import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import { useActionButton } from '@/Composables/useActionButton';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
-import { fetchSignatoryDefaults, normalizeSignatoryDefault } from '@/Composables/signatoryDefaults';
+import { fetchOffices } from '@/Composables/officeSignatory';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
 import CwaTemplate from './Pdf/CwaTemplate.vue';
 import PayrollTemplate from './Pdf/PayrollTemplate.vue';
@@ -610,9 +610,8 @@ async function printPdf(type) {
     let signatories = [];
     let configuration = null;
     let signatoriesLoaded = false;
-    let fundDefault = null;
-    let fundDefaultsLoaded = false;
     let offices = [];
+    let officesLoaded = false;
     try {
         const res = await axios.get('/api/signatories');
         signatories = res.data.data ?? [];
@@ -622,12 +621,10 @@ async function printPdf(type) {
         signatoriesLoaded = false;
     }
     try {
-        const defaults = await fetchSignatoryDefaults();
-        fundDefault = defaults.fund;
-        offices = defaults.offices;
-        fundDefaultsLoaded = true;
+        offices = await fetchOffices();
+        officesLoaded = true;
     } catch {
-        fundDefaultsLoaded = false;
+        officesLoaded = false;
     }
 
     if (type !== 'obr') {
@@ -641,24 +638,22 @@ async function printPdf(type) {
         }
     }
 
-    // Central Fund default (no picker): the Part A block is built from
-    // the default saved in Settings > Signatories. A failed defaults fetch
-    // is a refusal, like a failed signatories fetch above. With no default
-    // saved, the first Part A head is used (see the Settings note); its
-    // underline flag is left unset so each template keeps its own default
-    // (CWA underlines, Payroll does not). A saved default whose office
-    // head is gone is refused rather than silently reassigned.
+    // Central Part A block (no picker): the voucher office's head from
+    // the Offices module, else the first Part A head. A failed offices
+    // fetch is a refusal, like a failed signatories fetch above. The
+    // underline flag is left unset so each template keeps its own
+    // default (CWA underlines, Payroll does not).
     if (type !== 'obr') {
-        if (!fundDefaultsLoaded) {
-            toast.add({ severity: 'error', summary: 'Cannot print', detail: 'Could not load the signatory defaults. Please try again.', life: 5000 });
+        if (!officesLoaded) {
+            toast.add({ severity: 'error', summary: 'Cannot print', detail: 'Could not load the offices. Please try again.', life: 5000 });
             return;
         }
 
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
-            const centralPartA = buildCentralFundPartA(fundDefault, partA, voucher.office, offices);
+            const centralPartA = buildCentralOfficePartA(partA, voucher.office, offices);
             if (!centralPartA) {
-                toast.add({ severity: 'error', summary: 'Cannot print', detail: 'The saved Fund default in Settings > Signatories points to an office head that no longer exists. Update the default, then try again.', life: 5000 });
+                toast.add({ severity: 'error', summary: 'Cannot print', detail: 'No office head is available for this voucher.', life: 5000 });
                 return;
             }
 
@@ -676,15 +671,14 @@ async function printPdf(type) {
 
 
 
-function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = null, offices = []) {
+function buildCentralOfficePartA(partAOfficeHeads, voucherOffice = null, offices = []) {
     const partA = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
-    const saved = normalizeSignatoryDefault(fundDefault);
 
-    // By-office first, mirroring the backend: the voucher office's head
-    // in the Offices module (the assignment's own head, else its main
-    // office's head), then the saved default. The saved title subset
-    // only applies when the chosen head is the saved head; otherwise all
-    // of the chosen head's titles.
+    // The voucher office's head from the Offices module (the
+    // assignment's own head, else its main office's head), else the
+    // first office head, all of its titles, and no forced underline
+    // flag, so CWA keeps underlining and Payroll keeps not underlining
+    // (their template-level defaults).
     const wanted = String(voucherOffice ?? '').trim().toLowerCase();
     let officeHead = null;
     if (wanted) {
@@ -703,38 +697,6 @@ function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = nu
         }
     }
 
-    if (saved) {
-        const liveHead = partA.find((entry) => entry.id === saved.office_head_signatory_id) ?? null;
-        const chosen = officeHead ?? liveHead ?? saved.office_head;
-
-        // Saved default, but its office head no longer exists anywhere
-        // and no office head matches the voucher's office.
-        if (!chosen) return null;
-
-        const useSavedTitles = saved.office_head_signatory_id != null && chosen.id === saved.office_head_signatory_id;
-        const snapshot = {
-            office_head: chosen,
-            signatory_titles: useSavedTitles ? saved.signatory_titles : null,
-            signatory_show_designation: saved.signatory_show_designation,
-            signatory_show_office: saved.signatory_show_office,
-            signatory_info_order: saved.signatory_info_order,
-        };
-        const partADetailLines = buildPrintSignatoryDetailLines(snapshot);
-
-        return {
-            ...chosen,
-            part: 'A',
-            name_underline: saved.signatory_name_underline,
-            title: partADetailLines,
-            titles: partADetailLines,
-            office: '',
-        };
-    }
-
-    // No default saved yet: the Offices-module head when one matches,
-    // else the first office head, all of its titles, and no
-    // forced underline flag, so CWA keeps underlining and Payroll keeps
-    // not underlining (their template-level defaults).
     const chosen = officeHead ?? partA[0] ?? null;
     if (!chosen) return null;
 
@@ -755,7 +717,6 @@ function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = nu
         office: '',
     };
 }
-
 function buildPrintSignatoryDetailLines(snapshot) {
     const officeHead = snapshot?.office_head;
 

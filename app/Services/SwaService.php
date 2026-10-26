@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\CalendarEvent;
 use App\Models\Signatory;
-use App\Models\SignatoryDocumentDefault;
+use App\Models\Office;
 use App\Models\SwaReport;
 use App\Models\SwaReportTask;
 use App\Models\SwaReportTaskDailyValue;
@@ -255,11 +255,10 @@ class SwaService
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
         // Client-supplied signatory fields are ignored: the snapshot comes
-        // from the Part A office head matching the subject's effective
-        // office (office of assignment when set, else office), falling
-        // back to the centrally configured SWA preset (or the first Part A
-        // office head when no preset exists).
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa', SignatoryDocumentDefault::effectiveOffice($subject));
+        // from the Offices module (the subject office's assigned head,
+        // else its main office's head), falling back to the first Part A
+        // office head.
+        $signatory = Office::resolveSnapshot(Office::effectiveOffice($subject));
 
         if ($signatory === null) {
             throw ValidationException::withMessages([
@@ -352,11 +351,10 @@ class SwaService
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
         // Client-supplied signatory fields are ignored: the snapshot comes
-        // from the Part A office head matching the subject's effective
-        // office (office of assignment when set, else office), falling
-        // back to the centrally configured SWA preset (or the first Part A
-        // office head when no preset exists).
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa', $report->subject ? SignatoryDocumentDefault::effectiveOffice($report->subject) : null);
+        // from the Offices module (the subject office's assigned head,
+        // else its main office's head), falling back to the first Part A
+        // office head.
+        $signatory = Office::resolveSnapshot($report->subject ? Office::effectiveOffice($report->subject) : null);
 
         if ($signatory === null) {
             throw ValidationException::withMessages([
