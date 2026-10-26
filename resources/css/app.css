@@ -413,3 +413,14 @@ button.morph-success {
 		transition: none;
 	}
 }
+
+/* Modal nav buttons keep their vertical centering in every state.
+   Their centering lives entirely in translateY(-50%), so any hover
+   or active rule that touches transform would drop the button by
+   half its height (seen on video: the modal Save button fell ~17px
+   on hover and snapped back on unhover). Reasserting the centering
+   here, after the design system import, keeps it pinned. */
+.ios-nav-btn:hover,
+.ios-nav-btn:active {
+	transform: translateY(-50%);
+}
