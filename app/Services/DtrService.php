@@ -42,6 +42,7 @@ class DtrService
                 'display_name' => $subject->full_name,
                 'employee_no' => $subject->employee_no,
                 'office' => $subject->office,
+                'office_of_assignment' => $subject->office_of_assignment,
                 'designation' => $subject->designation,
                 'secondary_label' => $subject->employee_type,
             ];
@@ -160,7 +161,7 @@ class DtrService
             ]);
         }
 
-        $signatory = $this->resolveSignatory($validated);
+		$signatory = $this->resolveSignatory($validated, $subject);
         $dailyValuesByDate = collect($validated['daily_values'])
             ->keyBy(fn (array $value) => Carbon::parse($value['work_date'])->toDateString());
 
@@ -213,7 +214,7 @@ class DtrService
             ]);
         }
 
-        $signatory = $this->resolveSignatory($validated);
+		$signatory = $this->resolveSignatory($validated, $report->subject);
         $dailyValuesByDate = collect($validated['daily_values'])
             ->keyBy(fn (array $value) => Carbon::parse($value['work_date'])->toDateString());
 
@@ -332,14 +333,15 @@ class DtrService
 
     /**
      * Client-supplied signatory fields are ignored: the snapshot comes
-     * from the centrally configured DTR preset (or the first Part A
-     * office head when no preset exists). Refuses generation when no
-     * Part A office head exists at all, rather than writing a blank
-     * signature block.
+     * from the Part A office head matching the subject's effective office
+     * (office of assignment when set, else office), falling back to the
+     * centrally configured DTR preset (or the first Part A office head
+     * when no preset exists). Refuses generation when no Part A office
+     * head exists at all, rather than writing a blank signature block.
      */
-    private function resolveSignatory(array $validated): array
+    private function resolveSignatory(array $validated, ?Model $subject = null): array
     {
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('dtr');
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('dtr', $subject ? SignatoryDocumentDefault::effectiveOffice($subject) : null);
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

@@ -15,6 +15,10 @@
  *   }
  *
  * Display resolution (resolveDefaultDisplay):
+ * - When an office is given, the Part A office head matching that office
+ *   wins over the saved default (which stays as the fallback), mirroring
+ *   the backend. The saved title subset only applies when the matched
+ *   head is the saved head.
  * - A saved default whose office head still exists wins, with the live
  *   office-head row (name/office) taking precedence over the snapshot copy.
  * - A saved default whose office head is gone is STALE: it resolves to no
@@ -86,11 +90,15 @@ export async function fetchSignatoryDefaults() {
  * Resolve one document type's display block. `fallbackUnderline` is the
  * underline value used only for the unsaved-default fallback (SWA/DTR
  * previously defaulted to underlined, certifications to not underlined);
- * a saved default always supplies its own flag.
+ * a saved default always supplies its own flag. `office`, when given,
+ * matches a Part A office head by office first (case-insensitive,
+ * trimmed), mirroring the backend: the matched head wins over the saved
+ * default, which stays as the fallback, and the saved title subset only
+ * applies when the matched head is the saved head.
  * Returns null, or { head, titles, underline, showDesignation, showOffice,
  * infoOrder, saved, stale }.
  */
-export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline) {
+export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, office = null) {
     const heads = (officeHeads ?? []).map((head) => ({
         ...head,
         name: String(head?.name ?? '').trim(),
@@ -99,6 +107,28 @@ export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline) {
     })).filter((head) => head.id != null);
 
     if (!heads.length) return null;
+
+    const wanted = String(office ?? '').trim().toLowerCase();
+    const match = wanted
+        ? heads.find((head) => (head.office ?? '').toLowerCase() === wanted) ?? null
+        : null;
+
+    if (match) {
+        const useSavedTitles = def
+            && def.office_head_signatory_id === match.id
+            && Array.isArray(def.signatory_titles);
+
+        return {
+            head: match,
+            titles: useSavedTitles ? def.signatory_titles : [...match.titles],
+            underline: def ? def.signatory_name_underline : Boolean(fallbackUnderline),
+            showDesignation: def ? def.signatory_show_designation : true,
+            showOffice: def ? def.signatory_show_office : true,
+            infoOrder: def ? def.signatory_info_order : 'designation_first',
+            saved: Boolean(def),
+            stale: false,
+        };
+    }
 
     if (def) {
         const liveHead = heads.find((head) => head.id === def.office_head_signatory_id) ?? null;

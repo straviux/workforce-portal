@@ -391,7 +391,7 @@ const editingReportId = ref(null);
 // resolves the saved report's signature block from this default, so the
 // workspace never sends signatory fields of its own.
 const centralDtrDefault = ref(null);
-const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true));
+const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true, props.subject?.office_of_assignment || props.subject?.office || null));
 
 async function loadCentralDtrDefault() {
     try {

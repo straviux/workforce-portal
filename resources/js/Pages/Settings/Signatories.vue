@@ -28,10 +28,12 @@
                 <p class="text-sm text-emerald-900 dark:text-emerald-100">Signatory configuration complete. Fund documents can be printed.</p>
             </div>
 
-            <!-- Document defaults: the single place signatory blocks are
-                 configured. Each document type (SWA, DTR, Certification,
-                 Fund) takes its signature block from its default here;
-                 there are no per-report signatory pickers anymore. -->
+            <!-- Document defaults: the fallback signatory block per
+                 document type. Generation first matches the Part A office
+                 head by the document's office (for employees, the office
+                 of assignment when set, else the office); the default
+                 here applies only when no head matches that office.
+                 There are no per-report signatory pickers anymore. -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
@@ -42,7 +44,9 @@
                         :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
                 </div>
                 <p class="text-sm text-surface-400 mb-4">
-                    These defaults print on every new document of that type. Change them here instead of
+                    These defaults are the fallback for each document type: a new document first uses the
+                    office head matching its office (for employees, the office of assignment when set),
+                    and only falls back to the default here when no head matches. Change them here instead of
                     per document.
                 </p>
 

@@ -653,7 +653,7 @@ async function printPdf(type) {
 
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
-            const centralPartA = buildCentralFundPartA(fundDefault, partA);
+            const centralPartA = buildCentralFundPartA(fundDefault, partA, voucher.office);
             if (!centralPartA) {
                 toast.add({ severity: 'error', summary: 'Cannot print', detail: 'The saved Fund default in Settings > Signatories points to an office head that no longer exists. Update the default, then try again.', life: 5000 });
                 return;
@@ -673,20 +673,31 @@ async function printPdf(type) {
 
 
 
-function buildCentralFundPartA(fundDefault, partAOfficeHeads) {
+function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = null) {
     const partA = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
     const saved = normalizeSignatoryDefault(fundDefault);
 
+    // By-office first, mirroring the backend: the Part A head matching
+    // the voucher's office wins over the saved default, which stays as
+    // the fallback. The saved title subset only applies when the matched
+    // head is the saved head; otherwise all of the matched head's titles.
+    const wanted = String(voucherOffice ?? '').trim().toLowerCase();
+    const match = wanted
+        ? partA.find((entry) => String(entry.office ?? '').trim().toLowerCase() === wanted) ?? null
+        : null;
+
     if (saved) {
         const liveHead = partA.find((entry) => entry.id === saved.office_head_signatory_id) ?? null;
-        const chosen = liveHead ?? saved.office_head;
+        const chosen = match ?? liveHead ?? saved.office_head;
 
-        // Saved default, but its office head no longer exists anywhere.
+        // Saved default, but its office head no longer exists anywhere
+        // and no office head matches the voucher's office.
         if (!chosen) return null;
 
+        const useSavedTitles = saved.office_head_signatory_id != null && chosen.id === saved.office_head_signatory_id;
         const snapshot = {
             office_head: chosen,
-            signatory_titles: saved.signatory_titles,
+            signatory_titles: useSavedTitles ? saved.signatory_titles : null,
             signatory_show_designation: saved.signatory_show_designation,
             signatory_show_office: saved.signatory_show_office,
             signatory_info_order: saved.signatory_info_order,
@@ -703,10 +714,11 @@ function buildCentralFundPartA(fundDefault, partAOfficeHeads) {
         };
     }
 
-    // No default saved yet: first office head, all of its titles, and no
-    // forced underline flag, so CWA keeps underlining and Payroll keeps
-    // not underlining (their template-level defaults).
-    const chosen = partA[0] ?? null;
+    // No default saved yet: the office-matching head when one matches,
+    // else the first office head, all of its titles, and no forced
+    // underline flag, so CWA keeps underlining and Payroll keeps not
+    // underlining (their template-level defaults).
+    const chosen = match ?? partA[0] ?? null;
     if (!chosen) return null;
 
     const snapshot = {

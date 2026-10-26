@@ -21,6 +21,7 @@ class Employee extends Model
         'name_extension',
         'address',
         'office',
+        'office_of_assignment',
         'designation',
         'agency',
         'amount',

@@ -179,7 +179,7 @@ const form = reactive(defaultForm());
 // fields of its own.
 const centralCertificationDefault = ref(null);
 const centralDefaultLoaded = ref(false);
-const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false));
+const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false, form.office));
 
 async function loadCentralCertificationDefault() {
     centralDefaultLoaded.value = false;

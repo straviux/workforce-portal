@@ -88,18 +88,47 @@ class SignatoryDocumentDefault extends Model
     }
 
     /**
+     * The office signatory resolution matches against, for a document
+     * subject: an employee's office of assignment when one is set, else
+     * the employee's regular office; any other subject's office. Null
+     * when the subject carries no office at all.
+     */
+    public static function effectiveOffice(Model $subject): ?string
+    {
+        if ($subject instanceof Employee) {
+            $office = trim((string) ($subject->office_of_assignment ?? ''))
+                ?: trim((string) ($subject->office ?? ''));
+        } else {
+            $office = trim((string) ($subject->office ?? ''));
+        }
+
+        return $office === '' ? null : $office;
+    }
+
+    private static function officesMatch(?string $a, ?string $b): bool
+    {
+        $a = trim((string) $a);
+        $b = trim((string) $b);
+
+        return $a !== '' && $b !== '' && mb_strtolower($a) === mb_strtolower($b);
+    }
+
+    /**
      * Resolve a document type to the 8 shared snapshot columns
      * (HasSignatorySnapshot), frozen into the document at creation time.
      *
      * Name, office and titles come from the live Signatory row at
-     * generation time, never from client input:
-     * - The office head is the default row's head when it still exists,
-     *   otherwise the first Part A office head (fallback when no default
-     *   row exists, or when the configured head was removed).
+     * generation time, never from client input. The office head is
+     * picked by office first: when $office is given, the first Part A
+     * office head whose office matches it (case-insensitive, trimmed).
+     * Only when no head matches (or no office is given) does the
+     * configured default head apply, then the first Part A office head
+     * (fallback when no default row exists, or when the configured head
+     * was removed).
      * - Titles are the configured subset intersected with the head's
      *   current titles when the configured head is the resolved head;
-     *   otherwise (no configured subset, or a fallback head) all of the
-     *   resolved head's current titles.
+     *   otherwise (no configured subset, or a different head resolved)
+     *   all of the resolved head's current titles.
      * - Display flags come from the default row when one exists, else
      *   underline false, show designation true, show office true,
      *   designation_first.
@@ -107,14 +136,26 @@ class SignatoryDocumentDefault extends Model
      * Returns null when no Part A office head exists at all; callers must
      * refuse generation in that case (there is no signatory to freeze).
      */
-    public static function resolveSnapshot(string $type): ?array
+    public static function resolveSnapshot(string $type, ?string $office = null): ?array
     {
         $default = static::query()
             ->with('officeHeadSignatory')
             ->where('document_type', $type)
             ->first();
 
-        $head = $default?->officeHeadSignatory
+        $office = trim((string) $office);
+
+        $head = null;
+
+        if ($office !== '') {
+            $head = Signatory::query()
+                ->where('part', 'A')
+                ->orderBy('id')
+                ->get()
+                ->first(fn (Signatory $candidate) => self::officesMatch($candidate->office, $office));
+        }
+
+        $head ??= $default?->officeHeadSignatory
             ?? Signatory::query()->where('part', 'A')->orderBy('id')->first();
 
         if ($head === null) {

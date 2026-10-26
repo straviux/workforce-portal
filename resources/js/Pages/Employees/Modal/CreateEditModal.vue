@@ -106,6 +106,13 @@
                                         size="small" />
                                 </div>
                             </div>
+                            <div class="ios-form-group">
+                                <label class="ios-label">Office of Assignment <span
+                                        class="text-surface-400 font-normal">(optional)</span></label>
+                                <InputText v-model="form.office_of_assignment"
+                                    placeholder="Assigned office, if different from Office" class="w-full"
+                                    size="small" />
+                            </div>
                             <div class="grid grid-cols-3 gap-3">
                                 <div class="ios-form-group">
                                     <label class="ios-label">Contract Ref. No.</label>
@@ -169,6 +176,13 @@
                                         class="w-full" placeholder="0.00" inputClass="w-full" size="small" />
                                 </div>
                             </div>
+                            <div class="ios-form-group mt-3">
+                                <label class="ios-label">Office of Assignment <span
+                                        class="text-surface-400 font-normal">(optional)</span></label>
+                                <InputText v-model="form.office_of_assignment"
+                                    placeholder="Assigned office, if different from Office" class="w-full"
+                                    size="small" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,6 +228,7 @@ const defaultForm = () => ({
     name_extension: '',
     address: '',
     office: '',
+    office_of_assignment: '',
     designation: '',
     employee_type: 'contract_of_service',
     contract_ref_no: '',
@@ -240,6 +255,7 @@ watch(() => props.show, (val) => {
                 name_extension: props.employee.name_extension || '',
                 address: props.employee.address || '',
                 office: props.employee.office || '',
+                office_of_assignment: props.employee.office_of_assignment || '',
                 designation: props.employee.designation || '',
                 employee_type: props.employee.employee_type || 'contract_of_service',
                 contract_ref_no: props.employee.contract_ref_no || '',

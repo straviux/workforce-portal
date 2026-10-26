@@ -510,7 +510,7 @@ const editingReportTaskRows = ref([]);
 // resolves the saved report's signature block from this default, so the
 // workspace never sends signatory fields of its own.
 const centralSwaDefault = ref(null);
-const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralSwaDefault.value, officeHeads.value, true));
+const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralSwaDefault.value, officeHeads.value, true, props.subject?.office_of_assignment || props.subject?.office || null));
 
 async function loadCentralSwaDefault() {
     try {

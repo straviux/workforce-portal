@@ -39,6 +39,7 @@ class SwaService
                 'display_name' => $subject->full_name,
                 'employee_no' => $subject->employee_no,
                 'office' => $subject->office,
+                'office_of_assignment' => $subject->office_of_assignment,
                 'designation' => $subject->designation,
                 'secondary_label' => $subject->employee_type,
             ];
@@ -254,9 +255,11 @@ class SwaService
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
         // Client-supplied signatory fields are ignored: the snapshot comes
-        // from the centrally configured SWA preset (or the first Part A
+        // from the Part A office head matching the subject's effective
+        // office (office of assignment when set, else office), falling
+        // back to the centrally configured SWA preset (or the first Part A
         // office head when no preset exists).
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa');
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa', SignatoryDocumentDefault::effectiveOffice($subject));
 
         if ($signatory === null) {
             throw ValidationException::withMessages([
@@ -349,9 +352,11 @@ class SwaService
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
         // Client-supplied signatory fields are ignored: the snapshot comes
-        // from the centrally configured SWA preset (or the first Part A
+        // from the Part A office head matching the subject's effective
+        // office (office of assignment when set, else office), falling
+        // back to the centrally configured SWA preset (or the first Part A
         // office head when no preset exists).
-        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa');
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa', $report->subject ? SignatoryDocumentDefault::effectiveOffice($report->subject) : null);
 
         if ($signatory === null) {
             throw ValidationException::withMessages([
