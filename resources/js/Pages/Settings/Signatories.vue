@@ -44,9 +44,13 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ oh.name }}</p>
                             <p v-if="oh.office" class="text-xs text-surface-500">{{ oh.office }}</p>
-                            <div v-if="oh.titles?.length" class="mt-0.5">
-                                <span v-for="(t, i) in oh.titles" :key="i" class="block text-xs text-surface-400">{{ t.text }}
-                                    <span v-if="t.scopes?.length" class="text-surface-300">· {{ t.scopes.map(titleScopeLabel).join(', ') }}</span></span>
+                            <div v-if="oh.titles?.length" class="mt-0.5 space-y-0.5">
+                                <template v-for="scope in TITLE_SCOPES" :key="scope.value">
+                                    <p v-if="titleTexts(oh.titles, scope.value).length" class="text-xs text-surface-400">
+                                        <span class="font-medium text-surface-500">{{ scope.label }}:</span>
+                                        {{ titleTexts(oh.titles, scope.value).join(', ') }}
+                                    </p>
+                                </template>
                             </div>
                         </div>
                         <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
@@ -108,24 +112,21 @@
                 </div>
                 <div class="ios-form-group">
                     <label class="ios-label">Titles / Designations</label>
-                    <div class="space-y-3">
-                        <div v-for="(t, i) in ohForm.titles" :key="i" class="space-y-1.5">
-                            <div class="flex gap-2 items-center">
-                                <InputText v-model="ohForm.titles[i].text" placeholder="e.g. Political Affairs Officer III"
-                                    class="flex-1" size="small" />
-                                <Button severity="danger" text rounded size="small"
-                                    :disabled="ohForm.titles.length === 1" @click="ohForm.titles.splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
-                            </div>
-                            <div class="flex flex-wrap gap-x-3 gap-y-1 pl-1">
-                                <label v-for="scope in TITLE_SCOPES" :key="scope.value"
-                                    class="flex items-center gap-1 text-xs text-surface-500">
-                                    <Checkbox v-model="ohForm.titles[i].scopes" :inputId="`oh-scope-${i}-${scope.value}`" :value="scope.value" />
-                                    {{ scope.label }}
-                                </label>
+                    <p class="text-xs text-surface-500 mb-2">Each document has its own titles: a title typed under SWA renders only in SWA, and so on.</p>
+                    <div class="space-y-4">
+                        <div v-for="scope in TITLE_SCOPES" :key="scope.value">
+                            <p class="text-xs font-medium text-surface-500 mb-1.5">{{ scope.label }}</p>
+                            <div class="space-y-2">
+                                <div v-for="(t, i) in ohForm.titlesByScope[scope.value]" :key="i" class="flex gap-2 items-center">
+                                    <InputText v-model="ohForm.titlesByScope[scope.value][i]" placeholder="e.g. Political Affairs Officer III"
+                                        class="flex-1" size="small" />
+                                    <Button severity="danger" text rounded size="small"
+                                        @click="ohForm.titlesByScope[scope.value].splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
+                                </div>
+                                <Button label="Add title" text size="small" class="rounded !pl-0"
+                                    @click="ohForm.titlesByScope[scope.value].push('')"><template #icon><AppIcon name="Plus" /></template></Button>
                             </div>
                         </div>
-                        <Button label="Add title" text size="small" class="rounded !pl-0"
-                            @click="ohForm.titles.push({ text: '', scopes: [...ALL_TITLE_SCOPES] })"><template #icon><AppIcon name="Plus" /></template></Button>
                     </div>
                 </div>
             </div>
@@ -191,7 +192,7 @@ import ContextMenu from 'primevue/contextmenu';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
-import { ALL_TITLE_SCOPES, TITLE_SCOPES, normalizeTitleEntries, titleScopeLabel } from '@/Composables/officeSignatory';
+import { TITLE_SCOPES, normalizeTitleEntries, titleTexts } from '@/Composables/officeSignatory';
 import { useActionButton } from '@/Composables/useActionButton';
 
 const toast = useToast();
@@ -242,7 +243,8 @@ function toTitles(title) {
 
 // ── Office Head modal state ──
 const ohModal = reactive({ show: false, editId: null });
-const ohForm = reactive({ name: '', office: '', titles: [{ text: '', scopes: [...ALL_TITLE_SCOPES] }] });
+const emptyTitlesByScope = () => Object.fromEntries(TITLE_SCOPES.map((scope) => [scope.value, []]));
+const ohForm = reactive({ name: '', office: '', titlesByScope: emptyTitlesByScope() });
 // The footer button's verb flips with the mode, so each mode gets its
 // own morph action and the live one is the mode open at click time
 // (the mode never changes mid-flight, and the modal only closes after
@@ -263,7 +265,7 @@ function openAddOh() {
     ohModal.editId = null;
     ohForm.name = '';
     ohForm.office = '';
-    ohForm.titles = [{ text: '', scopes: [...ALL_TITLE_SCOPES] }];
+    ohForm.titlesByScope = emptyTitlesByScope();
     ohModal.show = true;
 }
 
@@ -271,22 +273,25 @@ function openEditOh(oh) {
     ohModal.editId = oh.id;
     ohForm.name = oh.name;
     ohForm.office = oh.office ?? '';
-    // Deep copy: editing must not mutate the list rows before saving.
-    ohForm.titles = oh.titles.length
-        ? oh.titles.map((t) => ({ text: t.text ?? '', scopes: [...(t.scopes ?? ALL_TITLE_SCOPES)] }))
-        : [{ text: '', scopes: [...ALL_TITLE_SCOPES] }];
+    // Group the stored entries under their document; an entry ticking
+    // several scopes (legacy all-scopes titles) shows in each of them.
+    const grouped = emptyTitlesByScope();
+    for (const entry of normalizeTitleEntries(oh.titles)) {
+        for (const scope of entry.scopes) {
+            if (grouped[scope]) grouped[scope].push(entry.text);
+        }
+    }
+    ohForm.titlesByScope = grouped;
     ohModal.show = true;
 }
 
 async function submitOhModal() {
-    const titles = ohForm.titles
-        .map((t) => ({ text: String(t.text ?? '').trim(), scopes: [...(t.scopes ?? [])] }))
-        .filter((t) => t.text);
-
-    if (titles.some((t) => !t.scopes.length)) {
-        toast.add({ severity: 'warn', summary: 'Title without a place', detail: 'Tick at least one document for every title.', life: 3500 });
-        return;
-    }
+    // One stored entry per row, scoped to its own section: a title typed
+    // under two documents is stored twice, once per document.
+    const titles = TITLE_SCOPES.flatMap((scope) =>
+        ohForm.titlesByScope[scope.value]
+            .map((text) => ({ text: String(text ?? '').trim(), scopes: [scope.value] }))
+            .filter((t) => t.text));
 
     const payload = {
         name: ohForm.name,
