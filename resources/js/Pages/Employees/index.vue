@@ -143,7 +143,9 @@
     <!-- Modals -->
     <CreateEditModal v-model:show="showCreateEdit" :employee="selectedEmployee" :mode="modalMode" @saved="onSaved" />
     <ViewModal v-model:show="showView" :employee="selectedEmployee" @edit="onEditFromView" />
-    <DeleteConfirmModal v-model:show="showDelete" :employee="selectedEmployee ?? ''" :is-deleting="isDeleting"
+    <DeleteConfirmModal v-model:show="showDelete" :employee="selectedEmployee ?? ''"
+        :action-state="deleteAction.state" :action-label="deleteAction.label"
+        :action-morph-class="deleteAction.morphClass" :action-disabled="deleteAction.disabled"
         @confirm-delete="confirmDelete" />
     <UserMatchModal v-model:show="showUserMatch" @matched="fetchEmployees(pagination.current_page)" />
 </template>
@@ -159,6 +161,7 @@ import DeleteConfirmModal from './Modal/DeleteConfirmModal.vue';
 import UserMatchModal from './Modal/UserMatchModal.vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
+import { useActionButton } from '@/Composables/useActionButton';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -168,7 +171,10 @@ const page = usePage();
 // ── State ────────────────────────────────────────────────
 const employees = ref([]);
 const loading = ref(false);
-const isDeleting = ref(false);
+// Parent-owned morph state for the delete button inside DeleteConfirmModal
+// (the request lives here, so the state lives here too). Wrapped in
+// reactive() so template prop bindings unwrap the composable's refs.
+const deleteAction = reactive(useActionButton({ idleLabel: 'Delete', processingLabel: 'Deleting...', successLabel: 'Deleted' }));
 
 const pagination = reactive({
     filtered_total: 0,
@@ -327,17 +333,23 @@ async function toggleActive(emp) {
 }
 
 async function confirmDelete() {
-    isDeleting.value = true;
+    if (deleteAction.state !== 'idle') return;
     try {
-        await axios.delete(`/api/employees/${selectedEmployee.value.id}`);
-        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Employee deleted.', life: 3000 });
-        showDelete.value = false;
-        fetchEmployees(1);
+        await deleteAction.run(async () => {
+            try {
+                await axios.delete(`/api/employees/${selectedEmployee.value.id}`);
+                toast.add({ severity: 'success', summary: 'Deleted', detail: 'Employee deleted.', life: 3000 });
+            } catch (err) {
+                toast.add({ severity: 'error', summary: 'Error', detail: 'Could not delete employee.', life: 3500 });
+                throw err;
+            }
+        });
     } catch {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'Could not delete employee.', life: 3500 });
-    } finally {
-        isDeleting.value = false;
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showDelete.value = false;
+    fetchEmployees(1);
 }
 
 // ── Formatters ────────────────────────────────────────────

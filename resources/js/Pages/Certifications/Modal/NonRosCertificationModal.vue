@@ -10,9 +10,10 @@
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? `Edit Non-ROS Certification` : `New Non-ROS
                         Certification` }}</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="saving || !officeHeads.length"
+                    <button class="ios-nav-btn ios-nav-action" :disabled="saveAction.disabled || !officeHeads.length"
+                        :class="saveAction.morphClass"
                         @click="submit">
-                        {{ saving ? 'Saving…' : 'Save' }}
+                        {{ saveAction.label }}
                     </button>
                 </div>
 
@@ -140,6 +141,7 @@ import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { resolveCertificationSubjectParts } from '@/Pages/Certifications/support/subjectName';
 import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -151,7 +153,13 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'saved']);
 
 const toast = useToast();
-const saving = ref(false);
+// Idle label stays "Save" in both modes (create + edit), so the mapped
+// pair is Saving... -> Saved rather than a per-mode Update variant.
+const saveAction = useActionButton({
+    idleLabel: 'Save',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
 const errors = ref({});
 
 const defaultForm = () => ({
@@ -279,20 +287,26 @@ async function submit() {
         issued_date: formatDateForApi(form.issued_date),
     };
 
-    saving.value = true;
-
     try {
-        const response = props.mode === 'edit'
-            ? await axios.put(`/api/certifications/non-ros/${props.certification.id}`, payload)
-            : await axios.post('/api/certifications/non-ros', payload);
+        const response = await saveAction.run(async () => {
+            const result = props.mode === 'edit'
+                ? await axios.put(`/api/certifications/non-ros/${props.certification.id}`, payload)
+                : await axios.post('/api/certifications/non-ros', payload);
 
-        toast.add({
-            severity: 'success',
-            summary: 'Saved',
-            detail: props.mode === 'edit' ? 'Certification updated.' : 'Certification saved.',
-            life: 3000,
+            toast.add({
+                severity: 'success',
+                summary: 'Saved',
+                detail: props.mode === 'edit' ? 'Certification updated.' : 'Certification saved.',
+                life: 3000,
+            });
+
+            return result;
         });
 
+        if (!response) return;
+
+        // After the full cycle only: emitting close here keeps "Saved"
+        // visible in the header instead of vanishing with the modal.
         emit('update:show', false);
         emit('saved', response.data.data);
     } catch (error) {
@@ -310,8 +324,6 @@ async function submit() {
                 life: 4000,
             });
         }
-    } finally {
-        saving.value = false;
     }
 }
 

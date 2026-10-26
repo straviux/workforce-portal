@@ -9,8 +9,9 @@
                         <AppIcon name="X" /> Cancel
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? `Edit Particular` : `New Particular` }}</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">
-                        {{ saving ? `Saving…` : `Save` }}
+                    <button class="ios-nav-btn ios-nav-action" :disabled="saveAction.disabled"
+                        :class="saveAction.morphClass" @click="submit">
+                        {{ saveAction.label }}
                     </button>
                 </div>
 
@@ -61,6 +62,7 @@
 import { ref, reactive, computed, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -72,7 +74,9 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'saved']);
 
 const toast = useToast();
-const saving = ref(false);
+// Wrapped in reactive() so template prop bindings unwrap the composable's
+// refs (raw use renders class="dep __v_isRef" in script-setup SFCs).
+const saveAction = reactive(useActionButton({ idleLabel: 'Save', processingLabel: 'Saving...', successLabel: 'Saved' }));
 const errors = ref({});
 
 const defaultForm = () => ({
@@ -115,27 +119,33 @@ async function submit() {
         date_expired: form.date_expired ? new Date(form.date_expired).toISOString().slice(0, 10) : null,
     };
 
-    saving.value = true;
+    if (saveAction.state !== 'idle') return;
     try {
-        if (props.mode === 'edit') {
-            await axios.put(`/api/responsibility-centers/${props.rc.id}/particulars/${props.particular.id}`, payload);
-            toast.add({ severity: 'success', summary: 'Success', detail: 'Particular updated', life: 3000 });
-        } else {
-            await axios.post(`/api/responsibility-centers/${props.rc.id}/particulars`, payload);
-            toast.add({ severity: 'success', summary: 'Success', detail: 'Particular created', life: 3000 });
-        }
-        emit('update:show', false);
-        emit('saved');
-    } catch (err) {
-        const data = err.response?.data;
-        if (data?.errors) {
-            errors.value = Object.fromEntries(Object.entries(data.errors).map(([k, v]) => [k, v[0]]));
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: data?.message ?? 'Failed to save', life: 5000 });
-        }
-    } finally {
-        saving.value = false;
+        await saveAction.run(async () => {
+            try {
+                if (props.mode === 'edit') {
+                    await axios.put(`/api/responsibility-centers/${props.rc.id}/particulars/${props.particular.id}`, payload);
+                    toast.add({ severity: 'success', summary: 'Success', detail: 'Particular updated', life: 3000 });
+                } else {
+                    await axios.post(`/api/responsibility-centers/${props.rc.id}/particulars`, payload);
+                    toast.add({ severity: 'success', summary: 'Success', detail: 'Particular created', life: 3000 });
+                }
+            } catch (err) {
+                const data = err.response?.data;
+                if (data?.errors) {
+                    errors.value = Object.fromEntries(Object.entries(data.errors).map(([k, v]) => [k, v[0]]));
+                } else {
+                    toast.add({ severity: 'error', summary: 'Error', detail: data?.message ?? 'Failed to save', life: 5000 });
+                }
+                throw err;
+            }
+        });
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    emit('update:show', false);
+    emit('saved');
 }
 
 // Drag

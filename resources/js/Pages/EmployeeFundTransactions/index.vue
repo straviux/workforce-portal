@@ -138,13 +138,14 @@
 
         <DeleteConfirmModal v-model:show="modals.delete" :transaction-id="selectedTransaction?.transaction_id"
             :payee-name="selectedTransaction?.payee_name"
-            :date="selectedTransaction ? formatDate(selectedTransaction.created_at) : ''" :is-deleting="isDeleting"
-            @confirm-delete="handleDelete" />
+            :date="selectedTransaction ? formatDate(selectedTransaction.created_at) : ''"
+            :action-state="deleteActionState" @confirm-delete="handleDelete" />
 
-        <RemarksModal v-model:show="modals.remarks" :model-value="selectedTransaction" :is-saving="isSaving"
-            @save="handleSaveRemarks" />
+        <RemarksModal v-model:show="modals.remarks" :model-value="selectedTransaction"
+            :action-state="remarksActionState" @save="handleSaveRemarks" />
 
-        <StatusModal v-model:show="modals.status" :model-value="selectedTransaction" :is-saving="isSaving"
+        <StatusModal v-model:show="modals.status" :model-value="selectedTransaction"
+            :action-state="statusActionState"
             :live-tracking-data="liveObrTrackingData" :is-tracking-loading="liveObrTrackingLoading"
             :tracking-error="liveObrTrackingError" @save="handleSaveStatus" />
 
@@ -179,6 +180,7 @@ import StatusModal from './Modal/StatusModal.vue';
 import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
 
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
+import { useActionButton } from '@/Composables/useActionButton';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
 import { fetchSignatoryDefaults, normalizeSignatoryDefault } from '@/Composables/signatoryDefaults';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
@@ -196,8 +198,30 @@ const { printHtml, buildHtmlDoc } = usePdfPrint();
 // ── State ──
 const transactions = ref([]);
 const loading = ref(false);
-const isSaving = ref(false);
-const isDeleting = ref(false);
+// M3 processing morph: the request lives here (parent), so the morph
+// state lives here too and is passed down to the emit-based modals.
+// The modal buttons only emit; they never fake completion.
+const remarksAction = useActionButton({ processingLabel: 'Saving...', successLabel: 'Saved' });
+const statusAction = useActionButton({ processingLabel: 'Updating...', successLabel: 'Updated' });
+const deleteAction = useActionButton({ processingLabel: 'Deleting...', successLabel: 'Deleted' });
+const remarksActionState = computed(() => ({
+    state: remarksAction.state,
+    label: remarksAction.label,
+    disabled: remarksAction.disabled,
+    morphClass: remarksAction.morphClass,
+}));
+const statusActionState = computed(() => ({
+    state: statusAction.state,
+    label: statusAction.label,
+    disabled: statusAction.disabled,
+    morphClass: statusAction.morphClass,
+}));
+const deleteActionState = computed(() => ({
+    state: deleteAction.state,
+    label: deleteAction.label,
+    disabled: deleteAction.disabled,
+    morphClass: deleteAction.morphClass,
+}));
 const trackingHistoryLoading = ref(false);
 const liveObrTrackingLoading = ref(false);
 const selectedTransaction = ref(null);
@@ -472,60 +496,71 @@ async function openTrackingHistory(transaction) {
 }
 
 // ── Modal Saves ──
+// Each handler awaits its action.run() BEFORE closing its modal, so
+// the success state is visible first. `completed` stays false if the
+// run was ignored by the double-click guard, so a guarded click can
+// never close the modal without saving. On reject the modal stays
+// open and the existing error toast runs unchanged.
 async function handleSaveRemarks(remarks) {
-    isSaving.value = true;
+    let completed = false;
     try {
-        await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
-            transaction_status: normalizeTransactionStatus(selectedTransaction.value.transaction_status),
-            remarks,
+        await remarksAction.run(async () => {
+            await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
+                transaction_status: normalizeTransactionStatus(selectedTransaction.value.transaction_status),
+                remarks,
+            });
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Remarks updated.', life: 3000 });
+            await fetchTransactions();
+            completed = true;
         });
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Remarks updated.', life: 3000 });
-        modals.remarks = false;
-        fetchTransactions();
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to save remarks.', life: 3000 });
-    } finally {
-        isSaving.value = false;
+        return;
     }
+    if (completed) modals.remarks = false;
 }
 
 async function handleSaveStatus(data) {
-    isSaving.value = true;
+    let completed = false;
     try {
-        const payload = typeof data === 'object' && data !== null
-            ? {
-                ...data,
-                transaction_status: normalizeTransactionStatus(data.transaction_status),
-            }
-            : {
-                transaction_status: normalizeTransactionStatus(data),
-            };
+        await statusAction.run(async () => {
+            const payload = typeof data === 'object' && data !== null
+                ? {
+                    ...data,
+                    transaction_status: normalizeTransactionStatus(data.transaction_status),
+                }
+                : {
+                    transaction_status: normalizeTransactionStatus(data),
+                };
 
-        await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
-            ...payload,
+            await axios.patch(`/api/employee-fund-transactions/${selectedTransaction.value.id}/update-status`, {
+                ...payload,
+            });
+            toast.add({ severity: 'success', summary: 'Updated', detail: 'Tracking updated.', life: 3000 });
+            await fetchTransactions();
+            completed = true;
         });
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Tracking updated.', life: 3000 });
-        modals.status = false;
-        fetchTransactions();
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to update tracking.', life: 3000 });
-    } finally {
-        isSaving.value = false;
+        return;
     }
+    if (completed) modals.status = false;
 }
 
 async function handleDelete() {
-    isDeleting.value = true;
+    let completed = false;
     try {
-        await axios.delete(`/api/employee-fund-transactions/${selectedTransaction.value.id}`);
-        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Transaction deleted.', life: 3000 });
-        modals.delete = false;
-        fetchTransactions(1);
+        await deleteAction.run(async () => {
+            await axios.delete(`/api/employee-fund-transactions/${selectedTransaction.value.id}`);
+            toast.add({ severity: 'success', summary: 'Deleted', detail: 'Transaction deleted.', life: 3000 });
+            await fetchTransactions(1);
+            completed = true;
+        });
     } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete transaction.', life: 3000 });
-    } finally {
-        isDeleting.value = false;
+        return;
     }
+    if (completed) modals.delete = false;
 }
 
 

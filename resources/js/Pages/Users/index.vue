@@ -174,8 +174,11 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showCreateEdit = false" />
-            <Button :label="modalMode === 'create' ? 'Create User' : 'Save Changes'" class="rounded"
-                :loading="saving" @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
+            <Button :label="modalMode === 'create' ? createAction.label : editAction.label" class="rounded"
+                :loading="modalMode === 'create' ? createAction.loading : editAction.loading"
+                :disabled="modalMode === 'create' ? createAction.disabled : editAction.disabled"
+                :class="modalMode === 'create' ? createAction.morphClass : editAction.morphClass"
+                @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
         </template>
     </Dialog>
 
@@ -188,8 +191,9 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showDelete = false" />
-            <Button label="Delete" severity="danger" class="rounded" :loading="deleting"
-                @click="confirmDelete"><template #icon><AppIcon name="Trash2" /></template></Button>
+            <Button :label="deleteAction.label" severity="danger" class="rounded" :loading="deleteAction.loading"
+                :disabled="deleteAction.disabled" :class="deleteAction.morphClass"
+                @click="confirmDelete"><template #icon><AppIcon v-if="deleteAction.state === 'success'" name="Check" /><AppIcon v-else name="Trash2" /></template></Button>
         </template>
     </Dialog>
 
@@ -210,8 +214,9 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showImportDialog = false" />
-            <Button label="Import Users" class="rounded" :loading="importingScholarship"
-                @click="importScholarshipUsers"><template #icon><AppIcon name="Download" /></template></Button>
+            <Button :label="importAction.label" class="rounded" :loading="importAction.loading"
+                :disabled="importAction.disabled" :class="importAction.morphClass"
+                @click="importScholarshipUsers"><template #icon><AppIcon v-if="importAction.state === 'success'" name="Check" /><AppIcon v-else name="Download" /></template></Button>
         </template>
     </Dialog>
 
@@ -249,14 +254,16 @@
             </div>
         </div>
         <template #footer>
-            <Button v-if="currentLogoUrl" label="Remove Logo" severity="danger" text class="rounded"
-                :loading="logoDeleting" @click="removeLogo"
-                :disabled="logoUploading"><template #icon><AppIcon name="Trash2" /></template></Button>
+            <Button v-if="currentLogoUrl" :label="removeAction.label" severity="danger" text class="rounded"
+                :loading="removeAction.loading" @click="removeLogo" :class="removeAction.morphClass"
+                :disabled="removeAction.disabled || uploadAction.disabled"><template #icon><AppIcon v-if="removeAction.state === 'success'" name="Check" /><AppIcon v-else name="Trash2" /></template></Button>
             <div class="flex-1"></div>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showLogoDialog = false"
-                :disabled="logoUploading || logoDeleting" />
-            <Button label="Upload Logo" class="rounded" :loading="logoUploading"
-                @click="uploadLogo" :disabled="!selectedFile || logoDeleting"><template #icon><AppIcon name="Upload" /></template></Button>
+                :disabled="uploadAction.disabled || removeAction.disabled" />
+            <Button :label="uploadAction.label" class="rounded" :loading="uploadAction.loading"
+                :disabled="!selectedFile || uploadAction.disabled || removeAction.disabled"
+                :class="uploadAction.morphClass"
+                @click="uploadLogo"><template #icon><AppIcon v-if="uploadAction.state === 'success'" name="Check" /><AppIcon v-else name="Upload" /></template></Button>
         </template>
     </Dialog>
 </template>
@@ -268,6 +275,7 @@ import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import InputError from '@/Components/ui/inputs/InputError.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -277,9 +285,17 @@ const page = usePage();
 const users = ref([]);
 const roleOptions = ref([]);
 const loading = ref(false);
-const saving = ref(false);
-const deleting = ref(false);
-const importingScholarship = ref(false);
+// Morph actions, each wrapped in reactive() so template prop bindings
+// unwrap the composable's refs (raw use renders class="dep __v_isRef" in
+// script-setup SFCs). In script, read e.g. createAction.state as a plain
+// string, never .value. Create/edit need separate actions because their
+// idle/processing/success labels differ by mode.
+const createAction = reactive(useActionButton({ idleLabel: 'Create User', processingLabel: 'Creating...', successLabel: 'Created' }));
+const editAction = reactive(useActionButton({ idleLabel: 'Save Changes', processingLabel: 'Saving...', successLabel: 'Saved' }));
+const deleteAction = reactive(useActionButton({ idleLabel: 'Delete', processingLabel: 'Deleting...', successLabel: 'Deleted' }));
+const importAction = reactive(useActionButton({ idleLabel: 'Import Users', processingLabel: 'Importing...', successLabel: 'Imported' }));
+const uploadAction = reactive(useActionButton({ idleLabel: 'Upload Logo', processingLabel: 'Uploading...', successLabel: 'Uploaded' }));
+const removeAction = reactive(useActionButton({ idleLabel: 'Remove Logo', processingLabel: 'Deleting...', successLabel: 'Deleted' }));
 
 const pagination = reactive({
     filtered_total: 0,
@@ -307,8 +323,6 @@ const formErrors = ref({});
 const currentLogoUrl = ref(null);
 const selectedFile = ref(null);
 const fileInputRef = ref(null);
-const logoUploading = ref(false);
-const logoDeleting = ref(false);
 
 const defaultForm = () => ({
     name: '',
@@ -442,91 +456,109 @@ function formatImportSummary(summary = {}) {
 }
 
 async function importScholarshipUsers() {
-    importingScholarship.value = true;
+    if (importAction.state !== 'idle') return;
 
     try {
-        const { data } = await axios.post('/api/users/import-scholarship');
-        showImportDialog.value = false;
-        toast.add({
-            severity: 'success',
-            summary: 'Import complete',
-            detail: formatImportSummary(data.summary),
-            life: 4500,
+        await importAction.run(async () => {
+            try {
+                const { data } = await axios.post('/api/users/import-scholarship');
+                toast.add({
+                    severity: 'success',
+                    summary: 'Import complete',
+                    detail: formatImportSummary(data.summary),
+                    life: 4500,
+                });
+            } catch (error) {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Import failed',
+                    detail: error.response?.data?.message || 'Could not import scholarship users.',
+                    life: 4500,
+                });
+                throw error;
+            }
         });
-        await fetchUsers(1);
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Import failed',
-            detail: error.response?.data?.message || 'Could not import scholarship users.',
-            life: 4500,
-        });
-    } finally {
-        importingScholarship.value = false;
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showImportDialog.value = false;
+    await fetchUsers(1);
 }
 
 async function submit() {
-    saving.value = true;
+    const action = modalMode.value === 'create' ? createAction : editAction;
+    if (action.state !== 'idle') return;
     formErrors.value = {};
 
     try {
-        const payload = {
-            name: form.name,
-            username: form.username,
-            email: form.email || null,
-            office: form.office || null,
-            designation: form.designation || null,
-            password: form.password,
-            password_confirmation: form.password_confirmation,
-            role_names: form.role_names,
-        };
+        await action.run(async () => {
+            try {
+                const payload = {
+                    name: form.name,
+                    username: form.username,
+                    email: form.email || null,
+                    office: form.office || null,
+                    designation: form.designation || null,
+                    password: form.password,
+                    password_confirmation: form.password_confirmation,
+                    role_names: form.role_names,
+                };
 
-        if (modalMode.value === 'edit' && !payload.password) {
-            delete payload.password;
-            delete payload.password_confirmation;
-        }
+                if (modalMode.value === 'edit' && !payload.password) {
+                    delete payload.password;
+                    delete payload.password_confirmation;
+                }
 
-        if (modalMode.value === 'edit') {
-            await axios.put(`/api/users/${selectedUser.value.id}`, payload);
-        } else {
-            await axios.post('/api/users', payload);
-        }
+                if (modalMode.value === 'edit') {
+                    await axios.put(`/api/users/${selectedUser.value.id}`, payload);
+                } else {
+                    await axios.post('/api/users', payload);
+                }
 
-        toast.add({
-            severity: 'success',
-            summary: modalMode.value === 'edit' ? 'Updated' : 'Created',
-            detail: modalMode.value === 'edit' ? 'User updated.' : 'User created.',
-            life: 3000,
+                toast.add({
+                    severity: 'success',
+                    summary: modalMode.value === 'edit' ? 'Updated' : 'Created',
+                    detail: modalMode.value === 'edit' ? 'User updated.' : 'User created.',
+                    life: 3000,
+                });
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    formErrors.value = normalizeErrors(error.response.data.errors);
+                    toast.add({ severity: 'warn', summary: 'Validation Error', detail: firstError('message') || error.response.data.message || 'Please check the form.', life: 3500 });
+                } else {
+                    toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not save user.', life: 3500 });
+                }
+                throw error;
+            }
         });
-
-        showCreateEdit.value = false;
-        fetchUsers(modalMode.value === 'create' ? 1 : pagination.current_page);
-    } catch (error) {
-        if (error.response?.status === 422) {
-            formErrors.value = normalizeErrors(error.response.data.errors);
-            toast.add({ severity: 'warn', summary: 'Validation Error', detail: firstError('message') || error.response.data.message || 'Please check the form.', life: 3500 });
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not save user.', life: 3500 });
-        }
-    } finally {
-        saving.value = false;
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showCreateEdit.value = false;
+    fetchUsers(modalMode.value === 'create' ? 1 : pagination.current_page);
 }
 
 async function confirmDelete() {
-    deleting.value = true;
+    if (deleteAction.state !== 'idle') return;
 
     try {
-        await axios.delete(`/api/users/${selectedUser.value.id}`);
-        toast.add({ severity: 'success', summary: 'Deleted', detail: 'User deleted.', life: 3000 });
-        showDelete.value = false;
-        fetchUsers(1);
-    } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not delete user.', life: 3500 });
-    } finally {
-        deleting.value = false;
+        await deleteAction.run(async () => {
+            try {
+                await axios.delete(`/api/users/${selectedUser.value.id}`);
+                toast.add({ severity: 'success', summary: 'Deleted', detail: 'User deleted.', life: 3000 });
+            } catch (error) {
+                toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not delete user.', life: 3500 });
+                throw error;
+            }
+        });
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showDelete.value = false;
+    fetchUsers(1);
 }
 
 // --- Office Logo ---
@@ -556,67 +588,76 @@ function onFileSelected(event) {
 
 async function uploadLogo() {
     if (!selectedFile.value) return;
-
-    logoUploading.value = true;
+    if (uploadAction.state !== 'idle') return;
 
     try {
-        const formData = new FormData();
-        formData.append('logo', selectedFile.value);
+        await uploadAction.run(async () => {
+            try {
+                const formData = new FormData();
+                formData.append('logo', selectedFile.value);
 
-        const { data } = await axios.post('/api/settings/office-logo', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+                const { data } = await axios.post('/api/settings/office-logo', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
 
-        currentLogoUrl.value = data.logo_url + '?t=' + Date.now();
-        selectedFile.value = null;
-        if (fileInputRef.value) {
-            fileInputRef.value.value = '';
-        }
+                currentLogoUrl.value = data.logo_url + '?t=' + Date.now();
+                selectedFile.value = null;
+                if (fileInputRef.value) {
+                    fileInputRef.value.value = '';
+                }
 
-        toast.add({
-            severity: 'success',
-            summary: 'Logo Updated',
-            detail: 'Office logo has been updated.',
-            life: 3000,
+                toast.add({
+                    severity: 'success',
+                    summary: 'Logo Updated',
+                    detail: 'Office logo has been updated.',
+                    life: 3000,
+                });
+            } catch (error) {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Upload Failed',
+                    detail: error.response?.data?.message || 'Could not upload logo.',
+                    life: 4000,
+                });
+                throw error;
+            }
         });
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Upload Failed',
-            detail: error.response?.data?.message || 'Could not upload logo.',
-            life: 4000,
-        });
-    } finally {
-        logoUploading.value = false;
+    } catch {
+        // Error toast already shown; dialog stays open as before.
     }
 }
 
 async function removeLogo() {
-    logoDeleting.value = true;
+    if (removeAction.state !== 'idle') return;
 
     try {
-        await axios.delete('/api/settings/office-logo');
-        currentLogoUrl.value = null;
-        selectedFile.value = null;
-        if (fileInputRef.value) {
-            fileInputRef.value.value = '';
-        }
+        await removeAction.run(async () => {
+            try {
+                await axios.delete('/api/settings/office-logo');
+                currentLogoUrl.value = null;
+                selectedFile.value = null;
+                if (fileInputRef.value) {
+                    fileInputRef.value.value = '';
+                }
 
-        toast.add({
-            severity: 'success',
-            summary: 'Logo Removed',
-            detail: 'Office logo has been removed.',
-            life: 3000,
+                toast.add({
+                    severity: 'success',
+                    summary: 'Logo Removed',
+                    detail: 'Office logo has been removed.',
+                    life: 3000,
+                });
+            } catch (error) {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error.response?.data?.message || 'Could not remove logo.',
+                    life: 4000,
+                });
+                throw error;
+            }
         });
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.response?.data?.message || 'Could not remove logo.',
-            life: 4000,
-        });
-    } finally {
-        logoDeleting.value = false;
+    } catch {
+        // Error toast already shown; dialog stays open as before.
     }
 }
 

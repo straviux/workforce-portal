@@ -21,8 +21,10 @@
 
                     <SwaWorkspace v-else module-type="personal" :subject="subject" :tasks="tasks" :reports="reports"
                         :calendar-events="calendarEvents" :office-heads="officeHeads" :can-manage="canManageSwa"
-                        :is-saving-tasks="savingTasks" :is-saving-report="savingReport"
-                        :is-deleting-report="deletingReport" @save-tasks="handleSaveTasks"
+                        :is-saving-tasks="isSavingTasks" :is-saving-report="isSavingReport"
+                        :is-deleting-report="deletingReport" :tasks-action="tasksActionState"
+                        :save-action="saveReportActionState" :update-action="updateReportActionState"
+                        @save-tasks="handleSaveTasks"
                         @save-report="handleSaveReport" @update-report="handleUpdateReport"
                         @delete-report="handleDeleteReport" />
                 </div>
@@ -37,6 +39,7 @@ import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import SwaWorkspace from '@/Pages/Swa/Modal/SwaWorkspace.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -50,8 +53,25 @@ const page = usePage();
 const dragOffset = ref({ x: 0, y: 0 });
 const dragStart = ref(null);
 const loadingSetup = ref(false);
-const savingTasks = ref(false);
-const savingReport = ref(false);
+// Morph state for the workspace action buttons. The requests live here,
+// so the actions live here too; the workspace only renders the plain
+// snapshots below (idle labels stay "Save Tasks" / "Save SWA" /
+// "Update SWA", processing/success follow the Save/Update mapping).
+const tasksAction = useActionButton({ idleLabel: 'Save Tasks', processingLabel: 'Saving...', successLabel: 'Saved' });
+const saveReportAction = useActionButton({ idleLabel: 'Save SWA', processingLabel: 'Saving...', successLabel: 'Saved' });
+const updateReportAction = useActionButton({ idleLabel: 'Update SWA', processingLabel: 'Updating...', successLabel: 'Updated' });
+const actionStateSnapshot = (action) => computed(() => ({
+    state: action.state,
+    label: action.label,
+    loading: action.loading,
+    disabled: action.disabled,
+    morphClass: action.morphClass,
+}));
+const tasksActionState = actionStateSnapshot(tasksAction);
+const saveReportActionState = actionStateSnapshot(saveReportAction);
+const updateReportActionState = actionStateSnapshot(updateReportAction);
+const isSavingTasks = computed(() => tasksAction.disabled);
+const isSavingReport = computed(() => saveReportAction.disabled || updateReportAction.disabled);
 const deletingReport = ref(false);
 const subject = ref(null);
 const tasks = ref([]);
@@ -95,18 +115,26 @@ async function fetchSetup() {
     }
 }
 
-async function handleSaveTasks(payload, options = {}) {
-    if (!canManageSwa.value) return false;
+// Raw tasks request, shared by the Save Tasks button path (wrapped in
+// the tasks morph below) and the Generate path (which must NOT run the
+// tasks morph: the report morph already covers the whole generation,
+// and a nested tasks success hold would stall the report request).
+async function putTasks(payload, options = {}) {
+    await axios.put('/api/swa/personal/tasks', { tasks: payload });
+    await fetchSetup();
 
-    savingTasks.value = true;
+    if (!options.silent) {
+        toast.add({ severity: 'success', summary: 'Saved', detail: 'Personal SWA tasks saved.', life: 3000 });
+    }
+}
+
+async function handleSaveTasks(payload, options = {}) {
+    if (!canManageSwa.value || tasksAction.state !== 'idle') return false;
 
     try {
-        await axios.put('/api/swa/personal/tasks', { tasks: payload });
-        await fetchSetup();
-
-        if (!options.silent) {
-            toast.add({ severity: 'success', summary: 'Saved', detail: 'Personal SWA tasks saved.', life: 3000 });
-        }
+        await tasksAction.run(async () => {
+            await putTasks(payload, options);
+        });
 
         return true;
     } catch (error) {
@@ -117,51 +145,60 @@ async function handleSaveTasks(payload, options = {}) {
             life: 4000,
         });
         return false;
-    } finally {
-        savingTasks.value = false;
     }
 }
 
-async function handleSaveReport(payload) {
-    if (!canManageSwa.value) return;
+async function handleSaveReport(payload, callbacks = {}) {
+    if (!canManageSwa.value || saveReportAction.state !== 'idle') return;
 
-    savingReport.value = true;
+    let tasksError = null;
 
     try {
-        const { tasks: taskPayload, ...reportPayload } = payload;
-        const tasksSaved = await handleSaveTasks(taskPayload, { silent: true });
+        await saveReportAction.run(async () => {
+            const { tasks: taskPayload, ...reportPayload } = payload;
 
-        if (!tasksSaved) return;
+            try {
+                await putTasks(taskPayload, { silent: true });
+            } catch (error) {
+                tasksError = error;
+                throw error;
+            }
 
-        await axios.post('/api/swa/personal/reports', reportPayload);
-        await fetchSetup();
+            await axios.post('/api/swa/personal/reports', reportPayload);
+            await fetchSetup();
 
-        toast.add({ severity: 'success', summary: 'Generated', detail: 'Personal SWA generated.', life: 3000 });
+            toast.add({ severity: 'success', summary: 'Generated', detail: 'Personal SWA generated.', life: 3000 });
+        });
     } catch (error) {
         toast.add({
             severity: 'error',
             summary: 'Error',
-            detail: extractErrorMessage(error, 'Could not generate personal SWA.'),
+            detail: extractErrorMessage(
+                tasksError ?? error,
+                tasksError ? 'Could not save personal SWA tasks.' : 'Could not generate personal SWA.',
+            ),
             life: 4000,
         });
-    } finally {
-        savingReport.value = false;
+        callbacks.onError?.(error);
+        return;
     }
+
+    // After the full morph cycle, so the "Saved" state is visible first.
+    callbacks.onSuccess?.();
 }
 
 async function handleUpdateReport(payload, callbacks = {}) {
-    if (!canManageSwa.value) return;
-
-    savingReport.value = true;
+    if (!canManageSwa.value || updateReportAction.state !== 'idle') return;
 
     try {
-        const { report_id: reportId, ...reportPayload } = payload;
+        await updateReportAction.run(async () => {
+            const { report_id: reportId, ...reportPayload } = payload;
 
-        await axios.put(`/api/swa/personal/reports/${reportId}`, reportPayload);
-        await fetchSetup();
+            await axios.put(`/api/swa/personal/reports/${reportId}`, reportPayload);
+            await fetchSetup();
 
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Personal SWA updated.', life: 3000 });
-        callbacks.onSuccess?.();
+            toast.add({ severity: 'success', summary: 'Updated', detail: 'Personal SWA updated.', life: 3000 });
+        });
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -170,9 +207,11 @@ async function handleUpdateReport(payload, callbacks = {}) {
             life: 4000,
         });
         callbacks.onError?.(error);
-    } finally {
-        savingReport.value = false;
+        return;
     }
+
+    // After the full morph cycle, so the "Updated" state is visible first.
+    callbacks.onSuccess?.();
 }
 
 async function handleDeleteReport(payload, callbacks = {}) {

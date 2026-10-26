@@ -9,9 +9,12 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Add Remarks</span>
-                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving"
+                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave"
+                        :disabled="actionState?.disabled" :class="actionState?.morphClass"
                         v-tooltip="'Save Remarks'">
-                        <AppIcon name="Save" class="text-emerald-500" />
+                        <AppIcon v-if="actionState?.state === 'success'" name="Check" class="text-emerald-500" />
+                        <AppIcon v-else name="Save" class="text-emerald-500" />
+                        <span v-if="actionState?.label">{{ actionState.label }}</span>
                     </button>
                 </div>
 
@@ -63,7 +66,10 @@ import { ref, watch, computed } from 'vue';
 const props = defineProps({
     show: Boolean,
     modelValue: { type: Object, default: null },
-    isSaving: { type: Boolean, default: false },
+    // Parent-owned morph state (the save request lives in the parent):
+    // { state, label, disabled, morphClass }. Idle label is '' so the
+    // button stays icon-only until processing/success shows its text.
+    actionState: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:show', 'save']);

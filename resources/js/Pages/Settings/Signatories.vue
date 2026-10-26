@@ -37,8 +37,9 @@
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
                         Document defaults
                     </p>
-                    <Button v-if="canManageSignatories" label="Save defaults" class="rounded" size="small"
-                        :loading="defaultsSaving" @click="saveDefaults"><template #icon><AppIcon name="Save" /></template></Button>
+                    <Button v-if="canManageSignatories" :label="saveDefaultsAction.label" class="rounded" size="small"
+                        :loading="saveDefaultsAction.loading" :disabled="saveDefaultsAction.disabled"
+                        :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
                 </div>
                 <p class="text-sm text-surface-400 mb-4">
                     These defaults print on every new document of that type. Change them here instead of
@@ -240,8 +241,9 @@
             </div>
             <template #footer>
                 <Button label="Cancel" severity="secondary" text class="rounded" @click="ohModal.show = false" />
-                <Button :label="ohModal.editId ? `Save` : `Add`"
-                    class="rounded" :loading="ohModal.saving" :disabled="!ohForm.name.trim()" @click="submitOhModal"><template #icon><AppIcon :name="ohModal.editId ? 'Check' : 'Plus'" /></template></Button>
+                <Button :label="ohModalAction.label"
+                    class="rounded" :loading="ohModalAction.loading" :disabled="ohModalAction.disabled || !ohForm.name.trim()"
+                    :class="ohModalAction.morphClass" @click="submitOhModal"><template #icon><AppIcon v-if="ohModalAction.state === 'success'" name="Check" /><AppIcon v-else :name="ohModal.editId ? 'Check' : 'Plus'" /></template></Button>
             </template>
         </Dialog>
 
@@ -282,8 +284,9 @@
             </div>
             <template #footer>
                 <Button label="Cancel" severity="secondary" text class="rounded" @click="bcdModal.show = false" />
-                <Button label="Save" class="rounded" :loading="bcdModal.saving"
-                    :disabled="!bcdForm_modal.name.trim()" @click="submitBcdModal"><template #icon><AppIcon name="Check" /></template></Button>
+                <Button :label="bcdAction.label" class="rounded" :loading="bcdAction.loading"
+                    :disabled="bcdAction.disabled || !bcdForm_modal.name.trim()" :class="bcdAction.morphClass"
+                    @click="submitBcdModal"><template #icon><AppIcon name="Check" /></template></Button>
             </template>
         </Dialog>
 
@@ -298,6 +301,7 @@ import ContextMenu from 'primevue/contextmenu';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
+import { useActionButton } from '@/Composables/useActionButton';
 import { SIGNATORY_DEFAULT_TYPES, fetchSignatoryDefaults, toTitleList } from '@/Composables/signatoryDefaults';
 
 const toast = useToast();
@@ -347,8 +351,23 @@ function toTitles(title) {
 }
 
 // ── Office Head modal state ──
-const ohModal = reactive({ show: false, editId: null, saving: false });
+const ohModal = reactive({ show: false, editId: null });
 const ohForm = reactive({ name: '', office: '', titles: [''] });
+// The footer button's verb flips with the mode, so each mode gets its
+// own morph action and the live one is the mode open at click time
+// (the mode never changes mid-flight, and the modal only closes after
+// the full run() cycle, so the success label is actually seen).
+const ohAddAction = useActionButton({
+    idleLabel: 'Add',
+    processingLabel: 'Adding...',
+    successLabel: 'Added',
+});
+const ohEditAction = useActionButton({
+    idleLabel: 'Save',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
+const ohModalAction = computed(() => (ohModal.editId ? ohEditAction : ohAddAction));
 
 function openAddOh() {
     ohModal.editId = null;
@@ -367,36 +386,43 @@ function openEditOh(oh) {
 }
 
 async function submitOhModal() {
-    ohModal.saving = true;
     const payload = {
         name: ohForm.name,
         office: ohForm.office,
         title: ohForm.titles.filter((t) => t.trim()),
     };
     try {
-        if (ohModal.editId) {
-            const res = await axios.patch(`/api/signatories/office-heads/${ohModal.editId}`, payload);
-            const idx = officeHeads.value.findIndex((r) => r.id === ohModal.editId);
-            if (idx !== -1) officeHeads.value[idx] = { ...res.data.data, titles: toTitles(res.data.data.title) };
-            toast.add({ severity: 'success', summary: 'Saved', detail: 'Office head updated.', life: 3000 });
-        } else {
-            const res = await axios.post('/api/signatories/office-heads', payload);
-            officeHeads.value.push({ ...res.data.data, titles: toTitles(res.data.data.title) });
-            toast.add({ severity: 'success', summary: 'Added', detail: 'Office head added.', life: 3000 });
-        }
+        await ohModalAction.value.run(async () => {
+            if (ohModal.editId) {
+                const res = await axios.patch(`/api/signatories/office-heads/${ohModal.editId}`, payload);
+                const idx = officeHeads.value.findIndex((r) => r.id === ohModal.editId);
+                if (idx !== -1) officeHeads.value[idx] = { ...res.data.data, titles: toTitles(res.data.data.title) };
+                toast.add({ severity: 'success', summary: 'Saved', detail: 'Office head updated.', life: 3000 });
+            } else {
+                const res = await axios.post('/api/signatories/office-heads', payload);
+                officeHeads.value.push({ ...res.data.data, titles: toTitles(res.data.data.title) });
+                toast.add({ severity: 'success', summary: 'Added', detail: 'Office head added.', life: 3000 });
+            }
+        });
+
+        // After the full cycle only: closing here keeps "Saved"/"Added"
+        // visible in the footer instead of vanishing with the modal.
         ohModal.show = false;
         await load(true);
     } catch (err) {
         const msg = err.response?.data?.message ?? 'Could not save office head.';
         toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3500 });
-    } finally {
-        ohModal.saving = false;
     }
 }
 
 // ── BCD modal state ──
-const bcdModal = reactive({ show: false, part: null, saving: false });
+const bcdModal = reactive({ show: false, part: null });
 const bcdForm_modal = reactive({ name: '', office: '', titles: [''] });
+const bcdAction = useActionButton({
+    idleLabel: 'Save',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
 
 function openEditPart(row) {
     bcdModal.part = row.part;
@@ -407,7 +433,6 @@ function openEditPart(row) {
 }
 
 async function submitBcdModal() {
-    bcdModal.saving = true;
     const payload = {
         signatories: [{
             part: bcdModal.part,
@@ -417,26 +442,29 @@ async function submitBcdModal() {
         }],
     };
     try {
-        await axios.post('/api/signatories', payload);
-        const idx = bcdForm.value.findIndex((r) => r.part === bcdModal.part);
-        if (idx !== -1) {
-            bcdForm.value[idx] = {
-                part: bcdModal.part,
-                name: bcdForm_modal.name,
-                office: bcdForm_modal.office,
-                titles: bcdForm_modal.titles.filter((t) => t.trim()).length
-                    ? [...bcdForm_modal.titles]
-                    : [''],
-            };
-        }
+        await bcdAction.run(async () => {
+            await axios.post('/api/signatories', payload);
+            const idx = bcdForm.value.findIndex((r) => r.part === bcdModal.part);
+            if (idx !== -1) {
+                bcdForm.value[idx] = {
+                    part: bcdModal.part,
+                    name: bcdForm_modal.name,
+                    office: bcdForm_modal.office,
+                    titles: bcdForm_modal.titles.filter((t) => t.trim()).length
+                        ? [...bcdForm_modal.titles]
+                        : [''],
+                };
+            }
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Signatory updated.', life: 3000 });
+        });
+
+        // After the full cycle only: closing here keeps "Saved"
+        // visible in the footer instead of vanishing with the modal.
         bcdModal.show = false;
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Signatory updated.', life: 3000 });
         await load(true);
     } catch (err) {
         const msg = err.response?.data?.message ?? 'Could not update signatory.';
         toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3500 });
-    } finally {
-        bcdModal.saving = false;
     }
 }
 
@@ -447,7 +475,11 @@ const infoOrderOptions = [
     { label: 'Office first', value: 'office_first' },
 ];
 const savedDefaults = ref({ swa: null, dtr: null, certification: null, fund: null });
-const defaultsSaving = ref(false);
+const saveDefaultsAction = useActionButton({
+    idleLabel: 'Save defaults',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
 
 function emptyDefaultForm(underline = false) {
     return {
@@ -574,8 +606,6 @@ async function loadDefaults(silent = false) {
 }
 
 async function saveDefaults() {
-    defaultsSaving.value = true;
-
     const defaults = {};
     for (const docType of defaultTypes) {
         const form = defaultsForm[docType.key];
@@ -600,14 +630,14 @@ async function saveDefaults() {
     }
 
     try {
-        await axios.put('/api/signatory-defaults', { defaults });
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Document defaults saved.', life: 3000 });
-        await loadDefaults(true);
+        await saveDefaultsAction.run(async () => {
+            await axios.put('/api/signatory-defaults', { defaults });
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Document defaults saved.', life: 3000 });
+            await loadDefaults(true);
+        });
     } catch (err) {
         const msg = err.response?.data?.message ?? 'Could not save document defaults.';
         toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3500 });
-    } finally {
-        defaultsSaving.value = false;
     }
 }
 

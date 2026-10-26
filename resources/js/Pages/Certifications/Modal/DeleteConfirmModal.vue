@@ -8,8 +8,10 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Delete Certification</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="isDeleting" @click="emit('confirm-delete')">
-                        <AppIcon name="Trash2" class="text-red-500" />
+                    <button class="ios-nav-btn ios-nav-action" :disabled="actionDisabled"
+                        :class="actionMorphClass" @click="emit('confirm-delete')">
+                        <AppIcon v-if="actionState === 'success'" name="Check" />
+                        <span>{{ actionLabel }}</span>
                     </button>
                 </div>
 
@@ -36,11 +38,17 @@
 <script setup>
 import { computed, ref } from 'vue';
 
+// The delete request lives in the parent (Certifications/index.vue), so
+// the morph state is owned there and passed down here; this modal never
+// fakes completion. actionLabel renders as the header button's text.
 defineProps({
     show: Boolean,
     certificationName: { type: String, default: '' },
     issuedDate: { type: String, default: '' },
-    isDeleting: { type: Boolean, default: false },
+    actionLabel: { type: String, default: 'Delete' },
+    actionDisabled: { type: Boolean, default: false },
+    actionMorphClass: { type: String, default: '' },
+    actionState: { type: String, default: 'idle' },
 });
 
 const emit = defineEmits(['update:show', 'confirm-delete']);

@@ -240,8 +240,9 @@
 
                     <div class="flex items-center gap-2 flex-wrap">
                         <Button label="Close" severity="secondary" text @click="closeGenerateDialog" />
-                        <Button :label="isEditingReport ? 'Update DTR' : 'Save DTR'" class="rounded" size="small"
-                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="emitSaveReport"><template #icon><AppIcon :name="isEditingReport ? 'Save' : 'Check'" /></template></Button>
+                        <Button :label="generateAction.label" class="rounded" size="small"
+                            :loading="generateAction.loading" :disabled="!canRunGenerateAction || generateAction.disabled"
+                            :class="generateAction.morphClass" @click="emitSaveReport"><template #icon><AppIcon v-if="generateAction.state === 'success'" name="Check" /><AppIcon v-else :name="isEditingReport ? 'Save' : 'Check'" /></template></Button>
                     </div>
                 </div>
             </template>
@@ -275,6 +276,18 @@ const props = defineProps({
     canManage: { type: Boolean, default: false },
     isSavingReport: { type: Boolean, default: false },
     isDeletingReport: { type: Boolean, default: false },
+    // Parent-owned useActionButton snapshots (plain state objects, see the
+    // parent modal): the create path's action and the update path's action.
+    // The workspace picks between them by editing state; the parent owns
+    // the request, so the morph lives there, not here.
+    saveAction: {
+        type: Object,
+        default: () => ({ state: 'idle', label: 'Save DTR', loading: false, disabled: false, morphClass: '' }),
+    },
+    updateAction: {
+        type: Object,
+        default: () => ({ state: 'idle', label: 'Update DTR', loading: false, disabled: false, morphClass: '' }),
+    },
 });
 
 const emit = defineEmits(['save-report', 'update-report', 'delete-report']);
@@ -402,6 +415,9 @@ const generation = reactive({
 
 const canOpenGenerateDialog = computed(() => Boolean(props.subject) && props.canManage);
 const isEditingReport = computed(() => editingReportId.value !== null);
+// Morph button state for the Generate dialog footer: the update action
+// while editing a saved report, the create action otherwise.
+const generateAction = computed(() => isEditingReport.value ? props.updateAction : props.saveAction);
 const officeHeads = computed(() => props.officeHeads ?? []);
 const selectedOfficeHead = computed(() => centralSignatoryDisplay.value?.head ?? null);
 const draftDates = computed(() => draftValues.value.map((row) => row.work_date));
@@ -492,13 +508,11 @@ const workspaceHint = computed(() => {
 
 onMounted(loadCentralDtrDefault);
 
-watch(() => props.reports?.length ?? 0, (currentCount, previousCount) => {
-    if (!showGenerateDialog.value) return;
-    if (previousCount == null || currentCount <= previousCount) return;
-
-    showGenerateDialog.value = false;
-});
-
+// NOTE: no reports-length auto-close here on purpose. The create path
+// closes via the onSuccess callback the parent invokes only after the
+// save action's full morph cycle (processing -> success -> idle), so
+// the success state stays visible instead of vanishing the moment the
+// refreshed report list arrives mid-request.
 watch(
     [() => generation.work_days.slice(), () => generation.period_start_date, () => generation.period_end_date],
     () => {
@@ -655,7 +669,11 @@ function emitSaveReport() {
         return;
     }
 
-    emit('save-report', payload);
+    emit('save-report', payload, {
+        onSuccess: () => {
+            closeGenerateDialog();
+        },
+    });
 }
 
 function toggleWorkDay(day) {

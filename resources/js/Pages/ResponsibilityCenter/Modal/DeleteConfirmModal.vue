@@ -40,9 +40,12 @@
                     <div class="ios-section">
                         <div class="flex gap-3">
                             <Button label="Cancel" severity="secondary" class="flex-1 rounded" outlined
-                                :disabled="deleting" @click="emit('update:show', false)" />
-                            <Button label="Delete" severity="danger" class="flex-1 rounded" :loading="deleting"
-                                :disabled="deleting" @click="emit('confirm')" />
+                                :disabled="actionDisabled" @click="emit('update:show', false)" />
+                            <Button :label="actionLabel" severity="danger" class="flex-1 rounded"
+                                :loading="actionLoading" :disabled="actionDisabled" :class="actionMorphClass"
+                                @click="emit('confirm')">
+                                <template #icon><AppIcon v-if="actionState === 'success'" name="Check" /></template>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -55,11 +58,19 @@
 <script setup>
 import { ref, computed } from 'vue';
 
+// The delete request lives in the parent (ResponsibilityCenter/index.vue),
+// which owns the useActionButton state and passes these primitives down —
+// the modal never fakes completion itself. The Delete button had no idle
+// icon, so the icon slot only renders the success check.
 defineProps({
     show: Boolean,
     type: { type: String, default: 'rc' }, // 'rc' | 'particular'
     targetName: { type: String, default: '' },
-    deleting: { type: Boolean, default: false },
+    actionLabel: { type: String, default: 'Delete' },
+    actionState: { type: String, default: 'idle' },
+    actionLoading: { type: Boolean, default: false },
+    actionDisabled: { type: Boolean, default: false },
+    actionMorphClass: { type: String, default: '' },
 });
 
 const emit = defineEmits(['update:show', 'confirm']);

@@ -193,7 +193,9 @@
     <DeleteConfirmModal v-model:show="showDeleteModal"
         :certification-name="selectedCertification ? formatSubjectDisplayName(selectedCertification) : ''"
         :issued-date="selectedCertification ? formatDate(selectedCertification.issued_date) : ''"
-        :is-deleting="isDeleting" @confirm-delete="handleDelete" />
+        :action-label="deleteAction.label" :action-disabled="deleteAction.disabled"
+        :action-morph-class="deleteAction.morphClass" :action-state="deleteAction.state"
+        @confirm-delete="handleDelete" />
 
     <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
         :title="pdfPreview.title" />
@@ -215,6 +217,7 @@ import {
     buildCertificationSubjectDisplayName,
     buildCertificationSubjectName,
 } from '@/Pages/Certifications/support/subjectName';
+import { useActionButton } from '@/Composables/useActionButton';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -225,7 +228,14 @@ const { buildHtmlDoc } = usePdfPrint();
 const certifications = ref([]);
 const officeHeads = ref([]);
 const loading = ref(false);
-const isDeleting = ref(false);
+// Delete morph lives here (the request lives here), not in the modal:
+// the modal button renders this state via props, and the modal only
+// closes after the full run() cycle so "Deleted" is actually seen.
+const deleteAction = useActionButton({
+    idleLabel: 'Delete',
+    processingLabel: 'Deleting...',
+    successLabel: 'Deleted',
+});
 const showNonRosRegistry = ref(false);
 const showCertificationModal = ref(false);
 const showDeleteModal = ref(false);
@@ -422,18 +432,21 @@ async function handleDelete() {
         return;
     }
 
-    isDeleting.value = true;
-
     try {
-        await axios.delete(`/api/certifications/non-ros/${selectedCertification.value.id}`);
-        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Certification deleted.', life: 3000 });
+        await deleteAction.run(async () => {
+            await axios.delete(`/api/certifications/non-ros/${selectedCertification.value.id}`);
+            toast.add({ severity: 'success', summary: 'Deleted', detail: 'Certification deleted.', life: 3000 });
+
+            const targetPage = certifications.value.length === 1 && pagination.current_page > 1
+                ? pagination.current_page - 1
+                : pagination.current_page;
+
+            await fetchCertifications(targetPage);
+        });
+
+        // After the full cycle only: closing here keeps "Deleted"
+        // visible in the modal instead of vanishing with the modal.
         showDeleteModal.value = false;
-
-        const targetPage = certifications.value.length === 1 && pagination.current_page > 1
-            ? pagination.current_page - 1
-            : pagination.current_page;
-
-        await fetchCertifications(targetPage);
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -441,8 +454,6 @@ async function handleDelete() {
             detail: error.response?.data?.message ?? 'Could not delete certification.',
             life: 3500,
         });
-    } finally {
-        isDeleting.value = false;
     }
 }
 

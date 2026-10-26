@@ -9,8 +9,9 @@
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? 'Edit Calendar Event' : 'New Calendar Event'
                         }}</span>
-                    <button type="button" class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">
-                        {{ saving ? 'Saving…' : 'Save' }}
+                    <button type="button" class="ios-nav-btn ios-nav-action" :disabled="saveAction.disabled"
+                        :class="saveAction.morphClass" @click="submit">
+                        {{ saveAction.label }}
                     </button>
                 </div>
 
@@ -97,6 +98,7 @@ import dayjs from 'dayjs';
 import { computed, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -107,7 +109,7 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'saved']);
 
 const toast = useToast();
-const saving = ref(false);
+const saveAction = useActionButton({ idleLabel: 'Save', processingLabel: 'Saving...', successLabel: 'Saved' });
 const errors = ref({});
 
 const eventTypeOptions = [
@@ -153,8 +155,9 @@ watch(() => props.show, (visible) => {
 });
 
 async function submit() {
+    if (saveAction.state !== 'idle') return;
+
     errors.value = {};
-    saving.value = true;
 
     const payload = {
         event_date: formatDateForApi(form.event_date),
@@ -166,15 +169,20 @@ async function submit() {
     };
 
     try {
-        const response = props.mode === 'edit' && props.event
-            ? await axios.put(`/api/calendar/${props.event.id}`, payload)
-            : await axios.post('/api/calendar', payload);
+        // Awaited before emitting, so the success pill shows before close.
+        const response = await saveAction.run(async () => {
+            const res = props.mode === 'edit' && props.event
+                ? await axios.put(`/api/calendar/${props.event.id}`, payload)
+                : await axios.post('/api/calendar', payload);
 
-        toast.add({
-            severity: 'success',
-            summary: 'Saved',
-            detail: props.mode === 'edit' ? 'Calendar event updated.' : 'Calendar event saved.',
-            life: 3000,
+            toast.add({
+                severity: 'success',
+                summary: 'Saved',
+                detail: props.mode === 'edit' ? 'Calendar event updated.' : 'Calendar event saved.',
+                life: 3000,
+            });
+
+            return res;
         });
 
         emit('update:show', false);
@@ -194,8 +202,6 @@ async function submit() {
                 life: 4000,
             });
         }
-    } finally {
-        saving.value = false;
     }
 }
 

@@ -130,8 +130,11 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showCreateEdit = false" />
-            <Button :label="modalMode === 'create' ? 'Create Role' : 'Save Changes'" class="rounded"
-                :loading="saving" @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
+            <Button :label="modalMode === 'create' ? createAction.label : editAction.label" class="rounded"
+                :loading="modalMode === 'create' ? createAction.loading : editAction.loading"
+                :disabled="modalMode === 'create' ? createAction.disabled : editAction.disabled"
+                :class="modalMode === 'create' ? createAction.morphClass : editAction.morphClass"
+                @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
         </template>
     </Dialog>
 
@@ -145,8 +148,9 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showDelete = false" />
-            <Button label="Delete" severity="danger" class="rounded" :loading="deleting"
-                @click="confirmDelete"><template #icon><AppIcon name="Trash2" /></template></Button>
+            <Button :label="deleteAction.label" severity="danger" class="rounded" :loading="deleteAction.loading"
+                :disabled="deleteAction.disabled" :class="deleteAction.morphClass"
+                @click="confirmDelete"><template #icon><AppIcon v-if="deleteAction.state === 'success'" name="Check" /><AppIcon v-else name="Trash2" /></template></Button>
         </template>
     </Dialog>
 </template>
@@ -158,6 +162,7 @@ import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import InputError from '@/Components/ui/inputs/InputError.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -167,8 +172,14 @@ const page = usePage();
 const roles = ref([]);
 const permissionOptions = ref([]);
 const loading = ref(false);
-const saving = ref(false);
-const deleting = ref(false);
+// Morph actions, each wrapped in reactive() so template prop bindings
+// unwrap the composable's refs (raw use renders class="dep __v_isRef" in
+// script-setup SFCs). In script, read e.g. createAction.state as a plain
+// string, never .value. Create/edit need separate actions because their
+// idle/processing/success labels differ by mode.
+const createAction = reactive(useActionButton({ idleLabel: 'Create Role', processingLabel: 'Creating...', successLabel: 'Created' }));
+const editAction = reactive(useActionButton({ idleLabel: 'Save Changes', processingLabel: 'Saving...', successLabel: 'Saved' }));
+const deleteAction = reactive(useActionButton({ idleLabel: 'Delete', processingLabel: 'Deleting...', successLabel: 'Deleted' }));
 
 const pagination = reactive({
     filtered_total: 0,
@@ -333,55 +344,67 @@ function openRowMenu(event, role) {
 }
 
 async function submit() {
-    saving.value = true;
+    const action = modalMode.value === 'create' ? createAction : editAction;
+    if (action.state !== 'idle') return;
     formErrors.value = {};
 
     try {
-        const payload = {
-            name: form.name,
-            permissions: form.permissions,
-        };
+        await action.run(async () => {
+            try {
+                const payload = {
+                    name: form.name,
+                    permissions: form.permissions,
+                };
 
-        if (modalMode.value === 'edit') {
-            await axios.put(`/api/roles/${selectedRole.value.id}`, payload);
-        } else {
-            await axios.post('/api/roles', payload);
-        }
+                if (modalMode.value === 'edit') {
+                    await axios.put(`/api/roles/${selectedRole.value.id}`, payload);
+                } else {
+                    await axios.post('/api/roles', payload);
+                }
 
-        toast.add({
-            severity: 'success',
-            summary: modalMode.value === 'edit' ? 'Updated' : 'Created',
-            detail: modalMode.value === 'edit' ? 'Role updated.' : 'Role created.',
-            life: 3000,
+                toast.add({
+                    severity: 'success',
+                    summary: modalMode.value === 'edit' ? 'Updated' : 'Created',
+                    detail: modalMode.value === 'edit' ? 'Role updated.' : 'Role created.',
+                    life: 3000,
+                });
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    formErrors.value = normalizeErrors(error.response.data.errors);
+                    toast.add({ severity: 'warn', summary: 'Validation Error', detail: error.response.data.message || 'Please check the form.', life: 3500 });
+                } else {
+                    toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not save role.', life: 3500 });
+                }
+                throw error;
+            }
         });
-
-        showCreateEdit.value = false;
-        fetchRoles(modalMode.value === 'create' ? 1 : pagination.current_page);
-    } catch (error) {
-        if (error.response?.status === 422) {
-            formErrors.value = normalizeErrors(error.response.data.errors);
-            toast.add({ severity: 'warn', summary: 'Validation Error', detail: error.response.data.message || 'Please check the form.', life: 3500 });
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not save role.', life: 3500 });
-        }
-    } finally {
-        saving.value = false;
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showCreateEdit.value = false;
+    fetchRoles(modalMode.value === 'create' ? 1 : pagination.current_page);
 }
 
 async function confirmDelete() {
-    deleting.value = true;
+    if (deleteAction.state !== 'idle') return;
 
     try {
-        await axios.delete(`/api/roles/${selectedRole.value.id}`);
-        toast.add({ severity: 'success', summary: 'Deleted', detail: 'Role deleted.', life: 3000 });
-        showDelete.value = false;
-        fetchRoles(1);
-    } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not delete role.', life: 3500 });
-    } finally {
-        deleting.value = false;
+        await deleteAction.run(async () => {
+            try {
+                await axios.delete(`/api/roles/${selectedRole.value.id}`);
+                toast.add({ severity: 'success', summary: 'Deleted', detail: 'Role deleted.', life: 3000 });
+            } catch (error) {
+                toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not delete role.', life: 3500 });
+                throw error;
+            }
+        });
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    showDelete.value = false;
+    fetchRoles(1);
 }
 
 fetchRoles(1);

@@ -9,8 +9,11 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Update Status & OBR</span>
-                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving">
-                        <AppIcon name="Save" class="text-emerald-500" />
+                    <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave"
+                        :disabled="actionState?.disabled" :class="actionState?.morphClass">
+                        <AppIcon v-if="actionState?.state === 'success'" name="Check" class="text-emerald-500" />
+                        <AppIcon v-else name="Save" class="text-emerald-500" />
+                        <span v-if="actionState?.label">{{ actionState.label }}</span>
                     </button>
                 </div>
 
@@ -102,7 +105,10 @@ const props = defineProps({
             { label: 'Suspended', value: 'suspended' },
         ],
     },
-    isSaving: { type: Boolean, default: false },
+    // Parent-owned morph state (the save request lives in the parent):
+    // { state, label, disabled, morphClass }. Idle label is '' so the
+    // button stays icon-only until processing/success shows its text.
+    actionState: { type: Object, default: null },
     liveTrackingData: { type: Object, default: null },
     isTrackingLoading: { type: Boolean, default: false },
     trackingError: { type: String, default: '' },

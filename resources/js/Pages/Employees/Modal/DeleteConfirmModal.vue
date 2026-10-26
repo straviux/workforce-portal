@@ -9,8 +9,10 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Delete Employee</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="isDeleting" @click="emit('confirm-delete')">
-                        <AppIcon name="Trash2" class="text-red-500" />
+                    <button class="ios-nav-btn ios-nav-action" :disabled="actionDisabled"
+                        :class="actionMorphClass" @click="emit('confirm-delete')">
+                        <AppIcon v-if="actionState === 'idle'" name="Trash2" class="text-red-500" />
+                        <template v-else>{{ actionLabel }}</template>
                     </button>
                 </div>
 
@@ -37,10 +39,17 @@
 <script setup>
 import { ref, computed } from 'vue';
 
+// The delete request lives in the parent (Employees/index.vue), which owns
+// the useActionButton state and passes these primitives down — the modal
+// never fakes completion itself. Idle keeps the icon-only button; during
+// processing/success the morph pill shows the action label instead.
 defineProps({
     show: Boolean,
     employee: { type: Object, default: () => ({}) },
-    isDeleting: { type: Boolean, default: false },
+    actionState: { type: String, default: 'idle' },
+    actionLabel: { type: String, default: 'Delete' },
+    actionMorphClass: { type: String, default: '' },
+    actionDisabled: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:show', 'confirm-delete']);

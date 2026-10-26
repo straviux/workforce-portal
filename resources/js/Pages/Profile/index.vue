@@ -27,12 +27,16 @@
                         @change="onFileSelected" />
                     <p class="text-xs text-surface-400">Supported: JPEG, PNG, WebP (max 5 MB)</p>
                     <div class="flex items-center gap-2 pt-1">
-                        <Button label="Upload Photo" class="rounded" size="small"
-                            :loading="photoUploading" :disabled="!selectedFile || photoDeleting"
-                            @click="uploadPhoto"><template #icon><AppIcon name="Upload" /></template></Button>
-                        <Button v-if="profile.has_profile_photo" label="Remove" severity="danger"
-                            text class="rounded" size="small" :loading="photoDeleting"
-                            :disabled="photoUploading" @click="removePhoto"><template #icon><AppIcon name="Trash2" /></template></Button>
+                        <Button :label="uploadAction.label" class="rounded" size="small"
+                            :loading="uploadAction.loading"
+                            :disabled="uploadAction.disabled || !selectedFile || removeAction.disabled"
+                            :class="uploadAction.morphClass"
+                            @click="uploadPhoto"><template #icon><AppIcon v-if="uploadAction.state === 'success'" name="Check" /><AppIcon v-else name="Upload" /></template></Button>
+                        <Button v-if="profile.has_profile_photo" :label="removeAction.label" severity="danger"
+                            text class="rounded" size="small" :loading="removeAction.loading"
+                            :disabled="removeAction.disabled || uploadAction.disabled"
+                            :class="removeAction.morphClass"
+                            @click="removePhoto"><template #icon><AppIcon v-if="removeAction.state === 'success'" name="Check" /><AppIcon v-else name="Trash2" /></template></Button>
                     </div>
                 </div>
             </div>
@@ -72,8 +76,9 @@
                 </div>
             </div>
             <div class="flex justify-end mt-5">
-                <Button label="Save Changes" class="rounded" size="small" :loading="infoSaving"
-                    :disabled="!infoForm.name.trim()" @click="submitInfo"><template #icon><AppIcon name="Check" /></template></Button>
+                <Button :label="infoAction.label" class="rounded" size="small" :loading="infoAction.loading"
+                    :disabled="infoAction.disabled || !infoForm.name.trim()" :class="infoAction.morphClass"
+                    @click="submitInfo"><template #icon><AppIcon name="Check" /></template></Button>
             </div>
         </div>
 
@@ -100,10 +105,11 @@
                 </div>
             </div>
             <div class="flex justify-end mt-5">
-                <Button label="Update Password" class="rounded" size="small"
-                    :loading="passwordSaving"
-                    :disabled="!passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation"
-                    @click="submitPassword"><template #icon><AppIcon name="Lock" /></template></Button>
+                <Button :label="passwordAction.label" class="rounded" size="small"
+                    :loading="passwordAction.loading"
+                    :disabled="passwordAction.disabled || !passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation"
+                    :class="passwordAction.morphClass"
+                    @click="submitPassword"><template #icon><AppIcon v-if="passwordAction.state === 'success'" name="Check" /><AppIcon v-else name="Lock" /></template></Button>
             </div>
         </div>
     </div>
@@ -116,6 +122,7 @@ import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import InputError from '@/Components/ui/inputs/InputError.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 defineOptions({ layout: WorkforceLayout });
 
@@ -133,16 +140,33 @@ const profile = reactive({
 
 const infoForm = reactive({ name: '', email: '', office: '', designation: '' });
 const infoErrors = ref({});
-const infoSaving = ref(false);
+const infoAction = useActionButton({
+    idleLabel: 'Save Changes',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
 
 const passwordForm = reactive({ current_password: '', password: '', password_confirmation: '' });
 const passwordErrors = ref({});
-const passwordSaving = ref(false);
+const passwordAction = useActionButton({
+    idleLabel: 'Update Password',
+    processingLabel: 'Updating...',
+    successLabel: 'Updated',
+});
 
 const selectedFile = ref(null);
 const fileInputRef = ref(null);
-const photoUploading = ref(false);
-const photoDeleting = ref(false);
+const uploadAction = useActionButton({
+    idleLabel: 'Upload Photo',
+    processingLabel: 'Uploading...',
+    successLabel: 'Uploaded',
+});
+// "Remove" deletes the photo, so it takes the Delete verb's pair.
+const removeAction = useActionButton({
+    idleLabel: 'Remove',
+    processingLabel: 'Deleting...',
+    successLabel: 'Deleted',
+});
 
 function normalizeErrors(errors = {}) {
     return Object.fromEntries(
@@ -172,20 +196,21 @@ async function load() {
 }
 
 async function submitInfo() {
-    infoSaving.value = true;
     infoErrors.value = {};
 
     try {
-        const payload = {
-            name: infoForm.name,
-            email: infoForm.email || null,
-            office: infoForm.office || null,
-            designation: infoForm.designation || null,
-        };
-        await axios.put('/api/profile', payload);
-        Object.assign(profile, payload);
-        router.reload({ only: ['auth'] });
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Profile updated.', life: 3000 });
+        await infoAction.run(async () => {
+            const payload = {
+                name: infoForm.name,
+                email: infoForm.email || null,
+                office: infoForm.office || null,
+                designation: infoForm.designation || null,
+            };
+            await axios.put('/api/profile', payload);
+            Object.assign(profile, payload);
+            router.reload({ only: ['auth'] });
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Profile updated.', life: 3000 });
+        });
     } catch (error) {
         if (error.response?.status === 422) {
             infoErrors.value = normalizeErrors(error.response.data.errors);
@@ -193,21 +218,20 @@ async function submitInfo() {
         } else {
             toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not update profile.', life: 3500 });
         }
-    } finally {
-        infoSaving.value = false;
     }
 }
 
 async function submitPassword() {
-    passwordSaving.value = true;
     passwordErrors.value = {};
 
     try {
-        await axios.put('/api/profile/password', { ...passwordForm });
-        passwordForm.current_password = '';
-        passwordForm.password = '';
-        passwordForm.password_confirmation = '';
-        toast.add({ severity: 'success', summary: 'Saved', detail: 'Password updated.', life: 3000 });
+        await passwordAction.run(async () => {
+            await axios.put('/api/profile/password', { ...passwordForm });
+            passwordForm.current_password = '';
+            passwordForm.password = '';
+            passwordForm.password_confirmation = '';
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Password updated.', life: 3000 });
+        });
     } catch (error) {
         if (error.response?.status === 422) {
             passwordErrors.value = normalizeErrors(error.response.data.errors);
@@ -215,8 +239,6 @@ async function submitPassword() {
         } else {
             toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not update password.', life: 3500 });
         }
-    } finally {
-        passwordSaving.value = false;
     }
 }
 
@@ -227,46 +249,42 @@ function onFileSelected(event) {
 async function uploadPhoto() {
     if (!selectedFile.value) return;
 
-    photoUploading.value = true;
-
     try {
-        const formData = new FormData();
-        formData.append('photo', selectedFile.value);
+        await uploadAction.run(async () => {
+            const formData = new FormData();
+            formData.append('photo', selectedFile.value);
 
-        const { data } = await axios.post('/api/profile/photo', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            const { data } = await axios.post('/api/profile/photo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            profile.profile_photo_url = data.data.profile_photo_url + '?t=' + Date.now();
+            profile.has_profile_photo = data.data.has_profile_photo;
+            selectedFile.value = null;
+            if (fileInputRef.value) fileInputRef.value.value = '';
+            router.reload({ only: ['auth'] });
+
+            toast.add({ severity: 'success', summary: 'Updated', detail: 'Profile photo updated.', life: 3000 });
         });
-
-        profile.profile_photo_url = data.data.profile_photo_url + '?t=' + Date.now();
-        profile.has_profile_photo = data.data.has_profile_photo;
-        selectedFile.value = null;
-        if (fileInputRef.value) fileInputRef.value.value = '';
-        router.reload({ only: ['auth'] });
-
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Profile photo updated.', life: 3000 });
     } catch (error) {
         toast.add({ severity: 'error', summary: 'Upload Failed', detail: error.response?.data?.message || 'Could not upload photo.', life: 3500 });
-    } finally {
-        photoUploading.value = false;
     }
 }
 
 async function removePhoto() {
-    photoDeleting.value = true;
-
     try {
-        const { data } = await axios.delete('/api/profile/photo');
-        profile.profile_photo_url = data.data.profile_photo_url;
-        profile.has_profile_photo = data.data.has_profile_photo;
-        selectedFile.value = null;
-        if (fileInputRef.value) fileInputRef.value.value = '';
-        router.reload({ only: ['auth'] });
+        await removeAction.run(async () => {
+            const { data } = await axios.delete('/api/profile/photo');
+            profile.profile_photo_url = data.data.profile_photo_url;
+            profile.has_profile_photo = data.data.has_profile_photo;
+            selectedFile.value = null;
+            if (fileInputRef.value) fileInputRef.value.value = '';
+            router.reload({ only: ['auth'] });
 
-        toast.add({ severity: 'success', summary: 'Removed', detail: 'Profile photo removed.', life: 3000 });
+            toast.add({ severity: 'success', summary: 'Removed', detail: 'Profile photo removed.', life: 3000 });
+        });
     } catch (error) {
         toast.add({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Could not remove photo.', life: 3500 });
-    } finally {
-        photoDeleting.value = false;
     }
 }
 

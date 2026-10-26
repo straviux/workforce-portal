@@ -9,8 +9,9 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">{{ mode === 'create' ? 'New Employee' : 'Edit Employee' }}</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">
-                        {{ saving ? 'Saving…' : 'Save' }}
+                    <button class="ios-nav-btn ios-nav-action" :disabled="saveAction.disabled"
+                        :class="saveAction.morphClass" @click="submit">
+                        {{ saveAction.label }}
                     </button>
                 </div>
 
@@ -180,6 +181,7 @@
 import { ref, reactive, watch, computed } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -190,7 +192,13 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'saved']);
 
 const toast = useToast();
-const saving = ref(false);
+// NOTE: wrapped in reactive() — the composable returns an object of refs,
+// and template prop bindings (e.g. :class="saveAction.morphClass") do NOT
+// unwrap nested refs in script-setup SFCs (verified: raw use renders
+// class="dep __v_isRef"). reactive() unwraps them on access; run() still
+// works because it closes over the composable's own refs. In script,
+// read saveAction.state as a plain string, never .value.
+const saveAction = reactive(useActionButton({ idleLabel: 'Save', processingLabel: 'Saving...', successLabel: 'Saved' }));
 const errors = ref({});
 
 const typeOptions = [
@@ -250,47 +258,53 @@ watch(() => props.show, (val) => {
 });
 
 async function submit() {
-    saving.value = true;
+    if (saveAction.state !== 'idle') return;
     errors.value = {};
     try {
-        const payload = { ...form };
-        // Clear type-specific fields
-        if (payload.employee_type === 'project_based') {
-            payload.contract_ref_no = null;
-            payload.atm_account_no = null;
-            payload.monthly_compensation = null;
-            payload.deduction_sss = null;
-            payload.deduction_philhealth = null;
-            payload.deduction_hdmf = null;
-        } else {
-            payload.agency = null;
-            payload.amount = null;
-            payload.designation = payload.designation || null;
-        }
+        await saveAction.run(async () => {
+            try {
+                const payload = { ...form };
+                // Clear type-specific fields
+                if (payload.employee_type === 'project_based') {
+                    payload.contract_ref_no = null;
+                    payload.atm_account_no = null;
+                    payload.monthly_compensation = null;
+                    payload.deduction_sss = null;
+                    payload.deduction_philhealth = null;
+                    payload.deduction_hdmf = null;
+                } else {
+                    payload.agency = null;
+                    payload.amount = null;
+                    payload.designation = payload.designation || null;
+                }
 
-        if (props.mode === 'edit') {
-            await axios.put(`/api/employees/${props.employee.id}`, payload);
-        } else {
-            await axios.post('/api/employees', payload);
-        }
+                if (props.mode === 'edit') {
+                    await axios.put(`/api/employees/${props.employee.id}`, payload);
+                } else {
+                    await axios.post('/api/employees', payload);
+                }
 
-        toast.add({
-            severity: 'success',
-            summary: props.mode === 'edit' ? 'Updated' : 'Created',
-            detail: `Employee ${props.mode === 'edit' ? 'updated' : 'created'} successfully.`,
-            life: 3000,
+                toast.add({
+                    severity: 'success',
+                    summary: props.mode === 'edit' ? 'Updated' : 'Created',
+                    detail: `Employee ${props.mode === 'edit' ? 'updated' : 'created'} successfully.`,
+                    life: 3000,
+                });
+            } catch (err) {
+                if (err.response?.status === 422) {
+                    errors.value = err.response.data.errors ?? {};
+                    toast.add({ severity: 'warn', summary: 'Validation Error', detail: 'Please check the form.', life: 3500 });
+                } else {
+                    toast.add({ severity: 'error', summary: 'Error', detail: 'Could not save employee.', life: 3500 });
+                }
+                throw err;
+            }
         });
-        emit('saved');
-    } catch (err) {
-        if (err.response?.status === 422) {
-            errors.value = err.response.data.errors ?? {};
-            toast.add({ severity: 'warn', summary: 'Validation Error', detail: 'Please check the form.', life: 3500 });
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'Could not save employee.', life: 3500 });
-        }
-    } finally {
-        saving.value = false;
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    emit('saved');
 }
 
 // ── Drag ─────────────────────────────────────────────────

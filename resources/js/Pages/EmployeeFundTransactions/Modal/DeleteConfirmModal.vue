@@ -9,8 +9,11 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Delete Transaction</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="isDeleting" @click="emit('confirm-delete')">
-                        <AppIcon name="Trash2" class="text-red-500" />
+                    <button class="ios-nav-btn ios-nav-action" :disabled="actionState?.disabled"
+                        :class="actionState?.morphClass" @click="emit('confirm-delete')">
+                        <AppIcon v-if="actionState?.state === 'success'" name="Check" class="text-emerald-500" />
+                        <AppIcon v-else name="Trash2" class="text-red-500" />
+                        <span v-if="actionState?.label">{{ actionState.label }}</span>
                     </button>
                 </div>
 
@@ -41,7 +44,10 @@ defineProps({
     transactionId: { type: String, default: '' },
     payeeName: { type: String, default: '' },
     date: { type: String, default: '' },
-    isDeleting: { type: Boolean, default: false },
+    // Parent-owned morph state (the delete request lives in the parent):
+    // { state, label, disabled, morphClass }. Idle label is '' so the
+    // button stays icon-only until processing/success shows its text.
+    actionState: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:show', 'confirm-delete']);

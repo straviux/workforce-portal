@@ -72,7 +72,8 @@
 
                     <DtrWorkspace v-else-if="subject" module-type="employee" :subject="subject" :reports="reports"
                         :calendar-events="calendarEvents" :office-heads="officeHeads" :can-manage="canManageDtr"
-                        :is-saving-report="savingReport" :is-deleting-report="deletingReport"
+                        :is-saving-report="isSavingReport" :is-deleting-report="deletingReport"
+                        :save-action="saveReportActionState" :update-action="updateReportActionState"
                         @save-report="handleSaveReport" @update-report="handleUpdateReport"
                         @delete-report="handleDeleteReport" />
                 </div>
@@ -87,6 +88,7 @@ import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import DtrWorkspace from '@/Pages/Dtr/Modal/DtrWorkspace.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -101,7 +103,27 @@ const dragOffset = ref({ x: 0, y: 0 });
 const dragStart = ref(null);
 const loadingEmployees = ref(false);
 const loadingSetup = ref(false);
-const savingReport = ref(false);
+// Morph state for the workspace Generate dialog footer button. The
+// request lives here, so the actions live here too; the workspace only
+// renders the plain snapshots below (its idle labels stay "Save DTR" /
+// "Update DTR", processing/success follow the Save/Update mapping).
+const saveReportAction = useActionButton({ idleLabel: 'Save DTR', processingLabel: 'Saving...', successLabel: 'Saved' });
+const updateReportAction = useActionButton({ idleLabel: 'Update DTR', processingLabel: 'Updating...', successLabel: 'Updated' });
+const saveReportActionState = computed(() => ({
+    state: saveReportAction.state,
+    label: saveReportAction.label,
+    loading: saveReportAction.loading,
+    disabled: saveReportAction.disabled,
+    morphClass: saveReportAction.morphClass,
+}));
+const updateReportActionState = computed(() => ({
+    state: updateReportAction.state,
+    label: updateReportAction.label,
+    loading: updateReportAction.loading,
+    disabled: updateReportAction.disabled,
+    morphClass: updateReportAction.morphClass,
+}));
+const isSavingReport = computed(() => saveReportAction.disabled || updateReportAction.disabled);
 const deletingReport = ref(false);
 const employees = ref([]);
 const selectedEmployeeId = ref(null);
@@ -192,17 +214,17 @@ async function fetchSetup() {
     }
 }
 
-async function handleSaveReport(payload) {
-    if (!canManageDtr.value || !selectedEmployeeId.value) return;
-
-    savingReport.value = true;
+async function handleSaveReport(payload, callbacks = {}) {
+    if (!canManageDtr.value || !selectedEmployeeId.value || saveReportAction.state !== 'idle') return;
 
     try {
-        await axios.post(`/api/dtr/employees/${selectedEmployeeId.value}/reports`, payload);
-        await fetchSetup();
-        await fetchEmployees();
+        await saveReportAction.run(async () => {
+            await axios.post(`/api/dtr/employees/${selectedEmployeeId.value}/reports`, payload);
+            await fetchSetup();
+            await fetchEmployees();
 
-        toast.add({ severity: 'success', summary: 'Generated', detail: 'Employee DTR generated.', life: 3000 });
+            toast.add({ severity: 'success', summary: 'Generated', detail: 'Employee DTR generated.', life: 3000 });
+        });
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -210,24 +232,26 @@ async function handleSaveReport(payload) {
             detail: extractErrorMessage(error, 'Could not generate employee DTR.'),
             life: 4000,
         });
-    } finally {
-        savingReport.value = false;
+        callbacks.onError?.(error);
+        return;
     }
+
+    // After the full morph cycle, so the "Saved" state is visible first.
+    callbacks.onSuccess?.();
 }
 
 async function handleUpdateReport(payload, callbacks = {}) {
-    if (!canManageDtr.value || !selectedEmployeeId.value) return;
-
-    savingReport.value = true;
+    if (!canManageDtr.value || !selectedEmployeeId.value || updateReportAction.state !== 'idle') return;
 
     try {
-        const { report_id: reportId, ...reportPayload } = payload;
+        await updateReportAction.run(async () => {
+            const { report_id: reportId, ...reportPayload } = payload;
 
-        await axios.put(`/api/dtr/employees/${selectedEmployeeId.value}/reports/${reportId}`, reportPayload);
-        await fetchSetup();
+            await axios.put(`/api/dtr/employees/${selectedEmployeeId.value}/reports/${reportId}`, reportPayload);
+            await fetchSetup();
 
-        toast.add({ severity: 'success', summary: 'Updated', detail: 'Employee DTR updated.', life: 3000 });
-        callbacks.onSuccess?.();
+            toast.add({ severity: 'success', summary: 'Updated', detail: 'Employee DTR updated.', life: 3000 });
+        });
     } catch (error) {
         toast.add({
             severity: 'error',
@@ -236,9 +260,11 @@ async function handleUpdateReport(payload, callbacks = {}) {
             life: 4000,
         });
         callbacks.onError?.(error);
-    } finally {
-        savingReport.value = false;
+        return;
     }
+
+    // After the full morph cycle, so the "Updated" state is visible first.
+    callbacks.onSuccess?.();
 }
 
 async function handleDeleteReport(payload, callbacks = {}) {

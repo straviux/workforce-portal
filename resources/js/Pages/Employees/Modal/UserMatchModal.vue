@@ -9,9 +9,9 @@
                         <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Match Users to Employees</span>
-                    <button class="ios-nav-btn ios-nav-action" :disabled="!selectedCount || confirming"
-                        @click="confirmSelected">
-                        {{ confirming ? 'Linking…' : `Confirm (${selectedCount})` }}
+                    <button class="ios-nav-btn ios-nav-action" :disabled="!selectedCount || linkAction.disabled"
+                        :class="linkAction.morphClass" @click="confirmSelected">
+                        {{ linkAction.state === 'idle' ? `Confirm (${selectedCount})` : linkAction.label }}
                     </button>
                 </div>
 
@@ -71,9 +71,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -83,7 +84,11 @@ const emit = defineEmits(['update:show', 'matched']);
 
 const toast = useToast();
 const loading = ref(false);
-const confirming = ref(false);
+// Wrapped in reactive() so template prop bindings unwrap the composable's
+// refs (raw use renders class="dep __v_isRef" in script-setup SFCs).
+// Idle label stays dynamic (Confirm + count) in the template; the
+// processing/success labels come from the action.
+const linkAction = reactive(useActionButton({ idleLabel: 'Confirm', processingLabel: 'Linking...', successLabel: 'Linked' }));
 const suggestions = ref([]);
 
 const selectedCount = computed(() => suggestions.value.filter((row) => row.checked && row.suggested_user).length);
@@ -106,23 +111,29 @@ async function confirmSelected() {
         .map((row) => ({ employee_id: row.employee.id, user_id: row.suggested_user.id }));
 
     if (!matches.length) return;
+    if (linkAction.state !== 'idle') return;
 
-    confirming.value = true;
     try {
-        const { data } = await axios.post('/api/employees/user-matches', { matches });
-        toast.add({ severity: 'success', summary: 'Linked', detail: data.message, life: 3500 });
-        emit('matched');
-        emit('update:show', false);
-    } catch (error) {
-        toast.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.response?.data?.message || 'Could not link the selected matches.',
-            life: 3500,
+        await linkAction.run(async () => {
+            try {
+                const { data } = await axios.post('/api/employees/user-matches', { matches });
+                toast.add({ severity: 'success', summary: 'Linked', detail: data.message, life: 3500 });
+            } catch (error) {
+                toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: error.response?.data?.message || 'Could not link the selected matches.',
+                    life: 3500,
+                });
+                throw error;
+            }
         });
-    } finally {
-        confirming.value = false;
+    } catch {
+        return;
     }
+    // Only after the full morph cycle (run resolves after success shows).
+    emit('matched');
+    emit('update:show', false);
 }
 
 watch(() => props.show, (visible) => {

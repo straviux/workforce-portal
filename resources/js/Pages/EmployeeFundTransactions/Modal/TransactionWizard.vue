@@ -15,9 +15,12 @@
                         :disabled="selectedEmployees.length === 0" @click="goNext">
                         <AppIcon name="ChevronRight" />
                     </button>
-                    <button v-else class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit"
+                    <button v-else class="ios-nav-btn ios-nav-action" :disabled="saveActionState.disabled"
+                        :class="saveActionState.morphClass" @click="submit"
                         v-tooltip="'Save Transaction'">
-                        <AppIcon name="Save" class="text-emerald-500" />
+                        <AppIcon v-if="saveActionState.state === 'success'" name="Check" class="text-emerald-500" />
+                        <AppIcon v-else name="Save" class="text-emerald-500" />
+                        <span v-if="saveActionState.label">{{ saveActionState.label }}</span>
                     </button>
                 </div>
 
@@ -374,6 +377,7 @@ import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
 import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
+import { useActionButton } from '@/Composables/useActionButton';
 
 const props = defineProps({
     show: Boolean,
@@ -386,7 +390,22 @@ const toast = useToast();
 
 // ── Wizard state ──
 const step = ref(1);
-const saving = ref(false);
+// M3 processing morph for the step-2 save button. Two instances because
+// the label mapping depends on mode (create vs edit) and the composable
+// captures its labels at creation; the wizard stays mounted while mode
+// changes between opens. Idle label is '' on both, so the header button
+// stays icon-only until processing/success shows its text.
+const createSaveAction = useActionButton({ processingLabel: 'Creating...', successLabel: 'Created' });
+const editSaveAction = useActionButton({ processingLabel: 'Updating...', successLabel: 'Updated' });
+const saveActionState = computed(() => {
+    const action = props.mode === 'edit' ? editSaveAction : createSaveAction;
+    return {
+        state: action.state,
+        label: action.label,
+        disabled: action.disabled,
+        morphClass: action.morphClass,
+    };
+});
 const errors = ref({});
 const draggedEmployeeIndex = ref(null);
 const dragOverEmployeeIndex = ref(null);
@@ -690,27 +709,35 @@ function onParticularChange(particular) {
 }
 
 // ── Submit ──
+// Awaits the morph run BEFORE emitting 'saved', so the success state
+// shows before the parent closes the wizard. `completed` stays false
+// if the run was ignored by the double-click guard, so a guarded click
+// can never close the wizard without saving. On reject the wizard
+// stays open and the existing error handling runs unchanged.
 async function submit() {
-    saving.value = true;
     errors.value = {};
+    let completed = false;
     try {
-        const payload = buildMainPayload();
+        const run = props.mode === 'edit' ? editSaveAction.run : createSaveAction.run;
+        await run(async () => {
+            const payload = buildMainPayload();
 
-        if (props.mode === 'edit') {
-            await axios.put(`/api/employee-fund-transactions/${props.transaction.id}`, payload);
-        } else {
-            await axios.post('/api/employee-fund-transactions', payload);
-        }
+            if (props.mode === 'edit') {
+                await axios.put(`/api/employee-fund-transactions/${props.transaction.id}`, payload);
+            } else {
+                await axios.post('/api/employee-fund-transactions', payload);
+            }
 
-        toast.add({
-            severity: 'success',
-            summary: props.mode === 'edit' ? 'Updated' : 'Created',
-            detail: props.mode === 'edit'
-                ? 'Transaction updated successfully.'
-                : `Transaction created with ${selectedEmployees.value.length} employee(s).`,
-            life: 3000,
+            toast.add({
+                severity: 'success',
+                summary: props.mode === 'edit' ? 'Updated' : 'Created',
+                detail: props.mode === 'edit'
+                    ? 'Transaction updated successfully.'
+                    : `Transaction created with ${selectedEmployees.value.length} employee(s).`,
+                life: 3000,
+            });
+            completed = true;
         });
-        emit('saved');
     } catch (err) {
         if (err.response?.status === 422) {
             errors.value = err.response.data.errors ?? {};
@@ -718,9 +745,9 @@ async function submit() {
         } else {
             toast.add({ severity: 'error', summary: 'Error', detail: 'Could not save transaction.', life: 3500 });
         }
-    } finally {
-        saving.value = false;
+        return;
     }
+    if (completed) emit('saved');
 }
 
 function localDateStr(d) {

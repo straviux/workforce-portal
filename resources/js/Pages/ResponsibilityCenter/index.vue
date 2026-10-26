@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
+import { useActionButton } from '@/Composables/useActionButton';
 import ContextMenu from 'primevue/contextmenu';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
@@ -18,7 +19,10 @@ const page = usePage();
 
 const responsibilityCenters = ref([]);
 const loading = ref(false);
-const deleting = ref(false);
+// Parent-owned morph state for the delete button inside DeleteConfirmModal
+// (the request lives here, so the state lives here too). Wrapped in
+// reactive() so template prop bindings unwrap the composable's refs.
+const deleteAction = reactive(useActionButton({ idleLabel: 'Delete', processingLabel: 'Deleting...', successLabel: 'Deleted' }));
 const contextMenuRef = ref(null);
 const contextMenuItems = ref([]);
 const contextMenuParticular = ref(null);
@@ -212,22 +216,27 @@ const openParticularContextMenu = (event, rc) => {
 };
 
 const handleDeleteConfirm = async () => {
-    deleting.value = true;
+    if (deleteAction.state !== 'idle') return;
     try {
-        if (deleteType.value === 'rc') {
-            await axios.delete(`/api/responsibility-centers/${deleteTargetId.value}`);
-            toast.add({ severity: 'success', summary: 'Success', detail: 'Responsibility Center deleted', life: 3000 });
-        } else {
-            await axios.delete(`/api/responsibility-centers/${deleteTargetRCId.value}/particulars/${deleteTargetId.value}`);
-            toast.add({ severity: 'success', summary: 'Success', detail: 'Particular deleted', life: 3000 });
-        }
+        await deleteAction.run(async () => {
+            try {
+                if (deleteType.value === 'rc') {
+                    await axios.delete(`/api/responsibility-centers/${deleteTargetId.value}`);
+                    toast.add({ severity: 'success', summary: 'Success', detail: 'Responsibility Center deleted', life: 3000 });
+                } else {
+                    await axios.delete(`/api/responsibility-centers/${deleteTargetRCId.value}/particulars/${deleteTargetId.value}`);
+                    toast.add({ severity: 'success', summary: 'Success', detail: 'Particular deleted', life: 3000 });
+                }
+            } catch (err) {
+                toast.add({ severity: 'error', summary: 'Error', detail: err.response?.data?.message ?? 'Failed to delete', life: 5000 });
+                throw err;
+            }
+        });
         await fetchResponsibilityCenters();
         showDeleteModal.value = false;
-    } catch (err) {
-        toast.add({ severity: 'error', summary: 'Error', detail: err.response?.data?.message ?? 'Failed to delete', life: 5000 });
+    } catch {
+        // Error toast already shown; modal still closes, as before.
         showDeleteModal.value = false;
-    } finally {
-        deleting.value = false;
     }
 };
 
@@ -382,7 +391,9 @@ onMounted(fetchResponsibilityCenters);
 
         <!-- Delete Confirm Modal -->
         <DeleteConfirmModal v-model:show="showDeleteModal" :type="deleteType" :target-name="deleteTargetName"
-            :deleting="deleting" @confirm="handleDeleteConfirm" />
+            :action-label="deleteAction.label" :action-state="deleteAction.state"
+            :action-loading="deleteAction.loading" :action-disabled="deleteAction.disabled"
+            :action-morph-class="deleteAction.morphClass" @confirm="handleDeleteConfirm" />
 
         <ContextMenu ref="contextMenuRef" :model="contextMenuItems" @hide="contextMenuParticular = null">
             <template #item="{ item, label, props }">

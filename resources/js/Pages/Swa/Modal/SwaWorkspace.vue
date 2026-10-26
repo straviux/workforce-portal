@@ -156,9 +156,10 @@
 
                     <div class="flex items-center gap-2">
                         <Button label="Close" severity="secondary" text @click="showTaskDialog = false" />
-                        <Button v-if="canManage" label="Save Tasks" class="rounded" size="small"
-                            :loading="isSavingTasks" :disabled="!taskEditMode || !hasValidTasks || isSavingReport"
-                            @click="emitSaveTasks"><template #icon><AppIcon name="Save" /></template></Button>
+                        <Button v-if="canManage" :label="tasksAction.label" class="rounded" size="small"
+                            :loading="tasksAction.loading" :disabled="!taskEditMode || !hasValidTasks || isSavingReport || tasksAction.disabled"
+                            :class="tasksAction.morphClass"
+                            @click="emitSaveTasks"><template #icon><AppIcon v-if="tasksAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
                     </div>
                 </div>
             </template>
@@ -359,8 +360,9 @@
 
                     <div class="flex items-center gap-2 flex-wrap">
                         <Button label="Close" severity="secondary" text @click="closeGenerateDialog" />
-                        <Button :label="generateActionLabel" class="rounded" size="small"
-                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="runGenerateAction"><template #icon><AppIcon :name="generateActionIcon" /></template></Button>
+                        <Button :label="generateButtonAction ? generateButtonAction.label : generateActionLabel" class="rounded" size="small"
+                            :loading="generateButtonAction ? generateButtonAction.loading : false" :disabled="!canRunGenerateAction || (generateButtonAction ? generateButtonAction.disabled : false)"
+                            :class="generateButtonAction ? generateButtonAction.morphClass : ''" @click="runGenerateAction"><template #icon><AppIcon v-if="generateButtonAction && generateButtonAction.state === 'success'" name="Check" /><AppIcon v-else :name="generateActionIcon" /></template></Button>
                     </div>
                 </div>
             </template>
@@ -396,6 +398,22 @@ const props = defineProps({
     isSavingTasks: { type: Boolean, default: false },
     isSavingReport: { type: Boolean, default: false },
     isDeletingReport: { type: Boolean, default: false },
+    // Parent-owned useActionButton snapshots (plain state objects, see the
+    // parent modal): task encoding, report create, and report update. The
+    // workspace picks between the report actions by editing state; the
+    // parent owns the requests, so the morph lives there, not here.
+    tasksAction: {
+        type: Object,
+        default: () => ({ state: 'idle', label: 'Save Tasks', loading: false, disabled: false, morphClass: '' }),
+    },
+    saveAction: {
+        type: Object,
+        default: () => ({ state: 'idle', label: 'Save SWA', loading: false, disabled: false, morphClass: '' }),
+    },
+    updateAction: {
+        type: Object,
+        default: () => ({ state: 'idle', label: 'Update SWA', loading: false, disabled: false, morphClass: '' }),
+    },
 });
 
 const emit = defineEmits(['save-tasks', 'save-report', 'update-report', 'delete-report']);
@@ -559,6 +577,14 @@ const generateActionLabel = computed(() => {
 
     return isEditingReport.value ? 'Update SWA' : 'Save SWA';
 });
+// Morph button state for the Generate dialog footer, or null when the
+// button only prepares/edits the daily-values table locally (no request,
+// so no morph): "Prepare Daily Values" / "Edit Daily Values" stay plain.
+const generateButtonAction = computed(() => {
+    if (!hasDraftEditorValues.value) return null;
+
+    return isEditingReport.value ? props.updateAction : props.saveAction;
+});
 const generateActionIcon = computed(() => {
     if (!hasDraftEditorValues.value) return isEditingReport.value ? 'Pencil' : 'Table';
 
@@ -672,13 +698,11 @@ watch(taskRows, () => {
     persistCountableRangeSettings();
 }, { deep: true });
 
-watch(() => props.reports?.length ?? 0, (currentCount, previousCount) => {
-    if (!showGenerateDialog.value) return;
-    if (previousCount == null || currentCount <= previousCount) return;
-
-    showGenerateDialog.value = false;
-});
-
+// NOTE: no reports-length auto-close here on purpose. The create path
+// closes via the onSuccess callback the parent invokes only after the
+// save action's full morph cycle (processing -> success -> idle), so
+// the success state stays visible instead of vanishing the moment the
+// refreshed report list arrives mid-request.
 watch(
     [taskRows, () => generation.work_days.slice(), () => generation.period_start_date, () => generation.period_end_date],
     () => {
@@ -870,7 +894,11 @@ function emitSaveReport() {
         return;
     }
 
-    emit('save-report', payload);
+    emit('save-report', payload, {
+        onSuccess: () => {
+            closeGenerateDialog();
+        },
+    });
 }
 
 function toggleWorkDay(day) {

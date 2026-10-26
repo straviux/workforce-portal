@@ -315,7 +315,10 @@ button:not(.ios-nav-btn) {
 		color 200ms ease,
 		border-color 200ms ease,
 		box-shadow 200ms ease,
-		outline-color 200ms ease;
+		outline-color 200ms ease,
+		padding-left 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		padding-right 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .p-button:hover,
 button:not(.ios-nav-btn):hover {
@@ -324,8 +327,8 @@ button:not(.ios-nav-btn):hover {
 .p-button:active,
 button:not(.ios-nav-btn):active {
 	transform: scale(0.95);
-	transition-duration: 100ms, 200ms, 200ms, 200ms, 200ms, 200ms, 200ms;
-	transition-timing-function: ease-out, ease, ease, ease, ease, ease, ease;
+	transition-duration: 100ms, 200ms, 200ms, 200ms, 200ms, 200ms, 200ms, 350ms, 350ms, 350ms;
+	transition-timing-function: ease-out, ease, ease, ease, ease, ease, ease, cubic-bezier(0.34, 1.56, 0.64, 1), cubic-bezier(0.34, 1.56, 0.64, 1), cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 /* Disabled and loading buttons stay still. */
 .p-button:disabled,
@@ -351,6 +354,57 @@ button:disabled:hover {
 	button:hover,
 	button:active {
 		transform: none;
+		transition: none;
+	}
+}
+
+/* ============================================
+   M3 Expressive processing morph for action buttons.
+   Idle -> processing -> success -> idle, driven by the
+   useActionButton composable (or by an external busy state via
+   actionMorphClass). Processing stretches the button wider
+   (padding grows), morphs corners from 12px to pill, and the
+   label swaps to the processing text with a spinner; success
+   keeps the stretched pill with a check icon and success label;
+   idle returns padding + radius to the original values.
+   Padding/radius animate (they are in the button transition
+   list above); transform is untouched, so the press squish
+   keeps working alongside the morph and the modal nav buttons
+   keep their translateY centering. Disabled/loading buttons
+   stay unclickable through processing AND success (the
+   composable's `disabled` covers both); only the spinner
+   itself is processing-only, so success can show its check.
+   prefers-reduced-motion: transitions off, instant swaps
+   (the reduced-motion block above sets transition: none).
+   ============================================ */
+.p-button.morph-processing,
+.p-button.morph-success,
+button.morph-processing,
+button.morph-success {
+	padding-left: 1.75em;
+	padding-right: 1.75em;
+	border-radius: 9999px;
+}
+/* Modal header action buttons are text buttons with no
+   background, so the radius change alone would be invisible:
+   the morph also gives them a tinted pill background. Their
+   own transition list gains the morph properties (the base
+   button list excludes .ios-nav-btn). */
+.ios-nav-action {
+	transition:
+		opacity 0.15s,
+		padding 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		background-color 200ms ease;
+}
+.ios-nav-action.morph-processing,
+.ios-nav-action.morph-success {
+	background: var(--md-primary-container);
+	padding: 4px 20px;
+	border-radius: 9999px;
+}
+@media (prefers-reduced-motion: reduce) {
+	.ios-nav-action {
 		transition: none;
 	}
 }

@@ -79,12 +79,13 @@ const submit = () => {
 
                     <Button
                         type="submit"
-                        label="Sign In"
+                        :label="form.processing ? 'Signing in...' : 'Sign In'"
                         iconPos="right"
                         :loading="form.processing"
                         :disabled="form.processing"
                         rounded
-                        class="w-full mt-2"><template #icon><AppIcon name="ArrowRight" /></template></Button>
+                        class="w-full mt-2"
+                        :class="form.processing ? 'morph-processing' : ''"><template #icon><AppIcon name="ArrowRight" /></template></Button>
                 </form>
             </div>
 
