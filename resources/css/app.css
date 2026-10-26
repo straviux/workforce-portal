@@ -424,3 +424,22 @@ button.morph-success {
 .ios-nav-btn:active {
 	transform: translateY(-50%);
 }
+
+/* Success state must read as success, not as broken.
+   The morph keeps the button disabled through the success hold to
+   prevent double-submit, but a disabled button renders gray text
+   with a not-allowed cursor, which reads as "button is broken"
+   (seen on video: gray "Saved" pill with a prohibition cursor for
+   the whole hold). Override that look only while morph-success is
+   present: primary text, normal cursor. Clicks stay blocked by the
+   disabled attribute and by the composable's double-click guard. */
+.ios-nav-action.morph-success,
+.ios-nav-action.morph-success:disabled {
+	color: var(--md-primary);
+	cursor: default;
+}
+.p-button.morph-success:disabled {
+	cursor: default;
+	opacity: 1;
+	pointer-events: auto;
+}
