@@ -17,7 +17,7 @@
                 <div class="flex items-start gap-3 min-w-0">
                     <div
                         class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 flex items-center justify-center shrink-0">
-                        <i class="pi pi-file-edit text-lg"></i>
+                        <AppIcon name="FilePen" :size="18" />
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -31,7 +31,7 @@
                     </div>
                 </div>
 
-                <i class="pi pi-angle-right text-surface-400 text-lg mt-1"></i>
+                <AppIcon name="ChevronRight" :size="18" class="text-surface-400 mt-1" />
             </div>
 
             <div class="mt-4 flex flex-wrap items-center gap-2 text-xs text-surface-500">
@@ -49,7 +49,7 @@
                 <div class="ios-nav-bar cursor-grab active:cursor-grabbing select-none"
                     @pointerdown="onRegistryDragStart">
                     <button type="button" class="ios-nav-btn ios-nav-cancel" @click="closeNonRosRegistry">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
 
                     <div class="min-w-0 flex-1 px-3 text-center leading-tight">
@@ -83,14 +83,14 @@
                         <p class="ios-section-label">Search</p>
                         <div class="ios-card flex flex-wrap gap-3 p-4">
                             <IconField class="flex-1 min-w-60">
-                                <InputIcon class="pi pi-search" />
+                                <InputIcon><AppIcon name="Search" /></InputIcon>
                                 <InputText v-model="filters.search"
                                     placeholder="Search name, designation, office, or signatory" class="w-full"
                                     size="small" @keyup.enter="fetchCertifications(1)" />
                             </IconField>
 
-                            <Button icon="pi pi-filter-slash" severity="secondary" size="small" class="rounded" outlined
-                                v-tooltip="'Reset filters'" @click="resetFilters" />
+                            <Button severity="secondary" size="small" class="rounded" outlined
+                                v-tooltip="'Reset filters'" @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
                         </div>
                     </div>
 
@@ -118,7 +118,7 @@
                                 }">
                                 <template #empty>
                                     <div class="text-center py-12 text-surface-400">
-                                        <i class="pi pi-file-edit text-4xl block mb-3"></i>
+                                        <AppIcon name="FilePen" :size="36" class="block mb-3" />
                                         <p class="text-sm">No saved certifications found.</p>
                                     </div>
                                 </template>
@@ -163,11 +163,11 @@
                                 <Column header="" style="width:140px;min-width:140px;" frozen alignFrozen="right">
                                     <template #body="{ data }">
                                         <div class="flex items-center justify-end gap-1">
-                                            <Button icon="pi pi-print" text severity="info"
-                                                @click="printCertification(data)" v-tooltip="'Print'" />
-                                            <Button icon="pi pi-ellipsis-v" severity="secondary" text
+                                            <Button text severity="info"
+                                                @click="printCertification(data)" v-tooltip="'Print'"><template #icon><AppIcon name="Printer" /></template></Button>
+                                            <Button severity="secondary" text
                                                 v-tooltip="'More Actions'" size="small"
-                                                @click="openRowMenu($event, data)" />
+                                                @click="openRowMenu($event, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                                         </div>
                                     </template>
                                 </Column>
@@ -179,7 +179,14 @@
         </template>
     </Dialog>
 
-    <ContextMenu ref="contextMenuRef" :model="rowMenuItems" @hide="contextMenuCertification = null" />
+    <ContextMenu ref="contextMenuRef" :model="rowMenuItems" @hide="contextMenuCertification = null">
+        <template #item="{ item, label, props }">
+            <a v-bind="props.action">
+                <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                <span v-bind="props.label">{{ label }}</span>
+            </a>
+        </template>
+    </ContextMenu>
 
     <NonRosCertificationModal v-model:show="showCertificationModal" :mode="certificationModalMode"
         :certification="selectedCertification" :office-heads="officeHeads" @saved="onSaved" />
@@ -272,7 +279,7 @@ const rowMenuItems = computed(() => {
     const items = [
         {
             label: 'Print',
-            icon: 'pi pi-print',
+            iconName: 'Printer',
             command: () => printCertification(certification),
         },
     ];
@@ -282,12 +289,12 @@ const rowMenuItems = computed(() => {
             { separator: true },
             {
                 label: 'Edit',
-                icon: 'pi pi-pencil',
+                iconName: 'Pencil',
                 command: () => openEdit(certification),
             },
             {
                 label: 'Delete',
-                icon: 'pi pi-trash',
+                iconName: 'Trash2',
                 class: 'text-red-500',
                 command: () => { showDeleteModal.value = true; },
             },

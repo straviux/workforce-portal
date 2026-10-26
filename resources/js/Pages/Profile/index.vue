@@ -19,7 +19,7 @@
                     class="w-20 h-20 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
                     <img v-if="profile.has_profile_photo && profile.profile_photo_url" :src="profile.profile_photo_url"
                         class="w-20 h-20 object-cover" />
-                    <i v-else class="pi pi-user text-white text-2xl"></i>
+                    <AppIcon v-else name="User" :size="24" class="text-white" />
                 </div>
 
                 <div class="flex-1 min-w-[220px] space-y-2">
@@ -27,12 +27,12 @@
                         @change="onFileSelected" />
                     <p class="text-xs text-surface-400">Supported: JPEG, PNG, WebP (max 5 MB)</p>
                     <div class="flex items-center gap-2 pt-1">
-                        <Button label="Upload Photo" icon="pi pi-upload" class="rounded" size="small"
+                        <Button label="Upload Photo" class="rounded" size="small"
                             :loading="photoUploading" :disabled="!selectedFile || photoDeleting"
-                            @click="uploadPhoto" />
-                        <Button v-if="profile.has_profile_photo" label="Remove" icon="pi pi-trash" severity="danger"
+                            @click="uploadPhoto"><template #icon><AppIcon name="Upload" /></template></Button>
+                        <Button v-if="profile.has_profile_photo" label="Remove" severity="danger"
                             text class="rounded" size="small" :loading="photoDeleting"
-                            :disabled="photoUploading" @click="removePhoto" />
+                            :disabled="photoUploading" @click="removePhoto"><template #icon><AppIcon name="Trash2" /></template></Button>
                     </div>
                 </div>
             </div>
@@ -72,8 +72,8 @@
                 </div>
             </div>
             <div class="flex justify-end mt-5">
-                <Button label="Save Changes" icon="pi pi-check" class="rounded" size="small" :loading="infoSaving"
-                    :disabled="!infoForm.name.trim()" @click="submitInfo" />
+                <Button label="Save Changes" class="rounded" size="small" :loading="infoSaving"
+                    :disabled="!infoForm.name.trim()" @click="submitInfo"><template #icon><AppIcon name="Check" /></template></Button>
             </div>
         </div>
 
@@ -100,10 +100,10 @@
                 </div>
             </div>
             <div class="flex justify-end mt-5">
-                <Button label="Update Password" icon="pi pi-lock" class="rounded" size="small"
+                <Button label="Update Password" class="rounded" size="small"
                     :loading="passwordSaving"
                     :disabled="!passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation"
-                    @click="submitPassword" />
+                    @click="submitPassword"><template #icon><AppIcon name="Lock" /></template></Button>
             </div>
         </div>
     </div>

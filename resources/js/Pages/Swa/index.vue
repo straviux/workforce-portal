@@ -30,7 +30,7 @@ const showEmployeeSwaModal = ref(false);
                 <div class="flex items-start gap-3 min-w-0">
                     <div
                         class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                        <i class="pi pi-user text-lg"></i>
+                        <AppIcon name="User" :size="18" />
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -43,7 +43,7 @@ const showEmployeeSwaModal = ref(false);
                     </div>
                 </div>
 
-                <i class="pi pi-angle-right text-surface-400 text-lg mt-1"></i>
+                <AppIcon name="ChevronRight" :size="18" class="text-surface-400 mt-1" />
             </div>
         </button>
 
@@ -54,7 +54,7 @@ const showEmployeeSwaModal = ref(false);
                 <div class="flex items-start gap-3 min-w-0">
                     <div
                         class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 flex items-center justify-center shrink-0">
-                        <i class="pi pi-users text-lg"></i>
+                        <AppIcon name="Users" :size="18" />
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -67,7 +67,7 @@ const showEmployeeSwaModal = ref(false);
                     </div>
                 </div>
 
-                <i class="pi pi-angle-right text-surface-400 text-lg mt-1"></i>
+                <AppIcon name="ChevronRight" :size="18" class="text-surface-400 mt-1" />
             </div>
         </button>
     </div>

@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Cancel
+                        <AppIcon name="X" /> Cancel
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? `Edit Particular` : `New Particular` }}</span>
                     <button class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">

@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Tracking History</span>
                 </div>
@@ -81,7 +81,7 @@
 
                     <div class="ios-section" v-else>
                         <div class="ios-card flex flex-col items-center gap-3 py-8 text-center">
-                            <i class="pi pi-history text-4xl text-surface-300"></i>
+                            <AppIcon name="History" :size="36" class="text-surface-300" />
                             <p class="text-sm text-surface-400">No tracking history available.</p>
                         </div>
                     </div>

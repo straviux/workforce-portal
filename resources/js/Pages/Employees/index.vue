@@ -11,17 +11,17 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
-            <Button v-if="isAdmin" icon="pi pi-users" label="Match Users" severity="secondary" outlined class="rounded"
-                @click="showUserMatch = true" />
-            <Button v-if="canManageEmployees" icon="pi pi-plus" label="New Employee" class="rounded"
-                @click="openCreate" />
+            <Button v-if="isAdmin" label="Match Users" severity="secondary" outlined class="rounded"
+                @click="showUserMatch = true"><template #icon><AppIcon name="Users" /></template></Button>
+            <Button v-if="canManageEmployees" label="New Employee" class="rounded"
+                @click="openCreate"><template #icon><AppIcon name="Plus" /></template></Button>
         </div>
     </div>
 
     <!-- Filter Toolbar -->
     <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
         <IconField class="flex-1 min-w-50">
-            <InputIcon class="pi pi-search" />
+            <InputIcon><AppIcon name="Search" /></InputIcon>
             <InputText v-model="filters.search" placeholder="Search name, employee no., office…" class="w-full"
                 size="small" @keyup.enter="fetchEmployees(1)" />
         </IconField>
@@ -29,8 +29,8 @@
             placeholder="All types" class="w-44" size="small" showClear @change="fetchEmployees(1)" />
         <Select v-model="filters.is_active" :options="activeOptions" optionLabel="label" optionValue="value"
             placeholder="All statuses" class="w-36" size="small" showClear @change="fetchEmployees(1)" />
-        <Button icon="pi pi-filter-slash" severity="secondary" size="small" class="rounded" outlined
-            v-tooltip="'Reset filters'" @click="resetFilters" />
+        <Button severity="secondary" size="small" class="rounded" outlined
+            v-tooltip="'Reset filters'" @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
     </div>
 
     <!-- DataTable -->
@@ -46,7 +46,7 @@
             }">
             <template #empty>
                 <div class="text-center py-12 text-surface-400">
-                    <i class="pi pi-users text-4xl block mb-3"></i>
+                    <AppIcon name="Users" :size="36" class="block mb-3" />
                     <p class="text-sm">No employees found.</p>
                 </div>
             </template>
@@ -123,15 +123,22 @@
 
             <Column header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                 <template #body="{ data }">
-                    <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small"
-                        @click="(e) => openRowMenu(e, data)" />
+                    <Button severity="secondary" text rounded size="small"
+                        @click="(e) => openRowMenu(e, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                 </template>
             </Column>
         </DataTable>
     </div>
 
     <!-- Row context menu -->
-    <ContextMenu ref="rowMenuRef" :model="rowMenuItems" @hide="contextMenuEmployee = null" />
+    <ContextMenu ref="rowMenuRef" :model="rowMenuItems" @hide="contextMenuEmployee = null">
+        <template #item="{ item, label, props }">
+            <a v-bind="props.action">
+                <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                <span v-bind="props.label">{{ label }}</span>
+            </a>
+        </template>
+    </ContextMenu>
 
     <!-- Modals -->
     <CreateEditModal v-model:show="showCreateEdit" :employee="selectedEmployee" :mode="modalMode" @saved="onSaved" />
@@ -206,16 +213,16 @@ function setRowMenuItems(emp) {
     contextMenuEmployee.value = emp;
 
     const items = [
-        { label: 'View Details', icon: 'pi pi-eye', command: () => { showView.value = true; } },
+        { label: 'View Details', iconName: 'Eye', command: () => { showView.value = true; } },
     ];
 
     if (canManageEmployees.value) {
         items.push(
-            { label: 'Edit', icon: 'pi pi-pencil', command: () => openEdit(emp) },
+            { label: 'Edit', iconName: 'Pencil', command: () => openEdit(emp) },
             { separator: true },
             {
                 label: emp.is_active ? 'Deactivate' : 'Activate',
-                icon: emp.is_active ? 'pi pi-ban' : 'pi pi-check-circle',
+                iconName: emp.is_active ? 'Ban' : 'CircleCheck',
                 command: () => toggleActive(emp),
             },
         );
@@ -226,7 +233,7 @@ function setRowMenuItems(emp) {
             items.push({ separator: true });
         }
 
-        items.push({ label: 'Delete', icon: 'pi pi-trash', class: 'text-red-500', command: () => { showDelete.value = true; } });
+        items.push({ label: 'Delete', iconName: 'Trash2', class: 'text-red-500', command: () => { showDelete.value = true; } });
     }
 
     rowMenuItems.value = items;

@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">{{ modalTitle }}</span>
                     <button class="ios-nav-btn ios-nav-action" :disabled="confirmDisabled" @click="applySnapshot">
@@ -61,7 +61,7 @@
                                         <span
                                             class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-surface-400 transition cursor-grab active:cursor-grabbing"
                                             v-tooltip="'Grab this to change order'">
-                                            <i class="pi pi-sort text-xs"></i>
+                                            <AppIcon name="ArrowUpDown" :size="12" />
                                         </span>
 
                                         <Checkbox :modelValue="isOfficeHeadTitleSelected(title)" :binary="true"
@@ -113,7 +113,7 @@
                                         <span
                                             class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-surface-400 transition cursor-grab active:cursor-grabbing"
                                             v-tooltip="'Grab this to change order'">
-                                            <i class="pi pi-sort text-xs"></i>
+                                            <AppIcon name="ArrowUpDown" :size="12" />
                                         </span>
 
                                         <Checkbox :modelValue="isVisibleLineSelected(lineOption.id)" :binary="true"

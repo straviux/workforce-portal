@@ -10,8 +10,8 @@
             </p>
         </div>
 
-        <Button v-if="canManageCalendar" label="Add Calendar Event" icon="pi pi-plus" class="rounded"
-            @click="openCreate" />
+        <Button v-if="canManageCalendar" label="Add Calendar Event" class="rounded"
+            @click="openCreate"><template #icon><AppIcon name="Plus" /></template></Button>
     </div>
 
     <div class="ios-section pb-4">
@@ -36,14 +36,14 @@
         <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
             <p class="ios-section-label !mb-0">Month View</p>
             <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto justify-between sm:justify-start">
-                <Button icon="pi pi-angle-left" severity="secondary" outlined class="rounded" size="small"
-                    @click="shiftMonth(-1)" />
+                <Button severity="secondary" outlined class="rounded" size="small"
+                    @click="shiftMonth(-1)"><template #icon><AppIcon name="ChevronLeft" /></template></Button>
                 <div
                     class="rounded-2xl border border-surface-200 dark:border-surface-700 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-surface-700 dark:text-surface-100 min-w-[132px] sm:min-w-[170px] text-center">
                     {{ monthLabel }}
                 </div>
-                <Button icon="pi pi-angle-right" severity="secondary" outlined class="rounded" size="small"
-                    @click="shiftMonth(1)" />
+                <Button severity="secondary" outlined class="rounded" size="small"
+                    @click="shiftMonth(1)"><template #icon><AppIcon name="ChevronRight" /></template></Button>
                 <Button label="Today" severity="secondary" text class="rounded" size="small"
                     @click="goToCurrentMonth" />
             </div>
@@ -57,7 +57,7 @@
             </div>
 
             <div v-if="loadingMonth" class="text-center py-10 text-surface-400">
-                <i class="pi pi-spin pi-spinner text-3xl block mb-3"></i>
+                <AppIcon name="LoaderCircle" :size="36" class="animate-spin block mb-3" />
                 <p class="text-sm">Loading month view…</p>
             </div>
 
@@ -110,8 +110,7 @@
                                             <p class="text-[9px] sm:text-[10px] mt-0.5 opacity-80 truncate">{{
                                                 formatEventType(event.event_type) }}{{ formatPortion(event.day_portion) }}</p>
                                         </div>
-                                        <i v-if="event.is_system"
-                                            class="pi pi-lock text-[9px] sm:text-[10px] opacity-70 mt-0.5 shrink-0"></i>
+                                        <AppIcon v-if="event.is_system" name="Lock" :size="10" class="opacity-70 mt-0.5 shrink-0" />
                                     </div>
                                 </button>
 
@@ -138,7 +137,7 @@
                 <div class="ios-form-group">
                     <label class="ios-label">Search</label>
                     <IconField>
-                        <InputIcon class="pi pi-search" />
+                        <InputIcon><AppIcon name="Search" /></InputIcon>
                         <InputText v-model="filters.search" class="w-full" placeholder="Search title or description"
                             @keyup.enter="fetchEvents(1)" />
                     </IconField>
@@ -161,9 +160,9 @@
                 </div>
 
                 <div class="flex items-center gap-2 justify-end">
-                    <Button icon="pi pi-search" label="Apply" class="rounded" size="small" @click="fetchEvents(1)" />
-                    <Button icon="pi pi-filter-slash" severity="secondary" outlined class="rounded" size="small"
-                        @click="resetFilters" />
+                    <Button label="Apply" class="rounded" size="small" @click="fetchEvents(1)"><template #icon><AppIcon name="Search" /></template></Button>
+                    <Button severity="secondary" outlined class="rounded" size="small"
+                        @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
                 </div>
             </div>
         </div>
@@ -184,7 +183,7 @@
                 }">
                 <template #empty>
                     <div class="text-center py-12 text-surface-400">
-                        <i class="pi pi-calendar text-4xl block mb-3"></i>
+                        <AppIcon name="Calendar" :size="36" class="block mb-3" />
                         <p class="text-sm">No calendar events found.</p>
                     </div>
                 </template>
@@ -244,13 +243,12 @@
                     <template #body="{ data }">
                         <div class="flex items-center justify-end gap-2">
                             <Button v-if="canManageCalendar && !data.is_system"
-                                :icon="data.is_active ? 'pi pi-eye-slash' : 'pi pi-eye'"
                                 :severity="data.is_active ? 'secondary' : 'success'" text rounded size="small"
-                                :disabled="statusUpdatingIds.includes(data.id)" @click="toggleActive(data)" />
-                            <Button v-if="canManageCalendar && !data.is_system" icon="pi pi-pencil" severity="secondary"
-                                text rounded size="small" @click="openEdit(data)" />
-                            <Button v-if="canManageCalendar && !data.is_system" icon="pi pi-trash" severity="danger"
-                                text rounded size="small" @click="deleteEvent(data)" />
+                                :disabled="statusUpdatingIds.includes(data.id)" @click="toggleActive(data)"><template #icon><AppIcon :name="data.is_active ? 'EyeOff' : 'Eye'" /></template></Button>
+                            <Button v-if="canManageCalendar && !data.is_system" severity="secondary"
+                                text rounded size="small" @click="openEdit(data)"><template #icon><AppIcon name="Pencil" /></template></Button>
+                            <Button v-if="canManageCalendar && !data.is_system" severity="danger"
+                                text rounded size="small" @click="deleteEvent(data)"><template #icon><AppIcon name="Trash2" /></template></Button>
                             <Tag v-else value="Locked" severity="warn" />
                         </div>
                     </template>

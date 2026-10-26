@@ -19,8 +19,8 @@
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
                         Part A — Office Head (Prepared by / Verified)
                     </p>
-                    <Button v-if="canManageSignatories" icon="pi pi-plus" label="Add" class="rounded" size="small"
-                        @click="openAddOh" />
+                    <Button v-if="canManageSignatories" label="Add" class="rounded" size="small"
+                        @click="openAddOh"><template #icon><AppIcon name="Plus" /></template></Button>
                 </div>
 
                 <div v-if="officeHeads.length" class="space-y-2">
@@ -34,10 +34,10 @@
                                     }}</span>
                             </div>
                         </div>
-                        <Button v-if="canManageSignatories" icon="pi pi-pencil" severity="secondary" text rounded size="small"
-                            @click="openEditOh(oh)" />
-                        <Button v-if="canManageSignatories" icon="pi pi-trash" severity="danger" text rounded size="small"
-                            :loading="deletingId === oh.id" @click="removeOfficeHead(oh)" />
+                        <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
+                            @click="openEditOh(oh)"><template #icon><AppIcon name="Pencil" /></template></Button>
+                        <Button v-if="canManageSignatories" severity="danger" text rounded size="small"
+                            :loading="deletingId === oh.id" @click="removeOfficeHead(oh)"><template #icon><AppIcon name="Trash2" /></template></Button>
                     </div>
                 </div>
                 <p v-else class="text-sm text-surface-400">No office heads added yet.</p>
@@ -61,8 +61,8 @@
                                     }}</span>
                             </div>
                         </div>
-                        <Button v-if="canManageSignatories" icon="pi pi-pencil" severity="secondary" text rounded size="small"
-                            @click="openEditPart(row)" />
+                        <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
+                            @click="openEditPart(row)"><template #icon><AppIcon name="Pencil" /></template></Button>
                     </div>
                 </div>
             </div>
@@ -89,18 +89,18 @@
                         <div v-for="(t, i) in ohForm.titles" :key="i" class="flex gap-2 items-center">
                             <InputText v-model="ohForm.titles[i]" placeholder="e.g. Political Affairs Officer III"
                                 class="flex-1" size="small" />
-                            <Button icon="pi pi-times" severity="danger" text rounded size="small"
-                                :disabled="ohForm.titles.length === 1" @click="ohForm.titles.splice(i, 1)" />
+                            <Button severity="danger" text rounded size="small"
+                                :disabled="ohForm.titles.length === 1" @click="ohForm.titles.splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
                         </div>
-                        <Button icon="pi pi-plus" label="Add title" text size="small" class="rounded !pl-0"
-                            @click="ohForm.titles.push('')" />
+                        <Button label="Add title" text size="small" class="rounded !pl-0"
+                            @click="ohForm.titles.push('')"><template #icon><AppIcon name="Plus" /></template></Button>
                     </div>
                 </div>
             </div>
             <template #footer>
                 <Button label="Cancel" severity="secondary" text class="rounded" @click="ohModal.show = false" />
-                <Button :label="ohModal.editId ? `Save` : `Add`" :icon="ohModal.editId ? `pi pi-check` : `pi pi-plus`"
-                    class="rounded" :loading="ohModal.saving" :disabled="!ohForm.name.trim()" @click="submitOhModal" />
+                <Button :label="ohModal.editId ? `Save` : `Add`"
+                    class="rounded" :loading="ohModal.saving" :disabled="!ohForm.name.trim()" @click="submitOhModal"><template #icon><AppIcon :name="ohModal.editId ? 'Check' : 'Plus'" /></template></Button>
             </template>
         </Dialog>
 
@@ -130,19 +130,19 @@
                             <InputText v-model="bcdForm_modal.titles[i]"
                                 :placeholder="`e.g. ${partPlaceholders[bcdModal.part]?.title}`" class="flex-1"
                                 size="small" />
-                            <Button icon="pi pi-times" severity="danger" text rounded size="small"
+                            <Button severity="danger" text rounded size="small"
                                 :disabled="bcdForm_modal.titles.length === 1"
-                                @click="bcdForm_modal.titles.splice(i, 1)" />
+                                @click="bcdForm_modal.titles.splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
                         </div>
-                        <Button icon="pi pi-plus" label="Add title" text size="small" class="rounded !pl-0"
-                            @click="bcdForm_modal.titles.push('')" />
+                        <Button label="Add title" text size="small" class="rounded !pl-0"
+                            @click="bcdForm_modal.titles.push('')"><template #icon><AppIcon name="Plus" /></template></Button>
                     </div>
                 </div>
             </div>
             <template #footer>
                 <Button label="Cancel" severity="secondary" text class="rounded" @click="bcdModal.show = false" />
-                <Button label="Save" icon="pi pi-check" class="rounded" :loading="bcdModal.saving"
-                    :disabled="!bcdForm_modal.name.trim()" @click="submitBcdModal" />
+                <Button label="Save" class="rounded" :loading="bcdModal.saving"
+                    :disabled="!bcdForm_modal.name.trim()" @click="submitBcdModal"><template #icon><AppIcon name="Check" /></template></Button>
             </template>
         </Dialog>
 

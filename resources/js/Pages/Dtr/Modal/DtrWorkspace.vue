@@ -10,8 +10,8 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-2">
-                    <Button label="Generate DTR" icon="pi pi-file-edit" severity="info" outlined class="rounded"
-                        size="small" :disabled="!canOpenGenerateDialog" @click="openGenerateDialog" />
+                    <Button label="Generate DTR" severity="info" outlined class="rounded"
+                        size="small" :disabled="!canOpenGenerateDialog" @click="openGenerateDialog"><template #icon><AppIcon name="FilePen" /></template></Button>
                 </div>
             </div>
         </div>
@@ -34,18 +34,18 @@
                         </div>
 
                         <div class="flex items-center gap-2 flex-wrap">
-                            <Button label="Preview" icon="pi pi-eye" severity="secondary" text size="small"
+                            <Button label="Preview" severity="secondary" text size="small"
                                 :loading="previewingReportId === report.id"
                                 :disabled="loadingEditorReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportPreview(report)" />
-                            <Button v-if="canManage" label="Edit" icon="pi pi-pencil" severity="secondary" text
+                                @click="openSavedReportPreview(report)"><template #icon><AppIcon name="Eye" /></template></Button>
+                            <Button v-if="canManage" label="Edit" severity="secondary" text
                                 size="small" :loading="loadingEditorReportId === report.id"
                                 :disabled="isSavingReport || isDeletingReport || previewingReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportEditor(report)" />
-                            <Button v-if="canManage" label="Delete" icon="pi pi-trash" severity="danger" text
+                                @click="openSavedReportEditor(report)"><template #icon><AppIcon name="Pencil" /></template></Button>
+                            <Button v-if="canManage" label="Delete" severity="danger" text
                                 size="small" :loading="deletingReportId === report.id"
                                 :disabled="isSavingReport || isDeletingReport || loadingEditorReportId === report.id || previewingReportId === report.id"
-                                @click="deleteSavedReport(report)" />
+                                @click="deleteSavedReport(report)"><template #icon><AppIcon name="Trash2" /></template></Button>
                             <Tag :value="`${report.day_count} days`" severity="secondary" />
                             <Tag :value="formatCreatedAt(report.created_at)" severity="info" />
                         </div>
@@ -53,7 +53,7 @@
                 </div>
 
                 <div v-else class="text-center py-8 text-surface-400">
-                    <i class="pi pi-calendar-clock text-3xl block mb-3"></i>
+                    <AppIcon name="CalendarClock" :size="36" class="block mb-3" />
                     <p class="text-sm">No DTR records generated yet.</p>
                 </div>
             </div>
@@ -95,8 +95,8 @@
                         </p>
                     </div>
 
-                    <Button label="Configure Signatory" icon="pi pi-user-edit" class="rounded" size="small"
-                        :disabled="!canManage || isSavingReport" @click="showSignatorySnapshotModal = true" />
+                    <Button label="Configure Signatory" class="rounded" size="small"
+                        :disabled="!canManage || isSavingReport" @click="showSignatorySnapshotModal = true"><template #icon><AppIcon name="UserPen" /></template></Button>
                 </div>
 
                 <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
@@ -159,10 +159,10 @@
                         </div>
 
                         <div class="flex items-center gap-2 flex-wrap">
-                            <Button v-if="canManage" label="Auto-fill (No Late/Undertime/Absent)" icon="pi pi-bolt"
+                            <Button v-if="canManage" label="Auto-fill (No Late/Undertime/Absent)"
                                 severity="success" outlined size="small" class="rounded"
                                 :disabled="!draftDates.length || isSavingReport" v-tooltip.bottom="autoFillTooltip"
-                                @click="autoFillRandomHours" />
+                                @click="autoFillRandomHours"><template #icon><AppIcon name="Zap" /></template></Button>
                             <Tag :value="`${draftDates.length} work day${draftDates.length === 1 ? '' : 's'}`"
                                 severity="secondary" />
                         </div>
@@ -234,9 +234,8 @@
 
                     <div class="flex items-center gap-2 flex-wrap">
                         <Button label="Close" severity="secondary" text @click="closeGenerateDialog" />
-                        <Button :label="isEditingReport ? 'Update DTR' : 'Save DTR'"
-                            :icon="isEditingReport ? 'pi pi-save' : 'pi pi-check'" class="rounded" size="small"
-                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="emitSaveReport" />
+                        <Button :label="isEditingReport ? 'Update DTR' : 'Save DTR'" class="rounded" size="small"
+                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="emitSaveReport"><template #icon><AppIcon :name="isEditingReport ? 'Save' : 'Check'" /></template></Button>
                     </div>
                 </div>
             </template>

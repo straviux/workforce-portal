@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i> Cancel
+                        <AppIcon name="X" /> Cancel
                     </button>
                     <span class="ios-nav-title">Confirm Delete</span>
                 </div>
@@ -17,7 +17,7 @@
                             <div class="flex justify-center mb-4">
                                 <div
                                     class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                    <i class="pi pi-trash text-2xl text-red-500"></i>
+                                    <AppIcon name="Trash2" :size="24" class="text-red-500" />
                                 </div>
                             </div>
                             <h3 class="text-base font-semibold mb-1">

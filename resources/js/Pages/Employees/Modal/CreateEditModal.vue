@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">{{ mode === 'create' ? 'New Employee' : 'Edit Employee' }}</span>
                     <button class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit">
@@ -24,7 +24,7 @@
                                 <div v-for="opt in typeOptions" :key="opt.value"
                                     class="flex-1 flex items-center gap-2 px-4 py-3 cursor-pointer border-r border-surface-200 dark:border-surface-700 last:border-r-0"
                                     @click="form.employee_type = opt.value">
-                                    <i v-if="form.employee_type === opt.value" class="pi pi-check text-xs"></i>
+                                    <AppIcon v-if="form.employee_type === opt.value" name="Check" :size="12" />
                                     <span class="text-sm"
                                         :class="form.employee_type === opt.value ? 'text-gray-600 font-medium' : ''">{{
                                             opt.label }}</span>

@@ -6,12 +6,12 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Add Remarks</span>
                     <button class="ios-nav-btn ios-nav-action font-semibold" @click="handleSave" :disabled="isSaving"
                         v-tooltip="'Save Remarks'">
-                        <i class="pi pi-save text-emerald-500"></i>
+                        <AppIcon name="Save" class="text-emerald-500" />
                     </button>
                 </div>
 

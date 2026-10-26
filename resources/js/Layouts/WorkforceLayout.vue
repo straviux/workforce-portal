@@ -118,8 +118,7 @@ onMounted(async () => {
                 <!-- Minimize toggle (desktop only) -->
                 <button @click="toggleSidebarMinimized"
                     class="hidden md:flex w-full pt-4 px-4 text-gray-500 hover:text-gray-300 cursor-pointer justify-end transition">
-                    <i :class="sidebarMinimized ? 'pi pi-window-maximize' : 'pi pi-window-minimize'"
-                        style="font-size: 0.7rem; margin-right: 8px;"></i>
+                    <AppIcon :name="sidebarMinimized ? 'Maximize2' : 'Minus'" :size="11" style="margin-right: 8px;" />
                 </button>
 
                 <!-- User profile (expanded) -->
@@ -129,7 +128,7 @@ onMounted(async () => {
                             class="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
                             <img v-if="user?.has_profile_photo && user?.profile_photo_url" :src="user.profile_photo_url"
                                 class="w-10 h-10 object-cover" />
-                            <i v-else class="pi pi-user text-white text-sm"></i>
+                            <AppIcon v-else name="User" :size="14" class="text-white" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-sm font-medium truncate">{{ user?.name ?? 'User' }}</p>
@@ -144,63 +143,63 @@ onMounted(async () => {
                         class="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
                         <img v-if="user?.has_profile_photo && user?.profile_photo_url" :src="user.profile_photo_url"
                             class="w-9 h-9 object-cover" />
-                        <i v-else class="pi pi-user text-white text-xs"></i>
+                        <AppIcon v-else name="User" :size="12" class="text-white" />
                     </div>
                 </div>
 
                 <!-- Navigation (expanded) -->
                 <nav v-if="!sidebarMinimized" class="flex-1 px-3 pt-3 space-y-1 overflow-y-auto pb-6">
                     <SidebarLink :href="route('dashboard')" :active="isActive('dashboard')">
-                        <i class="pi pi-home mr-3 text-base"></i>
+                        <AppIcon name="House" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Dashboard</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('employees.view')" :href="route('employees.index')"
                         :active="isActive('employees')">
-                        <i class="pi pi-id-card mr-3 text-base"></i>
+                        <AppIcon name="IdCard" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Employees</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('employee_fund_transactions.view')"
                         :href="route('employee_fund_transactions.index')"
                         :active="isActive('employee_fund_transactions')">
-                        <i class="pi pi-file-edit mr-3 text-base"></i>
+                        <AppIcon name="FilePen" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Fund Transactions</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('responsibility_centers.view')"
                         :href="route('responsibility_centers.index')" :active="isActive('responsibility_centers')">
-                        <i class="pi pi-building mr-3 text-base"></i>
+                        <AppIcon name="Building" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Resp Centers</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('certifications.view')" :href="route('certifications.index')"
                         :active="isActive('certifications')">
-                        <i class="pi pi-check-circle mr-3 text-base"></i>
+                        <AppIcon name="CircleCheck" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Certifications</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('calendar.view')" :href="route('calendar.index')"
                         :active="isActive('calendar')">
-                        <i class="pi pi-calendar mr-3 text-base"></i>
+                        <AppIcon name="Calendar" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Calendar</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
-                        <i class="pi pi-briefcase mr-3 text-base"></i>
+                        <AppIcon name="Briefcase" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">SWA</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('dtr.view')" :href="route('dtr.index')" :active="isActive('dtr')">
-                        <i class="pi pi-clock mr-3 text-base"></i>
+                        <AppIcon name="Clock" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">DTR</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
                         :active="isActive('settings.signatories')">
-                        <i class="pi pi-pen-to-square mr-3 text-base"></i>
+                        <AppIcon name="SquarePen" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Signatories</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('users.view')" :href="route('settings.users.index')"
                         :active="isActive('settings.users')">
-                        <i class="pi pi-users mr-3 text-base"></i>
+                        <AppIcon name="Users" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">User Management</span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('roles.view')" :href="route('settings.roles.index')"
                         :active="isActive('settings.roles')">
-                        <i class="pi pi-shield mr-3 text-base"></i>
+                        <AppIcon name="Shield" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">Access Roles</span>
                     </SidebarLink>
                 </nav>
@@ -209,66 +208,66 @@ onMounted(async () => {
                 <nav v-else class="flex-1 px-2 pt-3 space-y-2 overflow-y-auto pb-6">
                     <SidebarLink :href="route('dashboard')" :active="isActive('dashboard')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-home text-xl"></i>
+                            <AppIcon name="House" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('employees.view')" :href="route('employees.index')"
                         :active="isActive('employees')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-id-card text-xl"></i>
+                            <AppIcon name="IdCard" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('employee_fund_transactions.view')"
                         :href="route('employee_fund_transactions.index')"
                         :active="isActive('employee_fund_transactions')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-file-edit text-xl"></i>
+                            <AppIcon name="FilePen" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('responsibility_centers.view')"
                         :href="route('responsibility_centers.index')" :active="isActive('responsibility_centers')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-building text-xl"></i>
+                            <AppIcon name="Building" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('certifications.view')" :href="route('certifications.index')"
                         :active="isActive('certifications')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-check-circle text-xl"></i>
+                            <AppIcon name="CircleCheck" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('calendar.view')" :href="route('calendar.index')"
                         :active="isActive('calendar')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-calendar text-xl"></i>
+                            <AppIcon name="Calendar" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('swa.view')" :href="route('swa.index')" :active="isActive('swa')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-briefcase text-xl"></i>
+                            <AppIcon name="Briefcase" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('dtr.view')" :href="route('dtr.index')" :active="isActive('dtr')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-clock text-xl"></i>
+                            <AppIcon name="Clock" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
                         :active="isActive('settings.signatories')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-pen-to-square text-xl"></i>
+                            <AppIcon name="SquarePen" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('users.view')" :href="route('settings.users.index')"
                         :active="isActive('settings.users')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-users text-xl"></i>
+                            <AppIcon name="Users" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('roles.view')" :href="route('settings.roles.index')"
                         :active="isActive('settings.roles')">
                         <span class="w-full flex justify-center">
-                            <i class="pi pi-shield text-xl"></i>
+                            <AppIcon name="Shield" :size="20" />
                         </span>
                     </SidebarLink>
                 </nav>
@@ -277,7 +276,7 @@ onMounted(async () => {
                 <div class="md:hidden border-t border-white/10 p-3">
                     <button @click="handleLogout"
                         class="flex items-center gap-3 px-3 py-2 rounded-2xl text-red-400 hover:text-red-300 hover:bg-white/10 transition w-full text-sm">
-                        <i class="pi pi-sign-out"></i>
+                        <AppIcon name="LogOut" />
                         <span>Sign Out</span>
                     </button>
                 </div>
@@ -292,7 +291,7 @@ onMounted(async () => {
                     <!-- Mobile hamburger -->
                     <button @click="toggleMenu = !toggleMenu"
                         class="md:hidden text-gray-300 hover:text-white p-2 cursor-pointer">
-                        <i class="pi text-lg" :class="toggleMenu ? 'pi-times' : 'pi-bars'"></i>
+                        <AppIcon :name="toggleMenu ? 'X' : 'Menu'" :size="18" />
                     </button>
 
                     <!-- Brand -->
@@ -301,7 +300,7 @@ onMounted(async () => {
                             class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
                             <img v-if="officeLogoUrl" :src="officeLogoUrl" alt="Office Logo"
                                 class="w-full h-full object-contain" />
-                            <i v-else class="pi pi-briefcase text-white text-sm"></i>
+                            <AppIcon v-else name="Briefcase" :size="14" class="text-white" />
                         </div>
                         <span class="text-white font-semibold text-sm hidden sm:inline">Workforcify</span>
                         <div class="hidden md:block w-px h-5 bg-white/10"></div>
@@ -313,24 +312,24 @@ onMounted(async () => {
 
                     <!-- Right actions -->
                     <div class="flex items-center gap-1">
-                        <Button :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'" severity="secondary" variant="text"
+                        <Button severity="secondary" variant="text"
                             size="large" rounded @click="toggleDark"
-                            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" />
+                            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"><template #icon><AppIcon :name="isDark ? 'Sun' : 'Moon'" /></template></Button>
 
-                        <Button icon="pi pi-cog" severity="secondary" variant="text" size="large" rounded
-                            @click="toggleUserMenu" v-tooltip.bottom="`User Menu`" />
+                        <Button severity="secondary" variant="text" size="large" rounded
+                            @click="toggleUserMenu" v-tooltip.bottom="`User Menu`"><template #icon><AppIcon name="Settings" /></template></Button>
                         <Popover ref="userMenuRef" class="w-52 !rounded-2xl">
                             <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                                 <p class="text-sm font-semibold">{{ user?.name ?? 'User' }}</p>
                                 <p class="text-xs opacity-60 mt-0.5">{{ userRole }}</p>
                             </div>
                             <div class="px-2 py-2">
-                                <Button @click="goToProfile" label="Edit Profile" icon="pi pi-user-edit"
-                                    severity="secondary" variant="text" class="w-full !justify-start" />
+                                <Button @click="goToProfile" label="Edit Profile"
+                                    severity="secondary" variant="text" class="w-full !justify-start"><template #icon><AppIcon name="UserPen" /></template></Button>
                             </div>
                             <div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
-                                <Button @click="handleLogout" label="Sign Out" icon="pi pi-sign-out" severity="danger"
-                                    variant="text" class="w-full" />
+                                <Button @click="handleLogout" label="Sign Out" severity="danger"
+                                    variant="text" class="w-full"><template #icon><AppIcon name="LogOut" /></template></Button>
                             </div>
                         </Popover>
                     </div>

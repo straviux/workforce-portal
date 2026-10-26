@@ -10,24 +10,24 @@
             </p>
         </div>
         <div v-if="canManageUsers" class="flex flex-wrap items-center justify-end gap-2">
-            <Button icon="pi pi-image" label="Office Logo" severity="secondary" outlined class="rounded"
-                @click="openLogoDialog" />
-            <Button icon="pi pi-database" label="Import Scholarship Users" severity="secondary" outlined class="rounded"
-                @click="showImportDialog = true" />
-            <Button icon="pi pi-plus" label="New User" class="rounded" @click="openCreate" />
+            <Button label="Office Logo" severity="secondary" outlined class="rounded"
+                @click="openLogoDialog"><template #icon><AppIcon name="Image" /></template></Button>
+            <Button label="Import Scholarship Users" severity="secondary" outlined class="rounded"
+                @click="showImportDialog = true"><template #icon><AppIcon name="Database" /></template></Button>
+            <Button label="New User" class="rounded" @click="openCreate"><template #icon><AppIcon name="Plus" /></template></Button>
         </div>
     </div>
 
     <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
         <IconField class="flex-1 min-w-60">
-            <InputIcon class="pi pi-search" />
+            <InputIcon><AppIcon name="Search" /></InputIcon>
             <InputText v-model="filters.search" placeholder="Search name, username, email, office, or designation"
                 class="w-full" size="small" @keyup.enter="fetchUsers(1)" />
         </IconField>
         <Select v-model="filters.role" :options="roleOptions" optionLabel="name" optionValue="name"
             placeholder="All roles" class="w-48" size="small" showClear @change="fetchUsers(1)" />
-        <Button icon="pi pi-filter-slash" severity="secondary" size="small" class="rounded" outlined
-            v-tooltip="'Reset filters'" @click="resetFilters" />
+        <Button severity="secondary" size="small" class="rounded" outlined
+            v-tooltip="'Reset filters'" @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
     </div>
 
     <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
@@ -41,7 +41,7 @@
             }">
             <template #empty>
                 <div class="text-center py-12 text-surface-400">
-                    <i class="pi pi-users text-4xl block mb-3"></i>
+                    <AppIcon name="Users" :size="36" class="block mb-3" />
                     <p class="text-sm">No users found.</p>
                 </div>
             </template>
@@ -88,14 +88,21 @@
 
             <Column v-if="canManageUsers" header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                 <template #body="{ data }">
-                    <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small"
-                        @click="(event) => openRowMenu(event, data)" />
+                    <Button severity="secondary" text rounded size="small"
+                        @click="(event) => openRowMenu(event, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                 </template>
             </Column>
         </DataTable>
     </div>
 
-    <Menu ref="rowMenuRef" :model="rowMenuItems" popup />
+    <Menu ref="rowMenuRef" :model="rowMenuItems" popup>
+        <template #item="{ item, label, props }">
+            <a v-bind="props.action">
+                <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                <span v-bind="props.label">{{ label }}</span>
+            </a>
+        </template>
+    </Menu>
 
     <Dialog v-model:visible="showCreateEdit" modal :header="modalMode === 'create' ? 'New User' : 'Edit User'"
         :style="{ width: '42rem' }" :draggable="false">
@@ -167,8 +174,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showCreateEdit = false" />
-            <Button :label="modalMode === 'create' ? 'Create User' : 'Save Changes'" icon="pi pi-check" class="rounded"
-                :loading="saving" @click="submit" />
+            <Button :label="modalMode === 'create' ? 'Create User' : 'Save Changes'" class="rounded"
+                :loading="saving" @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
         </template>
     </Dialog>
 
@@ -181,8 +188,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showDelete = false" />
-            <Button label="Delete" icon="pi pi-trash" severity="danger" class="rounded" :loading="deleting"
-                @click="confirmDelete" />
+            <Button label="Delete" severity="danger" class="rounded" :loading="deleting"
+                @click="confirmDelete"><template #icon><AppIcon name="Trash2" /></template></Button>
         </template>
     </Dialog>
 
@@ -203,8 +210,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showImportDialog = false" />
-            <Button label="Import Users" icon="pi pi-download" class="rounded" :loading="importingScholarship"
-                @click="importScholarshipUsers" />
+            <Button label="Import Users" class="rounded" :loading="importingScholarship"
+                @click="importScholarshipUsers"><template #icon><AppIcon name="Download" /></template></Button>
         </template>
     </Dialog>
 
@@ -222,7 +229,7 @@
                     <img v-if="currentLogoUrl" :src="currentLogoUrl" alt="Office Logo"
                         class="max-w-full max-h-full object-contain p-4" />
                     <div v-else class="text-center text-surface-400">
-                        <i class="pi pi-image text-3xl block mb-2"></i>
+                        <AppIcon name="Image" :size="36" class="block mb-2" />
                         <span class="text-sm">No logo uploaded</span>
                     </div>
                 </div>
@@ -242,14 +249,14 @@
             </div>
         </div>
         <template #footer>
-            <Button v-if="currentLogoUrl" label="Remove Logo" icon="pi pi-trash" severity="danger" text class="rounded"
+            <Button v-if="currentLogoUrl" label="Remove Logo" severity="danger" text class="rounded"
                 :loading="logoDeleting" @click="removeLogo"
-                :disabled="logoUploading" />
+                :disabled="logoUploading"><template #icon><AppIcon name="Trash2" /></template></Button>
             <div class="flex-1"></div>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showLogoDialog = false"
                 :disabled="logoUploading || logoDeleting" />
-            <Button label="Upload Logo" icon="pi pi-upload" class="rounded" :loading="logoUploading"
-                @click="uploadLogo" :disabled="!selectedFile || logoDeleting" />
+            <Button label="Upload Logo" class="rounded" :loading="logoUploading"
+                @click="uploadLogo" :disabled="!selectedFile || logoDeleting"><template #icon><AppIcon name="Upload" /></template></Button>
         </template>
     </Dialog>
 </template>
@@ -411,9 +418,9 @@ function openEdit(user) {
 function openRowMenu(event, user) {
     selectedUser.value = user;
     rowMenuItems.value = [
-        { label: 'Edit', icon: 'pi pi-pencil', command: () => openEdit(user) },
+        { label: 'Edit', iconName: 'Pencil', command: () => openEdit(user) },
         { separator: true },
-        { label: 'Delete', icon: 'pi pi-trash', class: 'text-red-500', command: () => { showDelete.value = true; } },
+        { label: 'Delete', iconName: 'Trash2', class: 'text-red-500', command: () => { showDelete.value = true; } },
     ];
     rowMenuRef.value.toggle(event);
 }

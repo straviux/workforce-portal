@@ -8,16 +8,16 @@
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel"
                         @click="step === 2 ? step = 1 : emit('update:show', false)">
-                        <i :class="step === 2 ? 'pi pi-arrow-left' : 'pi pi-times'"></i>
+                        <AppIcon :name="step === 2 ? 'ArrowLeft' : 'X'" />
                     </button>
                     <span class="ios-nav-title">{{ wizardTitle }}</span>
                     <button v-if="step === 1" class="ios-nav-btn ios-nav-action"
                         :disabled="selectedEmployees.length === 0" @click="goNext">
-                        <i class="pi pi-chevron-right"></i>
+                        <AppIcon name="ChevronRight" />
                     </button>
                     <button v-else class="ios-nav-btn ios-nav-action" :disabled="saving" @click="submit"
                         v-tooltip="'Save Transaction'">
-                        <i class="pi pi-save text-emerald-500"></i>
+                        <AppIcon name="Save" class="text-emerald-500" />
                     </button>
                 </div>
 
@@ -43,7 +43,7 @@
                         <!-- Info banner -->
                         <div class="mx-4 mt-3 px-3 py-2 rounded-xl flex items-start gap-2 text-xs shrink-0"
                             style="background:#e8f0fe;color:#1e40af;">
-                            <i class="pi pi-info-circle mt-0.5 shrink-0" style="font-size:13px;"></i>
+                            <AppIcon name="Info" :size="13" class="mt-0.5 shrink-0" />
                             <span>Select an employee type to filter the list, then search by name.</span>
                         </div>
 
@@ -56,7 +56,7 @@
                         <!-- Search -->
                         <div class="px-4 pb-2 shrink-0">
                             <IconField>
-                                <InputIcon class="pi pi-search" />
+                                <InputIcon><AppIcon name="Search" /></InputIcon>
                                 <InputText v-model="employeeSearch" placeholder="Search name, employee no…"
                                     class="w-full" size="small" />
                             </IconField>
@@ -65,8 +65,7 @@
                         <!-- Count row -->
                         <div class="px-4 py-2 border-y border-surface-100 dark:border-surface-700 shrink-0">
                             <span class="text-xs text-surface-500">
-                                <span v-if="loadingEmployees"><i class="pi pi-spin pi-spinner mr-1"
-                                        style="font-size:11px;"></i>Loading…</span>
+                                <span v-if="loadingEmployees"><AppIcon name="LoaderCircle" :size="11" class="animate-spin mr-1" />Loading…</span>
                                 <span v-else>{{ filteredEmployees.length }} found</span>
                             </span>
                         </div>
@@ -74,12 +73,12 @@
                         <!-- Scrollable list -->
                         <div class="flex-1 overflow-y-auto divide-y divide-surface-100 dark:divide-surface-800 py-4">
                             <div v-if="loadingEmployees" class="py-12 text-center text-surface-400 text-xs">
-                                <i class="pi pi-spin pi-spinner text-2xl block mb-2"></i>
+                                <AppIcon name="LoaderCircle" :size="24" class="animate-spin block mb-2" />
                                 Loading employees…
                             </div>
                             <div v-else-if="filteredEmployees.length === 0"
                                 class="py-12 text-center text-surface-400 text-xs">
-                                <i class="pi pi-users text-2xl block mb-2"></i>
+                                <AppIcon name="Users" :size="24" class="block mb-2" />
                                 No active employees found.
                             </div>
                             <template v-else>
@@ -122,7 +121,7 @@
                             <!-- Empty state -->
                             <div v-if="selectedEmployees.length === 0"
                                 class="h-full flex flex-col items-center justify-center gap-2 text-surface-400">
-                                <i class="pi pi-users text-4xl opacity-20"></i>
+                                <AppIcon name="Users" :size="36" class="opacity-20" />
                                 <p class="text-sm">No employees selected yet</p>
                             </div>
 
@@ -144,7 +143,7 @@
                                     <div class="flex items-center gap-2 shrink-0">
                                         <span
                                             class="rounded-lg border border-surface-200 dark:border-surface-700 px-2 py-1 text-surface-400 transition cursor-grab active:cursor-grabbing">
-                                            <i class="pi pi-sort text-xs"></i>
+                                            <AppIcon name="ArrowUpDown" :size="12" />
                                         </span>
                                         <span
                                             class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-surface-100 px-2 text-[11px] font-semibold text-surface-600 dark:bg-surface-800 dark:text-surface-300">
@@ -169,7 +168,7 @@
                                     <button
                                         class="text-surface-300 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
                                         @click="toggleEmployee(emp)">
-                                        <i class="pi pi-times text-xs! text-red-400"></i>
+                                        <AppIcon name="X" :size="12" class="text-red-400" />
                                     </button>
                                 </div>
                             </div>

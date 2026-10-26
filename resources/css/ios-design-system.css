@@ -1,4 +1,12 @@
 /* ============================================
+   Material Design 3 re-token of the former iOS/macOS Design System.
+   Class names are kept stable (Vue markup still uses ios-* names);
+   only values changed: surfaces/containers/outlines/primary point at
+   the MD3 tokens in resources/css/app.css (--md-*), dialog chrome uses
+   the 28px MD3 extra-large corner, cards use the 12px medium corner,
+   and the nav bar is styled as an MD3 dialog header (no separate
+   iOS bar, no hairline divider). Neutral text greys are kept where
+   app.css defines no --md-on-surface token.
    iOS/macOS Design System
    - Consolidated styles for all iOS-themed components
    - Ensure all design updates are made here for uniformity
@@ -6,8 +14,8 @@
 
 /* ── Modal Structure ── */
 .ios-modal {
-	background: #f2f2f7;
-	border-radius: 14px;
+	background: var(--md-surface-container-high);
+	border-radius: 28px;
 	max-height: 90vh;
 	display: flex;
 	flex-direction: column;
@@ -36,7 +44,7 @@
 	max-height: none !important;
 	overflow: visible !important;
 	width: auto !important;
-	border-radius: 14px !important;
+	border-radius: 28px !important;
 }
 
 .ios-dialog-mask {
@@ -56,9 +64,9 @@
 	align-items: center;
 	justify-content: center;
 	position: relative;
-	padding: 14px 16px;
-	background: #ffffff;
-	border-bottom: 0.5px solid #e5e5ea;
+	padding: 20px 24px 12px;
+	background: var(--md-surface-container-high);
+	border-bottom: none;
 	flex-shrink: 0;
 	cursor: grab;
 	-webkit-user-select: none;
@@ -70,7 +78,7 @@
 }
 
 .ios-nav-title {
-	font-size: 17px;
+	font-size: 20px;
 	font-weight: 600;
 	color: #000;
 	letter-spacing: -0.4px;
@@ -94,24 +102,24 @@
 }
 
 .ios-nav-cancel {
-	left: 16px;
-	color: #8e8e93;
+	left: 24px;
+	color: var(--md-outline);
 	font-size: 20px;
 }
 
 .ios-nav-action {
-	right: 16px;
-	color: #374151;
+	right: 24px;
+	color: var(--md-primary);
 	font-weight: 600;
 }
 
 .ios-nav-action:disabled {
-	color: #c7c7cc;
+	color: var(--md-outline);
 	cursor: not-allowed;
 }
 
 .ios-nav-destructive {
-	color: #ff3b30 !important;
+	color: var(--md-error) !important;
 }
 
 /* ── Body ── */
@@ -158,7 +166,7 @@
 .ios-section-label {
 	font-size: 13px;
 	font-weight: 500;
-	color: #8e8e93;
+	color: var(--md-outline);
 	text-transform: uppercase;
 	letter-spacing: -0.08px;
 	padding: 0 16px 6px;
@@ -168,36 +176,36 @@
 
 .ios-section-footer {
 	font-size: 13px;
-	color: #6d6d72;
+	color: var(--md-outline);
 	padding: 6px 16px 0;
 	line-height: 1.3;
 }
 
 .ios-error {
-	color: #ff3b30 !important;
+	color: var(--md-error) !important;
 }
 
 /* ── Cards & Rows ── */
 .ios-card {
-	background: #ffffff;
-	border-radius: 10px;
+	background: var(--md-surface-container-lowest);
+	border-radius: 12px;
 	overflow: hidden;
-	border: 0.5px solid #e5e5ea;
+	border: 1px solid var(--md-outline-variant);
 }
 
 /* ── Info Card & List Item ── */
 .ios-info-card {
-	background: #ffffff;
-	border-radius: 10px;
+	background: var(--md-surface-container-lowest);
+	border-radius: 12px;
 	padding: 12px;
-	border: 0.5px solid #e5e5ea;
+	border: 1px solid var(--md-outline-variant);
 }
 
 .ios-list-item {
-	background: #ffffff;
-	border-radius: 10px;
+	background: var(--md-surface-container-lowest);
+	border-radius: 12px;
 	padding: 12px;
-	border: 0.5px solid #e5e5ea;
+	border: 1px solid var(--md-outline-variant);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -210,7 +218,7 @@
 	cursor: pointer;
 	padding: 6px;
 	border-radius: 8px;
-	color: #007aff;
+	color: var(--md-primary);
 	font-size: 14px;
 	transition: background 0.2s;
 	display: inline-flex;
@@ -219,15 +227,15 @@
 }
 
 .ios-icon-btn:hover {
-	background: rgba(0, 122, 255, 0.1);
+	background: color-mix(in srgb, var(--md-primary) 10%, transparent);
 }
 
 .ios-icon-btn-danger {
-	color: #ff3b30;
+	color: var(--md-error);
 }
 
 .ios-icon-btn-danger:hover {
-	background: rgba(255, 59, 48, 0.1);
+	background: color-mix(in srgb, var(--md-error) 10%, transparent);
 }
 
 /* ── Form Components ── */
@@ -246,21 +254,21 @@
 
 .ios-hint {
 	font-size: 11px;
-	color: #8e8e93;
+	color: var(--md-outline);
 	padding-left: 2px;
 }
 
 .ios-file-input {
-	border: 2px dashed #c7c7cc;
-	border-radius: 10px;
+	border: 2px dashed var(--md-outline-variant);
+	border-radius: 12px;
 	padding: 12px;
-	background: #ffffff;
+	background: var(--md-surface-container-lowest);
 	cursor: pointer;
 	transition: border-color 0.2s;
 }
 
 .ios-file-input:hover {
-	border-color: #007aff;
+	border-color: var(--md-primary);
 }
 
 .ios-row {
@@ -269,7 +277,7 @@
 	justify-content: space-between;
 	padding: 4px 16px;
 	min-height: 36px;
-	border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+	border-bottom: 1px solid var(--md-outline-variant);
 }
 
 .ios-row-last {
@@ -290,11 +298,11 @@
 /* ── Segmented Control ── */
 .ios-segmented-control {
 	display: flex;
-	background: #ffffff;
-	border-radius: 9px;
+	background: var(--md-surface-container-lowest);
+	border-radius: 12px;
 	padding: 2px;
 	gap: 0;
-	border: 0.5px solid #d1d1d6;
+	border: 1px solid var(--md-outline-variant);
 }
 
 .ios-segment {
@@ -316,16 +324,12 @@
 }
 
 .ios-segment-active {
-	color: #34c759;
+	color: var(--md-primary);
 }
 
-.ios-segment-active .pi {
-	color: #34c759;
-	font-size: 13px;
-}
-
-.ios-segment .pi {
-	font-size: 13px;
+.ios-segment svg {
+	width: 13px;
+	height: 13px;
 }
 
 /* ── Animations ── */
@@ -349,7 +353,7 @@
 .ios-modal .p-select,
 .ios-modal .p-datepicker,
 .ios-modal .p-inputnumber-input {
-	border-radius: 10px;
+	border-radius: 12px;
 }
 
 /* ── Date Input Override (Calendar Icon Clearance) ── */
@@ -363,13 +367,13 @@
 
 /* Modal shell */
 .dark .ios-modal {
-	background: #222831;
+	background: var(--md-surface-container-high);
 }
 
 /* Nav bar */
 .dark .ios-nav-bar {
-	background: #2a3040;
-	border-bottom-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container-high);
+	border-bottom: none;
 }
 
 .dark .ios-nav-title {
@@ -377,11 +381,11 @@
 }
 
 .dark .ios-nav-cancel {
-	color: #9ca3af;
+	color: var(--md-outline);
 }
 
 .dark .ios-nav-action {
-	color: #d1d5db;
+	color: var(--md-primary);
 }
 
 /* Body scrollbar */
@@ -395,7 +399,7 @@
 
 /* Section labels */
 .dark .ios-section-label {
-	color: #9ca3af;
+	color: var(--md-outline);
 }
 
 .dark .ios-section-footer {
@@ -404,8 +408,8 @@
 
 /* Cards & Rows */
 .dark .ios-card {
-	background: #222831;
-	border-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 }
 
 .dark .ios-row {
@@ -418,8 +422,8 @@
 
 /* Segmented control */
 .dark .ios-segmented-control {
-	background: #2a3040;
-	border-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 }
 
 .dark .ios-segment {
@@ -428,17 +432,17 @@
 
 /* Icon button */
 .dark .ios-info-card {
-	background: #2a3040;
-	border-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 }
 
 .dark .ios-list-item {
-	background: #2a3040;
-	border-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 }
 
 .dark .ios-icon-btn {
-	color: #d1d5db;
+	color: var(--md-primary);
 	background: rgba(255, 255, 255, 0.07);
 }
 
@@ -451,11 +455,11 @@
 }
 
 .dark .ios-icon-btn-danger {
-	color: #ff6b6b;
+	color: var(--md-error);
 }
 
 .dark .ios-icon-btn-danger:hover {
-	background: rgba(255, 107, 107, 0.12);
+	background: color-mix(in srgb, var(--md-error) 12%, transparent);
 }
 
 /* DataTable dark mode surface */
@@ -891,8 +895,8 @@
 	flex-shrink: 0;
 	padding: 8px 16px;
 	padding-bottom: max(8px, env(safe-area-inset-bottom));
-	border-top: 0.5px solid rgba(60, 60, 67, 0.12);
-	background: rgba(242, 242, 247, 0.95);
+	border-top: 1px solid var(--md-outline-variant);
+	background: var(--md-surface-container-high);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -923,7 +927,7 @@
 }
 
 .ios-date-separator {
-	color: #8e8e93;
+	color: var(--md-outline);
 	font-size: 14px;
 	flex-shrink: 0;
 }
@@ -932,20 +936,20 @@
 .ios-destructive-btn {
 	display: block;
 	width: 100%;
-	background: #ffffff;
-	border: 0.5px solid #e5e5ea;
-	border-radius: 10px;
+	background: var(--md-surface-container-lowest);
+	border: 1px solid var(--md-outline-variant);
+	border-radius: 12px;
 	padding: 8px;
 	text-align: center;
 	font-size: 13px;
-	color: #ff3b30;
+	color: var(--md-error);
 	cursor: pointer;
 	letter-spacing: -0.4px;
 	transition: background 0.15s;
 }
 
 .ios-destructive-btn:hover {
-	background: #f2f2f7;
+	background: var(--md-surface-container-high);
 }
 
 /* ── Selectable Rows ── */
@@ -959,7 +963,7 @@
 }
 
 .ios-row-selected {
-	background: rgba(0, 122, 255, 0.05) !important;
+	background: color-mix(in srgb, var(--md-primary) 8%, transparent) !important;
 }
 
 /* ── Step Indicator (dot-style) ── */
@@ -969,25 +973,25 @@
 	justify-content: center;
 	gap: 6px;
 	padding: 10px 0 2px;
-	background: #f2f2f7;
+	background: var(--md-surface-container-high);
 }
 
 .step-dot {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: #d1d1d6;
+	background: var(--md-outline-variant);
 	transition: all 0.3s ease;
 }
 
 .step-dot-active {
-	background: #007aff;
+	background: var(--md-primary);
 	width: 24px;
 	border-radius: 4px;
 }
 
 .step-dot-done {
-	background: #34c759;
+	background: var(--md-primary);
 }
 
 .status-dot {
@@ -1003,7 +1007,7 @@
 	background: transparent !important;
 	box-shadow: none !important;
 	font-size: 13px;
-	color: #8e8e93;
+	color: var(--md-outline);
 	text-align: left;
 	padding: 0;
 	width: 100%;
@@ -1012,7 +1016,7 @@
 }
 
 .ios-select .p-select-label {
-	color: #8e8e93 !important;
+	color: var(--md-outline) !important;
 	text-align: left;
 	padding: 4px 2px 4px 8px;
 	font-size: 13px;
@@ -1022,7 +1026,7 @@
 }
 
 .ios-select .p-select-dropdown {
-	color: #c7c7cc !important;
+	color: var(--md-outline-variant) !important;
 }
 
 .ios-datepicker .p-datepicker {
@@ -1036,19 +1040,19 @@
 	background: transparent !important;
 	box-shadow: none !important;
 	text-align: right;
-	color: #8e8e93;
+	color: var(--md-outline);
 	font-size: 13px;
 	padding: 4px 24px 4px 8px;
 }
 
 .ios-modal .p-toggleswitch.p-toggleswitch-checked .p-toggleswitch-slider {
-	background: #34c759 !important;
+	background: var(--md-primary) !important;
 }
 
 /* ── Dark Mode: Extended Components ── */
 .dark .ios-footer {
-	background: #2a3040;
-	border-top-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container-high);
+	border-top-color: var(--md-outline-variant);
 }
 
 /* ── Modal Maximized State ── */
@@ -1070,7 +1074,7 @@
 
 .ios-nav-step-text {
 	font-size: 12px;
-	color: #8e8e93;
+	color: var(--md-outline);
 	font-weight: 500;
 }
 
@@ -1080,7 +1084,7 @@
 	cursor: pointer;
 	padding: 4px 6px;
 	border-radius: 6px;
-	color: #8e8e93;
+	color: var(--md-outline);
 	transition: opacity 0.15s;
 	display: inline-flex;
 	align-items: center;
@@ -1097,12 +1101,12 @@
 	align-items: center;
 	gap: 4px;
 	padding: 8px 20px;
-	background: #e5e5ea;
+	background: var(--md-surface-container-highest);
 	border: none;
-	border-radius: 10px;
+	border-radius: 12px;
 	font-size: 12px;
 	font-weight: 500;
-	color: #8e8e93;
+	color: var(--md-outline);
 	cursor: pointer;
 	transition:
 		background 0.15s,
@@ -1111,13 +1115,14 @@
 	letter-spacing: -0.2px;
 }
 
-.ios-step-btn i {
-	font-size: 16px;
+.ios-step-btn svg {
+	width: 16px;
+	height: 16px;
 }
 
 .ios-step-active {
-	background: #007aff;
-	color: #ffffff;
+	background: var(--md-primary);
+	color: var(--md-on-primary);
 }
 
 .ios-step-disabled {
@@ -1128,7 +1133,7 @@
 .ios-step-separator {
 	flex: 1;
 	height: 1px;
-	background: #d1d1d6;
+	background: var(--md-outline-variant);
 	align-self: center;
 }
 
@@ -1139,7 +1144,7 @@
 	gap: 6px;
 	padding: 9px 20px;
 	border: none;
-	border-radius: 10px;
+	border-radius: 12px;
 	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
@@ -1155,17 +1160,17 @@
 }
 
 .ios-footer-back {
-	background: #e5e5ea;
+	background: var(--md-surface-container-highest);
 	color: #374151;
 }
 
 .ios-footer-back:hover:not(:disabled) {
-	background: #d1d1d6;
+	background: var(--md-outline-variant);
 }
 
 .ios-footer-next {
-	background: #007aff;
-	color: #ffffff;
+	background: var(--md-primary);
+	color: var(--md-on-primary);
 }
 
 .ios-footer-next:hover:not(:disabled) {
@@ -1173,8 +1178,8 @@
 }
 
 .ios-footer-submit {
-	background: #34c759;
-	color: #ffffff;
+	background: var(--md-primary);
+	color: var(--md-on-primary);
 }
 
 .ios-footer-submit:hover:not(:disabled) {
@@ -1183,34 +1188,34 @@
 
 /* ── Dark Mode: Wizard Steps & Footer Buttons ── */
 .dark .ios-step-btn {
-	background: #374151;
-	color: #9ca3af;
+	background: var(--md-surface-container-highest);
+	color: var(--md-outline);
 }
 
 .dark .ios-step-active {
-	background: #1d4ed8;
-	color: #ffffff;
+	background: var(--md-primary);
+	color: var(--md-on-primary);
 }
 
 .dark .ios-step-separator {
-	background: rgba(255, 255, 255, 0.12);
+	background: var(--md-outline-variant);
 }
 
 .dark .ios-footer-back {
-	background: #374151;
+	background: var(--md-surface-container-highest);
 	color: #d1d5db;
 }
 
 .dark .ios-footer-back:hover:not(:disabled) {
-	background: #4b5563;
+	background: var(--md-surface-container-highest);
 }
 
 .dark .ios-nav-step-text {
-	color: #9ca3af;
+	color: var(--md-outline);
 }
 
 .dark .ios-nav-maximize {
-	color: #9ca3af;
+	color: var(--md-outline);
 }
 
 .dark .ios-body {
@@ -1218,12 +1223,12 @@
 }
 
 .dark .ios-destructive-btn {
-	background: #1e2433;
-	border-color: rgba(255, 255, 255, 0.08);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 }
 
 .dark .ios-destructive-btn:hover {
-	background: #252d3d;
+	background: var(--md-surface-container-high);
 }
 
 .dark .ios-row-selectable:hover {
@@ -1231,7 +1236,7 @@
 }
 
 .dark .ios-row-selected {
-	background: rgba(96, 165, 250, 0.08) !important;
+	background: color-mix(in srgb, var(--md-primary) 12%, transparent) !important;
 }
 
 .dark .ios-label {
@@ -1243,13 +1248,13 @@
 }
 
 .dark .ios-file-input {
-	background: #1e2433;
-	border-color: rgba(255, 255, 255, 0.12);
+	background: var(--md-surface-container);
+	border-color: var(--md-outline-variant);
 	color: #d1d5db;
 }
 
 .dark .ios-file-input:hover {
-	border-color: rgba(96, 165, 250, 0.5);
+	border-color: var(--md-primary);
 }
 
 /* ── Row input (CourseModal) ── */
@@ -1259,7 +1264,7 @@
 
 /* ── Segment active ── */
 .dark .ios-segment-active {
-	background: #2a3040;
+	background: var(--md-surface-container);
 	box-shadow:
 		0 3px 8px rgba(0, 0, 0, 0.3),
 		0 1px 1px rgba(0, 0, 0, 0.2);
@@ -1329,7 +1334,7 @@
 }
 
 .dark .step-indicator {
-	background: #222831;
+	background: var(--md-surface-container-high);
 }
 
 .dark .step-dot {

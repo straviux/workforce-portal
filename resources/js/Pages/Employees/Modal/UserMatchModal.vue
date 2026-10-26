@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Match Users to Employees</span>
                     <button class="ios-nav-btn ios-nav-action" :disabled="!selectedCount || confirming"
@@ -23,12 +23,12 @@
                     </p>
 
                     <div v-if="loading" class="text-center py-12 text-surface-400">
-                        <i class="pi pi-spin pi-spinner text-2xl block mb-3"></i>
+                        <AppIcon name="LoaderCircle" :size="24" class="animate-spin block mb-3" />
                         <p class="text-sm">Looking for matches…</p>
                     </div>
 
                     <div v-else-if="!suggestions.length" class="text-center py-12 text-surface-400">
-                        <i class="pi pi-check-circle text-3xl block mb-3"></i>
+                        <AppIcon name="CircleCheck" :size="36" class="block mb-3" />
                         <p class="text-sm">Every employee already has a linked user account.</p>
                     </div>
 
@@ -47,7 +47,7 @@
                                 </p>
                             </div>
 
-                            <i class="pi pi-arrow-right text-surface-300 text-xs"></i>
+                            <AppIcon name="ArrowRight" :size="12" class="text-surface-300" />
 
                             <div class="flex-1 min-w-0 text-right">
                                 <template v-if="row.suggested_user">

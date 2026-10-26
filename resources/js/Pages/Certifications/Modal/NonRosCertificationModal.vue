@@ -6,7 +6,7 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? `Edit Non-ROS Certification` : `New Non-ROS
                         Certification` }}</span>
@@ -116,8 +116,8 @@
                                     certification footer.</p>
                             </div>
 
-                            <Button type="button" icon="pi pi-user-edit" label="Configure" class="rounded" size="small"
-                                @click="showSnapshotModal = true" :disabled="!officeHeads.length" />
+                            <Button type="button" label="Configure" class="rounded" size="small"
+                                @click="showSnapshotModal = true" :disabled="!officeHeads.length"><template #icon><AppIcon name="UserPen" /></template></Button>
                         </div>
                         <span v-if="errors.office_head_id" class="ios-hint ios-error mt-2 block">{{
                             errors.office_head_id }}</span>

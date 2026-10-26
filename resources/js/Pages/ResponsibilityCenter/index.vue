@@ -86,8 +86,8 @@ const openRCContextMenu = (event, rc) => {
 
     if (canManageResponsibilityCenters.value) {
         items.push(
-            { label: 'Add Particular', icon: 'pi pi-plus', command: () => openParticularsModal(rc) },
-            { label: 'Edit Responsibility Center', icon: 'pi pi-pencil', command: () => openRCModal(rc) },
+            { label: 'Add Particular', iconName: 'Plus', command: () => openParticularsModal(rc) },
+            { label: 'Edit Responsibility Center', iconName: 'Pencil', command: () => openRCModal(rc) },
         );
     }
 
@@ -98,7 +98,7 @@ const openRCContextMenu = (event, rc) => {
 
         items.push({
             label: 'Delete Responsibility Center',
-            icon: 'pi pi-trash',
+            iconName: 'Trash2',
             class: 'text-red-500',
             command: () => deleteRC(rc),
         });
@@ -121,7 +121,7 @@ const openParticularContextMenu = (event, rc) => {
     if (canManageResponsibilityCenters.value) {
         items.push({
             label: 'Edit Particular',
-            icon: 'pi pi-pencil',
+            iconName: 'Pencil',
             command: () => openParticularsModal(rc, particular),
         });
     }
@@ -133,7 +133,7 @@ const openParticularContextMenu = (event, rc) => {
 
         items.push({
             label: 'Delete Particular',
-            icon: 'pi pi-trash',
+            iconName: 'Trash2',
             class: 'text-red-500',
             command: () => confirmDeleteParticular(rc.id, particular),
         });
@@ -192,7 +192,7 @@ onMounted(fetchResponsibilityCenters);
         <Toolbar class="mb-4 -mt-2 !rounded-4xl !px-8">
             <template #start>
                 <div class="flex items-center gap-3">
-                    <i class="pi pi-building text-blue-500 text-[2rem]"></i>
+                    <AppIcon name="Building" :size="32" class="text-blue-500" />
                     <div>
                         <h1 class="text-2xl font-bold text-gray-700 dark:text-gray-100">Responsibility Centers</h1>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Manage responsibility centers and their
@@ -201,23 +201,23 @@ onMounted(fetchResponsibilityCenters);
                 </div>
             </template>
             <template #end>
-                <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" severity="success" rounded outlined
-                    @click="openRCModal()" v-tooltip.bottom="`Add Responsibility Center`" />
+                <Button v-if="canManageResponsibilityCenters" severity="success" rounded outlined
+                    @click="openRCModal()" v-tooltip.bottom="`Add Responsibility Center`"><template #icon><AppIcon name="Plus" /></template></Button>
             </template>
         </Toolbar>
 
         <!-- Loading -->
         <div v-if="loading" class="flex items-center justify-center py-24">
-            <i class="pi pi-spin pi-spinner text-3xl text-blue-500"></i>
+            <AppIcon name="LoaderCircle" :size="36" class="animate-spin text-blue-500" />
         </div>
 
         <!-- Empty -->
         <Panel v-else-if="responsibilityCenters.length === 0" class="!rounded-4xl overflow-hidden mt-8">
             <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                <i class="pi pi-inbox text-5xl mb-4"></i>
+                <AppIcon name="Inbox" :size="48" class="mb-4" />
                 <p class="text-base">No responsibility centers yet</p>
-                <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" label="Add Responsibility Center"
-                    severity="secondary" outlined rounded class="mt-4" @click="openRCModal()" />
+                <Button v-if="canManageResponsibilityCenters" label="Add Responsibility Center"
+                    severity="secondary" outlined rounded class="mt-4" @click="openRCModal()"><template #icon><AppIcon name="Plus" /></template></Button>
             </div>
         </Panel>
 
@@ -229,7 +229,7 @@ onMounted(fetchResponsibilityCenters);
                 <div class="flex items-center justify-between gap-4 mb-4 p-3 bg-gray-50 dark:bg-[#1e242b] rounded-4xl -mt-2"
                     @contextmenu.prevent="openRCContextMenu($event, rc)">
                     <div class="flex items-center gap-3">
-                        <i class="pi pi-building text-blue-500 text-xl"></i>
+                        <AppIcon name="Building" :size="20" class="text-blue-500" />
                         <div>
                             <h3 class="font-bold text-gray-700 dark:text-gray-100">{{ rc.name }}</h3>
                             <div class="flex gap-3 text-xs text-gray-500 mt-0.5">
@@ -243,12 +243,12 @@ onMounted(fetchResponsibilityCenters);
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <Button v-if="canManageResponsibilityCenters" icon="pi pi-plus" size="small" severity="success"
-                            rounded text @click="openParticularsModal(rc)" v-tooltip.bottom="`Add Particular`" />
-                        <Button v-if="canManageResponsibilityCenters" icon="pi pi-pencil" severity="secondary" text
-                            rounded size="small" @click="openRCModal(rc)" v-tooltip.bottom="`Edit RC`" />
-                        <Button v-if="canDeleteResponsibilityCenters" icon="pi pi-trash" severity="danger" text rounded
-                            size="small" @click="deleteRC(rc)" v-tooltip.bottom="`Delete RC`" />
+                        <Button v-if="canManageResponsibilityCenters" size="small" severity="success"
+                            rounded text @click="openParticularsModal(rc)" v-tooltip.bottom="`Add Particular`"><template #icon><AppIcon name="Plus" /></template></Button>
+                        <Button v-if="canManageResponsibilityCenters" severity="secondary" text
+                            rounded size="small" @click="openRCModal(rc)" v-tooltip.bottom="`Edit RC`"><template #icon><AppIcon name="Pencil" /></template></Button>
+                        <Button v-if="canDeleteResponsibilityCenters" severity="danger" text rounded
+                            size="small" @click="deleteRC(rc)" v-tooltip.bottom="`Delete RC`"><template #icon><AppIcon name="Trash2" /></template></Button>
                     </div>
                 </div>
 
@@ -295,19 +295,19 @@ onMounted(fetchResponsibilityCenters);
                         style="width: 90px">
                         <template #body="{ data }">
                             <div class="flex items-center gap-1 justify-end">
-                                <Button v-if="canManageResponsibilityCenters" icon="pi pi-pencil" severity="secondary"
+                                <Button v-if="canManageResponsibilityCenters" severity="secondary"
                                     text rounded size="small" @click="openParticularsModal(rc, data)"
-                                    v-tooltip.top="`Edit`" />
-                                <Button v-if="canDeleteResponsibilityCenters" icon="pi pi-trash" severity="danger" text
+                                    v-tooltip.top="`Edit`"><template #icon><AppIcon name="Pencil" /></template></Button>
+                                <Button v-if="canDeleteResponsibilityCenters" severity="danger" text
                                     rounded size="small" @click="confirmDeleteParticular(rc.id, data)"
-                                    v-tooltip.top="`Delete`" />
+                                    v-tooltip.top="`Delete`"><template #icon><AppIcon name="Trash2" /></template></Button>
                             </div>
                         </template>
                     </Column>
                 </DataTable>
 
                 <div v-else class="flex flex-col items-center justify-center py-8 text-gray-400">
-                    <i class="pi pi-inbox text-3xl mb-2"></i>
+                    <AppIcon name="Inbox" :size="36" class="mb-2" />
                     <p class="text-sm">No particulars yet</p>
                 </div>
 
@@ -325,7 +325,14 @@ onMounted(fetchResponsibilityCenters);
         <DeleteConfirmModal v-model:show="showDeleteModal" :type="deleteType" :target-name="deleteTargetName"
             :deleting="deleting" @confirm="handleDeleteConfirm" />
 
-        <ContextMenu ref="contextMenuRef" :model="contextMenuItems" @hide="contextMenuParticular = null" />
+        <ContextMenu ref="contextMenuRef" :model="contextMenuItems" @hide="contextMenuParticular = null">
+            <template #item="{ item, label, props }">
+                <a v-bind="props.action">
+                    <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                    <span v-bind="props.label">{{ label }}</span>
+                </a>
+            </template>
+        </ContextMenu>
     </div>
 </template>
 

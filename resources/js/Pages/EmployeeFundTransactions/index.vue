@@ -12,13 +12,13 @@
                     <span v-if="myCount > 0" class="ml-2">· {{ myCount }} created by you</span>
                 </p>
             </div>
-            <Button icon="pi pi-plus" label="New Transaction" class="rounded" @click="openCreate" />
+            <Button label="New Transaction" class="rounded" @click="openCreate"><template #icon><AppIcon name="Plus" /></template></Button>
         </div>
 
         <!-- Filter Toolbar -->
         <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
             <IconField class="flex-1 min-w-50">
-                <InputIcon class="pi pi-search" />
+                <InputIcon><AppIcon name="Search" /></InputIcon>
                 <InputText v-model="filters.search" placeholder="Search ID, payee, DV no…" class="w-full"
                     @keyup.enter="fetchTransactions(1)" />
             </IconField>
@@ -30,8 +30,8 @@
                 @keyup.enter="fetchTransactions(1)" />
             <Select v-model="filters.obr_type" :options="obrTypeOptions" optionLabel="label" optionValue="value"
                 placeholder="OBR Type" class="w-44" showClear @change="fetchTransactions(1)" />
-            <Button icon="pi pi-filter-slash" severity="secondary" class="rounded" outlined v-tooltip="'Reset filters'"
-                @click="resetFilters" />
+            <Button severity="secondary" class="rounded" outlined v-tooltip="'Reset filters'"
+                @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
         </div>
 
         <!-- DataTable -->
@@ -48,7 +48,7 @@
                 }">
                 <template #empty>
                     <div class="text-center py-12 text-surface-400">
-                        <i class="pi pi-inbox text-4xl block mb-3"></i>
+                        <AppIcon name="Inbox" :size="36" class="block mb-3" />
                         <p class="text-sm">No transactions found.</p>
                     </div>
                 </template>
@@ -116,15 +116,22 @@
 
                 <Column header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                     <template #body="{ data }">
-                        <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small"
-                            @click="openMenu($event, data)" />
+                        <Button severity="secondary" text rounded size="small"
+                            @click="openMenu($event, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                     </template>
                 </Column>
             </DataTable>
         </div>
 
         <!-- Context Menu -->
-        <ContextMenu ref="contextMenuRef" :model="menuItems" @hide="contextMenuTransaction = null" />
+        <ContextMenu ref="contextMenuRef" :model="menuItems" @hide="contextMenuTransaction = null">
+            <template #item="{ item, label, props }">
+                <a v-bind="props.action">
+                    <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                    <span v-bind="props.label">{{ label }}</span>
+                </a>
+            </template>
+        </ContextMenu>
 
         <!-- ── Modals ── -->
         <ViewTransactionModal v-model:show="modals.view" :transaction="selectedTransaction" />
@@ -283,52 +290,52 @@ const menuItems = computed(() => {
     return [
         {
             label: 'View Details',
-            icon: 'pi pi-eye',
+            iconName: 'Eye',
             command: () => { modals.view = true; },
         },
         {
             label: 'Edit',
-            icon: 'pi pi-pencil',
+            iconName: 'Pencil',
             command: () => openEdit(t),
         },
         { separator: true },
         {
             label: 'Update Status / OBR',
-            icon: 'pi pi-tag',
+            iconName: 'Tag',
             command: () => openStatusModal(t),
         },
         {
             label: 'Add Remarks',
-            icon: 'pi pi-comment',
+            iconName: 'MessageSquare',
             command: () => { modals.remarks = true; },
         },
         { separator: true },
         {
             label: 'Print OBR',
-            icon: 'pi pi-print',
+            iconName: 'Printer',
             command: () => printPdf('obr'),
         },
         ...(canPrintCwa ? [{
             label: 'Print CWA',
-            icon: 'pi pi-print',
+            iconName: 'Printer',
             command: () => printPdf('cwa'),
         }] : []),
         ...(canPrintPayroll ? [{
             label: 'Print Payroll',
-            icon: 'pi pi-print',
+            iconName: 'Printer',
             command: () => printPdf('payroll'),
         }] : []),
         { separator: true },
         {
             label: 'Tracking History',
-            icon: 'pi pi-history',
+            iconName: 'History',
             command: () => openTrackingHistory(t),
         },
         ...(isAdmin ? [
             { separator: true },
             {
                 label: 'Delete',
-                icon: 'pi pi-trash',
+                iconName: 'Trash2',
                 class: 'text-red-500',
                 command: () => { modals.delete = true; },
             },

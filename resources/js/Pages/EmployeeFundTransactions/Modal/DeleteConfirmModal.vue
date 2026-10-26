@@ -6,11 +6,11 @@
 
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Delete Transaction</span>
                     <button class="ios-nav-btn ios-nav-action" :disabled="isDeleting" @click="emit('confirm-delete')">
-                        <i class="pi pi-trash text-red-500"></i>
+                        <AppIcon name="Trash2" class="text-red-500" />
                     </button>
                 </div>
 

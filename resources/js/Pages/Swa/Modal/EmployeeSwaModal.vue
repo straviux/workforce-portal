@@ -5,7 +5,7 @@
             <div class="ios-modal w-[96vw] max-w-[1450px]" :style="modalStyle">
                 <div class="ios-nav-bar cursor-grab active:cursor-grabbing select-none" @pointerdown="onDragStart">
                     <button type="button" class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Employee SWA</span>
                     <div class="min-w-[3.5rem] shrink-0"></div>
@@ -17,14 +17,14 @@
                         <div class="ios-card p-4 space-y-4">
                             <div class="flex gap-3 flex-wrap">
                                 <IconField class="flex-1 min-w-60">
-                                    <InputIcon class="pi pi-search" />
+                                    <InputIcon><AppIcon name="Search" /></InputIcon>
                                     <InputText v-model="filters.search" class="w-full"
                                         placeholder="Search COS employee name, employee no., office, or designation"
                                         @keyup.enter="fetchEmployees" />
                                 </IconField>
 
-                                <Button icon="pi pi-search" label="Search" class="rounded" size="small"
-                                    :loading="loadingEmployees" :disabled="!hasSearchQuery" @click="fetchEmployees" />
+                                <Button label="Search" class="rounded" size="small"
+                                    :loading="loadingEmployees" :disabled="!hasSearchQuery" @click="fetchEmployees"><template #icon><AppIcon name="Search" /></template></Button>
                             </div>
 
                             <div v-if="employees.length" class="grid gap-3 lg:grid-cols-2">
@@ -58,7 +58,7 @@
                             </div>
 
                             <div v-else class="text-center py-8 text-surface-400">
-                                <i class="pi pi-users text-3xl block mb-3"></i>
+                                <AppIcon name="Users" :size="36" class="block mb-3" />
                                 <p class="text-sm">{{ hasSearchQuery ? `No COS employee subjects found.` : `Search for a
                                     COS employee to start.` }}</p>
                             </div>
@@ -67,7 +67,7 @@
 
                     <div v-if="loadingSetup" class="ios-section pb-4">
                         <div class="ios-card p-8 text-center text-surface-400">
-                            <i class="pi pi-spin pi-spinner text-3xl block mb-3"></i>
+                            <AppIcon name="LoaderCircle" :size="36" class="animate-spin block mb-3" />
                             <p class="text-sm">Loading employee SWA workspace…</p>
                         </div>
                     </div>

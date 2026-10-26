@@ -9,17 +9,17 @@
                 {{ pagination.filtered_total }} role{{ pagination.filtered_total !== 1 ? 's' : '' }} configured
             </p>
         </div>
-        <Button v-if="canManageRoles" icon="pi pi-plus" label="New Role" class="rounded" @click="openCreate" />
+        <Button v-if="canManageRoles" label="New Role" class="rounded" @click="openCreate"><template #icon><AppIcon name="Plus" /></template></Button>
     </div>
 
     <div class="ios-card flex flex-wrap gap-3 p-4 mb-4">
         <IconField class="flex-1 min-w-60">
-            <InputIcon class="pi pi-search" />
+            <InputIcon><AppIcon name="Search" /></InputIcon>
             <InputText v-model="filters.search" placeholder="Search role or permission" class="w-full" size="small"
                 @keyup.enter="fetchRoles(1)" />
         </IconField>
-        <Button icon="pi pi-filter-slash" severity="secondary" size="small" class="rounded" outlined
-            v-tooltip="'Reset filters'" @click="resetFilters" />
+        <Button severity="secondary" size="small" class="rounded" outlined
+            v-tooltip="'Reset filters'" @click="resetFilters"><template #icon><AppIcon name="FilterX" /></template></Button>
     </div>
 
     <div class="overflow-hidden" style="border-radius:1.5rem;border:1px solid var(--p-datatable-border-color);">
@@ -33,7 +33,7 @@
             }">
             <template #empty>
                 <div class="text-center py-12 text-surface-400">
-                    <i class="pi pi-shield text-4xl block mb-3"></i>
+                    <AppIcon name="Shield" :size="36" class="block mb-3" />
                     <p class="text-sm">No roles found.</p>
                 </div>
             </template>
@@ -74,14 +74,21 @@
 
             <Column v-if="canManageRoles" header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                 <template #body="{ data }">
-                    <Button icon="pi pi-ellipsis-v" severity="secondary" text rounded size="small"
-                        @click="(event) => openRowMenu(event, data)" />
+                    <Button severity="secondary" text rounded size="small"
+                        @click="(event) => openRowMenu(event, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                 </template>
             </Column>
         </DataTable>
     </div>
 
-    <Menu ref="rowMenuRef" :model="rowMenuItems" popup />
+    <Menu ref="rowMenuRef" :model="rowMenuItems" popup>
+        <template #item="{ item, label, props }">
+            <a v-bind="props.action">
+                <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                <span v-bind="props.label">{{ label }}</span>
+            </a>
+        </template>
+    </Menu>
 
     <Dialog v-model:visible="showCreateEdit" modal :header="modalMode === 'create' ? 'New Role' : 'Edit Role'"
         :style="{ width: '46rem' }" :draggable="false">
@@ -123,8 +130,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showCreateEdit = false" />
-            <Button :label="modalMode === 'create' ? 'Create Role' : 'Save Changes'" icon="pi pi-check" class="rounded"
-                :loading="saving" @click="submit" />
+            <Button :label="modalMode === 'create' ? 'Create Role' : 'Save Changes'" class="rounded"
+                :loading="saving" @click="submit"><template #icon><AppIcon name="Check" /></template></Button>
         </template>
     </Dialog>
 
@@ -138,8 +145,8 @@
         </div>
         <template #footer>
             <Button label="Cancel" severity="secondary" text class="rounded" @click="showDelete = false" />
-            <Button label="Delete" icon="pi pi-trash" severity="danger" class="rounded" :loading="deleting"
-                @click="confirmDelete" />
+            <Button label="Delete" severity="danger" class="rounded" :loading="deleting"
+                @click="confirmDelete"><template #icon><AppIcon name="Trash2" /></template></Button>
         </template>
     </Dialog>
 </template>
@@ -313,14 +320,14 @@ function openRowMenu(event, role) {
     selectedRole.value = role;
     rowMenuItems.value = role.is_system
         ? [
-            { label: 'Edit permissions', icon: 'pi pi-pencil', command: () => openEdit(role) },
+            { label: 'Edit permissions', iconName: 'Pencil', command: () => openEdit(role) },
             { separator: true },
-            { label: 'System role cannot be renamed or deleted', icon: 'pi pi-lock', disabled: true },
+            { label: 'System role cannot be renamed or deleted', iconName: 'Lock', disabled: true },
         ]
         : [
-            { label: 'Edit', icon: 'pi pi-pencil', command: () => openEdit(role) },
+            { label: 'Edit', iconName: 'Pencil', command: () => openEdit(role) },
             { separator: true },
-            { label: 'Delete', icon: 'pi pi-trash', class: 'text-red-500', command: () => { showDelete.value = true; } },
+            { label: 'Delete', iconName: 'Trash2', class: 'text-red-500', command: () => { showDelete.value = true; } },
         ];
     rowMenuRef.value.toggle(event);
 }

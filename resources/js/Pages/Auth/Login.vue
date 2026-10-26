@@ -42,7 +42,7 @@ const submit = () => {
                 <form @submit.prevent="submit" class="w-full flex flex-col items-center gap-2.5">
                     <div class="w-full">
                         <IconField>
-                            <InputIcon class="pi pi-user" />
+                            <InputIcon><AppIcon name="User" /></InputIcon>
                             <InputText
                                 id="username"
                                 v-model="form.username"
@@ -80,13 +80,11 @@ const submit = () => {
                     <Button
                         type="submit"
                         label="Sign In"
-                        icon="pi pi-arrow-right"
                         iconPos="right"
                         :loading="form.processing"
                         :disabled="form.processing"
                         rounded
-                        class="w-full mt-2"
-                    />
+                        class="w-full mt-2"><template #icon><AppIcon name="ArrowRight" /></template></Button>
                 </form>
             </div>
 

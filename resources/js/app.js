@@ -33,7 +33,6 @@ import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import { definePreset } from '@primevue/themes';
 import Aura from '@primevue/themes/aura';
-import 'primeicons/primeicons.css';
 import dayjs from 'dayjs';
 
 // PrimeVue Components
@@ -81,40 +80,56 @@ import safeHtmlDirective from '@/directives/safeHtml';
 import SignatorySnapshotModal from '@/Components/SignatorySnapshotModal.vue';
 import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
 import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
+import AppIcon from '@/Components/ui/AppIcon.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Workforcify';
 
-const Noir = definePreset(Aura, {
+// Material Design 3 preset: green primary seed (#2e7d32) + MD3 shapes.
+// The tonal scale mirrors the Tailwind tokens in resources/css/app.css;
+// the single seed variable lives there (--md-primary-seed).
+const Md3 = definePreset(Aura, {
+	primitive: {
+		// MD3 corner shapes: xs 4, sm 8, md 12, lg 16, xl 28.
+		borderRadius: {
+			none: '0',
+			xs: '4px',
+			sm: '8px',
+			md: '12px',
+			lg: '16px',
+			xl: '28px',
+		},
+	},
 	semantic: {
 		primary: {
-			50: '{zinc.50}',
-			100: '{zinc.100}',
-			200: '{zinc.200}',
-			300: '{zinc.300}',
-			400: '{zinc.400}',
-			500: '{zinc.500}',
-			600: '{zinc.600}',
-			700: '{zinc.700}',
-			800: '{zinc.800}',
-			900: '{zinc.900}',
-			950: '{zinc.950}',
+			50: '#edf7ed',
+			100: '#d7ecd8',
+			200: '#b9dfbb',
+			300: '#8fca94',
+			400: '#5fb266',
+			500: '#3a9a44',
+			600: '#2f8a39',
+			700: '#2e7d32',
+			800: '#256b2a',
+			900: '#1b5e20',
+			950: '#123f15',
 		},
 		colorScheme: {
 			light: {
 				primary: {
-					color: '{zinc.800}',
+					color: '#2e7d32',
 					inverseColor: '#ffffff',
-					hoverColor: '{zinc.900}',
-					activeColor: '{zinc.800}',
+					hoverColor: '#256b2a',
+					activeColor: '#1b5e20',
 				},
 				highlight: {
-					background: '{zinc.950}',
-					focusBackground: '{zinc.700}',
-					color: '#ffffff',
-					focusColor: '#ffffff',
+					background: '#d7ecd8',
+					focusBackground: '#b9dfbb',
+					color: '#123f15',
+					focusColor: '#123f15',
 				},
 			},
 			dark: {
+				// Dark surface scale keeps the app's existing dark character.
 				surface: {
 					0: '#ffffff',
 					50: '#f9fafb',
@@ -130,17 +145,36 @@ const Noir = definePreset(Aura, {
 					950: '#1a1e27',
 				},
 				primary: {
-					color: '{zinc.50}',
-					inverseColor: '{zinc.950}',
-					hoverColor: '{zinc.100}',
-					activeColor: '{zinc.200}',
+					color: '#b9dfbb',
+					inverseColor: '#1b5e20',
+					hoverColor: '#c8e6c9',
+					activeColor: '#a5d6a7',
 				},
 				highlight: {
-					background: 'rgba(250, 250, 250, .16)',
-					focusBackground: 'rgba(250, 250, 250, .24)',
+					background: 'rgba(185, 223, 187, .16)',
+					focusBackground: 'rgba(185, 223, 187, .24)',
 					color: 'rgba(255,255,255,.87)',
 					focusColor: 'rgba(255,255,255,.87)',
 				},
+			},
+		},
+	},
+	components: {
+		// MD3 buttons are full-round; dialogs use the 28px extra-large corner.
+		button: {
+			root: {
+				borderRadius: '9999px',
+			},
+		},
+		dialog: {
+			root: {
+				borderRadius: '28px',
+			},
+		},
+		// MD3 cards use the 12px medium corner (Aura defaults them to xl/28px).
+		card: {
+			root: {
+				borderRadius: '12px',
 			},
 		},
 	},
@@ -157,7 +191,7 @@ createInertiaApp({
 			.use(PrimeVue, {
 				ripple: true,
 				theme: {
-					preset: Noir,
+					preset: Md3,
 					options: {
 						prefix: 'p',
 						darkModeSelector: '.dark',
@@ -214,6 +248,7 @@ createInertiaApp({
 		app.component('SignatorySnapshotModal', SignatorySnapshotModal);
 		app.component('ResponsibilityCenterSelect', ResponsibilityCenterSelect);
 		app.component('ParticularsSelect', ParticularsSelect);
+		app.component('AppIcon', AppIcon);
 
 		app.directive('tooltip', Tooltip);
 		app.directive('safe-html', safeHtmlDirective);

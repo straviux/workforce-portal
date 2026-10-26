@@ -62,6 +62,97 @@
 }
 
 /* ============================================
+   Material Design 3 tokens.
+   SINGLE SEED: change --md-primary-seed below to retheme the app.
+   The tonal scale and the PrimeVue preset (resources/js/app.js)
+   mirror this seed; roles flip between light/dark through --md-*.
+   ============================================ */
+:root {
+	--md-primary-seed: #2e7d32;
+
+	/* Light roles */
+	--md-primary: #2e7d32;
+	--md-on-primary: #ffffff;
+	--md-primary-container: #d7ecd8;
+	--md-on-primary-container: #123f15;
+	--md-surface: #fbfdfb;
+	--md-surface-container-lowest: #ffffff;
+	--md-surface-container-low: #f2f6f2;
+	--md-surface-container: #e9eee9;
+	--md-surface-container-high: #dde5dd;
+	--md-surface-container-highest: #d2dad2;
+	--md-outline: #75796f;
+	--md-outline-variant: #c2c8bd;
+	--md-error: #ba1a1a;
+	--md-on-error: #ffffff;
+}
+
+.dark {
+	/* Dark roles (page surface stays close to the app's #222831) */
+	--md-primary: #b9dfbb;
+	--md-on-primary: #1b5e20;
+	--md-primary-container: #256b2a;
+	--md-on-primary-container: #d7ecd8;
+	--md-surface: #222831;
+	--md-surface-container-lowest: #1a1e27;
+	--md-surface-container-low: #222831;
+	--md-surface-container: #2b3440;
+	--md-surface-container-high: #333d4b;
+	--md-surface-container-highest: #3a4453;
+	--md-outline: #8d938a;
+	--md-outline-variant: #434a43;
+	--md-error: #ffb4ab;
+	--md-on-error: #690005;
+}
+
+@theme {
+	/* Primary tonal scale, built around --md-primary-seed (#2e7d32 family) */
+	--color-primary-50: #edf7ed;
+	--color-primary-100: #d7ecd8;
+	--color-primary-200: #b9dfbb;
+	--color-primary-300: #8fca94;
+	--color-primary-400: #5fb266;
+	--color-primary-500: #3a9a44;
+	--color-primary-600: #2f8a39;
+	--color-primary-700: #2e7d32;
+	--color-primary-800: #256b2a;
+	--color-primary-900: #1b5e20;
+	--color-primary-950: #123f15;
+
+	/* Roles (resolve through --md-* so .dark flips them) */
+	--color-primary: var(--md-primary);
+	--color-on-primary: var(--md-on-primary);
+	--color-primary-container: var(--md-primary-container);
+	--color-on-primary-container: var(--md-on-primary-container);
+	--color-surface: var(--md-surface);
+	--color-surface-container-lowest: var(--md-surface-container-lowest);
+	--color-surface-container-low: var(--md-surface-container-low);
+	--color-surface-container: var(--md-surface-container);
+	--color-surface-container-high: var(--md-surface-container-high);
+	--color-surface-container-highest: var(--md-surface-container-highest);
+	--color-outline: var(--md-outline);
+	--color-outline-variant: var(--md-outline-variant);
+	--color-error: var(--md-error);
+	--color-on-error: var(--md-on-error);
+
+	/* MD3 shape tokens (corners) */
+	--radius-md3-xs: 4px;
+	--radius-md3-sm: 8px;
+	--radius-md3-md: 12px;
+	--radius-md3-lg: 16px;
+	--radius-md3-xl: 28px;
+	--radius-md3-full: 9999px;
+
+	/* MD3 elevation tokens (levels 0-5) */
+	--shadow-md3-0: none;
+	--shadow-md3-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+	--shadow-md3-2: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
+	--shadow-md3-3: 0 1px 3px rgb(0 0 0 / 0.3), 0 4px 8px 3px rgb(0 0 0 / 0.15);
+	--shadow-md3-4: 0 2px 3px rgb(0 0 0 / 0.3), 0 6px 10px 4px rgb(0 0 0 / 0.15);
+	--shadow-md3-5: 0 4px 4px rgb(0 0 0 / 0.3), 0 8px 12px 6px rgb(0 0 0 / 0.15);
+}
+
+/* ============================================
    125% DPI compensation (zoom: 0.8 on <body>)
    zoom also scales viewport-relative units, so 100vh renders at 80%
    of the real viewport and full-height layouts fall short. Counter it

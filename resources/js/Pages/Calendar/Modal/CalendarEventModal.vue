@@ -5,7 +5,7 @@
             <div class="ios-modal w-220 max-w-[95vw]" :style="modalStyle">
                 <div class="ios-nav-bar" @pointerdown="onDragStart">
                     <button type="button" class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">{{ mode === 'edit' ? 'Edit Calendar Event' : 'New Calendar Event'
                         }}</span>

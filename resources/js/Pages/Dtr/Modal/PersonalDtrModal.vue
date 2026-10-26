@@ -5,7 +5,7 @@
             <div class="ios-modal w-[96vw] max-w-[1380px]" :style="modalStyle">
                 <div class="ios-nav-bar cursor-grab active:cursor-grabbing select-none" @pointerdown="onDragStart">
                     <button type="button" class="ios-nav-btn ios-nav-cancel" @click="emit('update:show', false)">
-                        <i class="pi pi-times"></i>
+                        <AppIcon name="X" />
                     </button>
                     <span class="ios-nav-title">Personal DTR</span>
                     <div class="min-w-[3.5rem] shrink-0"></div>
@@ -14,7 +14,7 @@
                 <div class="ios-body max-h-[82vh] overflow-y-auto">
                     <div v-if="loadingSetup" class="ios-section pb-4">
                         <div class="ios-card p-8 text-center text-surface-400">
-                            <i class="pi pi-spin pi-spinner text-3xl block mb-3"></i>
+                            <AppIcon name="LoaderCircle" :size="36" class="animate-spin block mb-3" />
                             <p class="text-sm">Loading personal DTR workspace…</p>
                         </div>
                     </div>

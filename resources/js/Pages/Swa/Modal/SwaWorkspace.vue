@@ -15,10 +15,10 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-2">
-                    <Button label="Task Encoding" icon="pi pi-list-check" severity="success" outlined class="rounded"
-                        size="small" :disabled="!subject" @click="openTaskDialog" />
-                    <Button label="Generate SWA" icon="pi pi-file-edit" severity="info" outlined class="rounded"
-                        size="small" :disabled="!canOpenGenerateDialog" @click="openGenerateDialog" />
+                    <Button label="Task Encoding" severity="success" outlined class="rounded"
+                        size="small" :disabled="!subject" @click="openTaskDialog"><template #icon><AppIcon name="ListChecks" /></template></Button>
+                    <Button label="Generate SWA" severity="info" outlined class="rounded"
+                        size="small" :disabled="!canOpenGenerateDialog" @click="openGenerateDialog"><template #icon><AppIcon name="FilePen" /></template></Button>
                     <!-- <Tag :value="moduleTag" severity="info" /> -->
 
                 </div>
@@ -47,18 +47,18 @@
                         </div>
 
                         <div class="flex items-center gap-2 flex-wrap">
-                            <Button label="Preview" icon="pi pi-eye" severity="secondary" text size="small"
+                            <Button label="Preview" severity="secondary" text size="small"
                                 :loading="previewingReportId === report.id"
                                 :disabled="loadingEditorReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportPreview(report)" />
-                            <Button v-if="canManage" label="Edit" icon="pi pi-pencil" severity="secondary" text
+                                @click="openSavedReportPreview(report)"><template #icon><AppIcon name="Eye" /></template></Button>
+                            <Button v-if="canManage" label="Edit" severity="secondary" text
                                 size="small" :loading="loadingEditorReportId === report.id"
                                 :disabled="isSavingReport || isDeletingReport || previewingReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportEditor(report)" />
-                            <Button v-if="canManage" label="Delete" icon="pi pi-trash" severity="danger" text
+                                @click="openSavedReportEditor(report)"><template #icon><AppIcon name="Pencil" /></template></Button>
+                            <Button v-if="canManage" label="Delete" severity="danger" text
                                 size="small" :loading="deletingReportId === report.id"
                                 :disabled="isSavingReport || isDeletingReport || loadingEditorReportId === report.id || previewingReportId === report.id"
-                                @click="deleteSavedReport(report)" />
+                                @click="deleteSavedReport(report)"><template #icon><AppIcon name="Trash2" /></template></Button>
                             <Tag :value="`${report.task_count} tasks`" severity="secondary" />
                             <Tag :value="formatCreatedAt(report.created_at)" severity="info" />
                         </div>
@@ -66,7 +66,7 @@
                 </div>
 
                 <div v-else class="text-center py-8 text-surface-400">
-                    <i class="pi pi-calendar-clock text-3xl block mb-3"></i>
+                    <AppIcon name="CalendarClock" :size="36" class="block mb-3" />
                     <p class="text-sm">No SWA records generated yet.</p>
                 </div>
             </div>
@@ -156,9 +156,9 @@
 
                     <div class="flex items-center gap-2">
                         <Button label="Close" severity="secondary" text @click="showTaskDialog = false" />
-                        <Button v-if="canManage" label="Save Tasks" icon="pi pi-save" class="rounded" size="small"
+                        <Button v-if="canManage" label="Save Tasks" class="rounded" size="small"
                             :loading="isSavingTasks" :disabled="!taskEditMode || !hasValidTasks || isSavingReport"
-                            @click="emitSaveTasks" />
+                            @click="emitSaveTasks"><template #icon><AppIcon name="Save" /></template></Button>
                     </div>
                 </div>
             </template>
@@ -208,9 +208,9 @@
                         </p>
                     </div>
 
-                    <Button label="Configure Signatory" icon="pi pi-user-edit" class="rounded" size="small"
+                    <Button label="Configure Signatory" class="rounded" size="small"
                         :disabled="!canManage || isSavingReport || isSavingTasks"
-                        @click="showSignatorySnapshotModal = true" />
+                        @click="showSignatorySnapshotModal = true"><template #icon><AppIcon name="UserPen" /></template></Button>
                 </div>
 
                 <div class="ios-card  p-4 flex items-start justify-between gap-4 flex-wrap">
@@ -274,9 +274,9 @@
                         </div>
 
                         <div class="flex items-center gap-2 flex-wrap">
-                            <Button v-if="canManage" label="Rebuild Daily Values" icon="pi pi-refresh" severity="info"
+                            <Button v-if="canManage" label="Rebuild Daily Values" severity="info"
                                 size="small" :disabled="!canPrepareDraft || isSavingReport || isSavingTasks"
-                                @click="rebuildDraftValues" v-tooltip.bottom="'Click to Randomized Daily Values'" />
+                                @click="rebuildDraftValues" v-tooltip.bottom="'Click to Randomized Daily Values'"><template #icon><AppIcon name="RefreshCw" /></template></Button>
                             <Tag :value="`${draftDates.length} work day${draftDates.length === 1 ? '' : 's'}`"
                                 severity="secondary" />
                         </div>
@@ -354,8 +354,8 @@
 
                     <div class="flex items-center gap-2 flex-wrap">
                         <Button label="Close" severity="secondary" text @click="closeGenerateDialog" />
-                        <Button :label="generateActionLabel" :icon="generateActionIcon" class="rounded" size="small"
-                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="runGenerateAction" />
+                        <Button :label="generateActionLabel" class="rounded" size="small"
+                            :loading="isSavingReport" :disabled="!canRunGenerateAction" @click="runGenerateAction"><template #icon><AppIcon :name="generateActionIcon" /></template></Button>
                     </div>
                 </div>
             </template>
@@ -497,9 +497,9 @@ const generateActionLabel = computed(() => {
     return isEditingReport.value ? 'Update SWA' : 'Save SWA';
 });
 const generateActionIcon = computed(() => {
-    if (!hasDraftEditorValues.value) return isEditingReport.value ? 'pi pi-pencil' : 'pi pi-table';
+    if (!hasDraftEditorValues.value) return isEditingReport.value ? 'Pencil' : 'Table';
 
-    return isEditingReport.value ? 'pi pi-save' : 'pi pi-check';
+    return isEditingReport.value ? 'Save' : 'Check';
 });
 const generateDialogHint = computed(() => {
     if (!officeHeads.value.length) {
