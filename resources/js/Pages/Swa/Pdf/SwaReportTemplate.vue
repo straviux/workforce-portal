@@ -7,7 +7,7 @@
                 <div class="swa-sheet__header-text">
                     <p class="swa-sheet__line">Republic of the Philippines</p>
                     <p class="swa-sheet__line">Provincial Government of Palawan</p>
-                    <p class="swa-sheet__line swa-sheet__line--program">{{ preparedByOffice }}</p>
+                    <p v-if="preparedByOffice" class="swa-sheet__line swa-sheet__line--program">{{ preparedByOffice }}</p>
                     <p class="swa-sheet__line swa-sheet__line--title">STATEMENT OF WORK ACCOMPLISHED</p>
                     <p class="swa-sheet__line swa-sheet__line--name">{{ preparedByName }}</p>
                     <p class="swa-sheet__line swa-sheet__line--designation">{{ preparedByTitle }}</p>
@@ -20,62 +20,33 @@
 
         <table class="swa-layout-table">
             <thead>
-                <tr>
-                    <th class="swa-task-header" style="width:40pt; border-right: none !important;">
-                        <div class="swa-date-header">
-                            <span>DATE</span>
-                        </div>
-
+                <tr class="swa-header-row"
+                    :style="{ '--swa-header-height': `${headerHeightPx}px`, height: `${headerHeightPx}px` }">
+                    <th class="swa-date-header-cell">
+                        <span class="swa-date-header-cell__text">DATE</span>
                     </th>
-                    <th
-                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div
-                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
-                            <span>{{ task1?.task_name }}</span>
-                        </div>
+                    <th class="swa-task-header">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
+                        <span class="swa-task-header__text">{{ task1?.task_name }}</span>
                     </th>
-                    <th
-                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div
-                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
-                            <span>{{ task2?.task_name }}</span>
-                        </div>
+                    <th class="swa-task-header">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
+                        <span class="swa-task-header__text">{{ task2?.task_name }}</span>
                     </th>
-                    <th
-                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div
-                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
-                            <span>{{ task3?.task_name }}</span>
-                        </div>
+                    <th class="swa-task-header">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
+                        <span class="swa-task-header__text">{{ task3?.task_name }}</span>
                     </th>
-                    <th
-                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div
-                            style="position: absolute; text-indent:-15px;padding-left:15px;left: 45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
-                            <span>{{ task4?.task_name }}</span>
-                        </div>
+                    <th class="swa-task-header">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
+                        <span class="swa-task-header__text">{{ task4?.task_name }}</span>
                     </th>
-                    <th
-                        style="position: relative; height: 100px; padding: 0; vertical-align: bottom; border-left: none !important; border-right: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-                        <div
-                            style="position: absolute; text-indent:-15px;padding-left:15px;left:45px !important; bottom: -5px; display: block; width: 120px !important; height: auto; white-space: normal; word-wrap: break-word; overflow-wrap: anywhere; word-break: break-word; transform: rotate(-46deg); transform-origin: left bottom; font-size: 7pt; line-height: 1.15; text-align: left; font-weight: 700;">
-                            <span>{{ task5?.task_name }}</span>
-                        </div>
+                    <th class="swa-task-header">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
+                        <span class="swa-task-header__text">{{ task5?.task_name }}</span>
                     </th>
-                    <th class="swa-task-header" style="border-left: none !important;">
-                        <div
-                            style="width: 138px; border-top: 1px solid #000;transform: rotate(-46deg);transform-origin: left bottom;" />
-
+                    <th class="swa-task-header swa-task-header--trailing">
+                        <span class="swa-task-header__divider" aria-hidden="true"></span>
                     </th>
                 </tr>
             </thead>
@@ -249,7 +220,7 @@ import { computed } from 'vue';
 const props = defineProps({
     draftRows: { type: Array, default: () => [] },
     documentRows: { type: Array, default: () => [] },
-    preparedByOffice: { type: String, default: 'SCHOLARSHIP PROGRAM' },
+    preparedByOffice: { type: String, default: '' },
     preparedByName: { type: String, default: '______________________________' },
     preparedByTitle: { type: String, default: '______________________________' },
     reviewerName: { type: String, default: '______________________________' },
@@ -270,8 +241,9 @@ const yakapLogoUrl = '/images/yakap-logo.png';
 
 // The YAKAP (scholarship program) logo only applies to Scholarship Program reports.
 // Other offices show just the PGP logo, stacked above the header text instead of beside it.
+// An empty office (personal subject with none set) matches nothing, so no program logo is implied.
 const isScholarshipProgramOffice = computed(
-    () => props.preparedByOffice.trim().toUpperCase() === 'SCHOLARSHIP PROGRAM',
+    () => (props.preparedByOffice ?? '').trim().toUpperCase() === 'SCHOLARSHIP PROGRAM',
 );
 
 // Every SWA report has exactly 5 tasks (sort_order 1-5) — loaded individually
@@ -284,6 +256,85 @@ const task5 = computed(() => findTaskBySortOrder(5));
 
 function findTaskBySortOrder(sortOrder) {
     return props.draftRows.find((task) => task.sort_order === sortOrder) ?? null;
+}
+
+// Slanted-header sizing (45 degrees, same geometry as the CSS below).
+// This template is rendered to a static HTML string for printing, so the
+// header height cannot be measured from the DOM: it is estimated from the
+// title text instead, using deliberately conservative metrics (fewer chars
+// per line and a wider average char than 7pt bold Arial really needs) so a
+// tall title yields a taller header rather than text spilling past the frame.
+// A title rotated -45deg occupies a vertical extent of
+// (block width + block height) * sin(45deg); the tallest of the 5 titles wins.
+const TASK_HEADER_TITLE_MAX_WIDTH_PX = 106;
+const TASK_HEADER_CHARS_PER_LINE = 19;
+const TASK_HEADER_AVG_CHAR_WIDTH_PX = 5.5;
+const TASK_HEADER_LINE_HEIGHT_PX = 11;
+const TASK_HEADER_CLEARANCE_PX = 10;
+const TASK_HEADER_MIN_HEIGHT_PX = 76;
+
+const headerHeightPx = computed(() => {
+    const titles = [task1.value, task2.value, task3.value, task4.value, task5.value]
+        .map((task) => task?.task_name ?? '');
+
+    return Math.max(TASK_HEADER_MIN_HEIGHT_PX, ...titles.map(estimateSlantedTitleHeight));
+});
+
+function estimateSlantedTitleHeight(title) {
+    const lines = wrapSlantedTitle(String(title ?? '').trim());
+
+    if (!lines.length) {
+        return TASK_HEADER_CLEARANCE_PX;
+    }
+
+    const blockWidthPx = Math.min(
+        Math.max(...lines.map((line) => line.length)) * TASK_HEADER_AVG_CHAR_WIDTH_PX,
+        TASK_HEADER_TITLE_MAX_WIDTH_PX,
+    );
+    const blockHeightPx = lines.length * TASK_HEADER_LINE_HEIGHT_PX;
+
+    return Math.ceil((blockWidthPx + blockHeightPx) * Math.SQRT1_2 + TASK_HEADER_CLEARANCE_PX);
+}
+
+// Greedy word wrap mirroring the CSS text box (106px wide, hyphenation and
+// anywhere-breaking can only shorten lines, so this overestimates, never under).
+function wrapSlantedTitle(text) {
+    if (!text) {
+        return [];
+    }
+
+    const lines = [];
+    let current = '';
+
+    const pushLine = (line) => {
+        if (line) {
+            lines.push(line);
+        }
+    };
+
+    for (const word of text.split(/\s+/u)) {
+        let rest = word;
+
+        while (rest.length > TASK_HEADER_CHARS_PER_LINE) {
+            pushLine(current);
+            current = '';
+            pushLine(rest.slice(0, TASK_HEADER_CHARS_PER_LINE));
+            rest = rest.slice(TASK_HEADER_CHARS_PER_LINE);
+        }
+
+        if (!current) {
+            current = rest;
+        } else if (current.length + 1 + rest.length <= TASK_HEADER_CHARS_PER_LINE) {
+            current += ` ${rest}`;
+        } else {
+            pushLine(current);
+            current = rest;
+        }
+    }
+
+    pushLine(current);
+
+    return lines;
 }
 
 function taskValueAt(documentRow, sortOrder) {

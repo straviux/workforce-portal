@@ -39,7 +39,7 @@ import dayjs from 'dayjs';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Panel from 'primevue/panel';
-import Dialog from 'primevue/dialog';
+import AppDialog from '@/Components/AppDialog.vue';
 import Drawer from 'primevue/drawer';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -77,7 +77,6 @@ import Editor from 'primevue/editor';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import safeHtmlDirective from '@/directives/safeHtml';
-import SignatorySnapshotModal from '@/Components/SignatorySnapshotModal.vue';
 import ResponsibilityCenterSelect from '@/Components/selects/ResponsibilityCenterSelect.vue';
 import ParticularsSelect from '@/Components/selects/ParticularsSelect.vue';
 import AppIcon from '@/Components/ui/AppIcon.vue';
@@ -208,7 +207,9 @@ createInertiaApp({
 		app.component('Button', Button);
 		app.component('Card', Card);
 		app.component('Panel', Panel);
-		app.component('Dialog', Dialog);
+		// AppDialog wraps PrimeVue Dialog (stacked Esc handling); it is
+		// registered under the plain `Dialog` name so call sites are untouched.
+		app.component('Dialog', AppDialog);
 		app.component('Drawer', Drawer);
 		app.component('DataTable', DataTable);
 		app.component('Column', Column);
@@ -245,7 +246,6 @@ createInertiaApp({
 		app.component('Editor', Editor);
 		app.component('InputGroup', InputGroup);
 		app.component('InputGroupAddon', InputGroupAddon);
-		app.component('SignatorySnapshotModal', SignatorySnapshotModal);
 		app.component('ResponsibilityCenterSelect', ResponsibilityCenterSelect);
 		app.component('ParticularsSelect', ParticularsSelect);
 		app.component('AppIcon', AppIcon);

@@ -7,6 +7,7 @@ use App\Models\DtrReport;
 use App\Models\DtrReportDailyValue;
 use App\Models\Employee;
 use App\Models\Signatory;
+use App\Models\SignatoryDocumentDefault;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -329,41 +330,24 @@ class DtrService
         return max(0, (int) $value);
     }
 
+    /**
+     * Client-supplied signatory fields are ignored: the snapshot comes
+     * from the centrally configured DTR preset (or the first Part A
+     * office head when no preset exists). Refuses generation when no
+     * Part A office head exists at all, rather than writing a blank
+     * signature block.
+     */
     private function resolveSignatory(array $validated): array
     {
-        $officeHead = Signatory::query()
-            ->where('part', 'A')
-            ->findOrFail($validated['office_head_id']);
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('dtr');
 
-        $availableTitles = collect($officeHead->title ?? [])
-            ->map(fn ($title) => trim((string) $title))
-            ->filter()
-            ->values();
+        if ($signatory === null) {
+            throw ValidationException::withMessages([
+                'office_head_id' => 'No office head signatory is configured. Add one in Settings before generating DTR.',
+            ]);
+        }
 
-        $selectedTitles = array_key_exists('signatory_titles', $validated)
-            ? $availableTitles
-                ->filter(fn ($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
-                ->values()
-            : $availableTitles;
-
-        return [
-            'office_head_signatory_id' => $officeHead->id,
-            'signatory_name' => $officeHead->name,
-            'signatory_office' => $officeHead->office,
-            'signatory_titles' => $selectedTitles->all(),
-            'signatory_name_underline' => array_key_exists('signatory_name_underline', $validated)
-                ? (bool) $validated['signatory_name_underline']
-                : true,
-            'signatory_show_designation' => array_key_exists('signatory_show_designation', $validated)
-                ? (bool) $validated['signatory_show_designation']
-                : true,
-            'signatory_show_office' => array_key_exists('signatory_show_office', $validated)
-                ? (bool) $validated['signatory_show_office']
-                : true,
-            'signatory_info_order' => ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
-                ? 'office_first'
-                : 'designation_first',
-        ];
+        return $signatory;
     }
 
     private function expectedWorkDates(string $startDate, string $endDate, Collection $workDays): Collection

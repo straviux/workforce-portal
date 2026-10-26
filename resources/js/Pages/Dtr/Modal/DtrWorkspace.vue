@@ -76,7 +76,15 @@
                     </p>
                 </div>
 
-                <div v-else class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
+                <div v-else-if="centralSignatoryDisplay?.stale"
+                    class="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/20 dark:bg-amber-950/20 p-4">
+                    <p class="text-sm font-medium text-amber-900 dark:text-amber-100">Saved signatory default no longer exists</p>
+                    <p class="text-sm text-amber-800/80 dark:text-amber-100/80 mt-1">
+                        The office head saved as the DTR default in Signatories was removed. Choose a new default there before generating DTR.
+                    </p>
+                </div>
+
+                <div v-else class="ios-card p-4">
                     <div class="space-y-1 text-sm">
                         <p class="font-medium text-surface-800 dark:text-surface-100" :style="signatoryNameUnderline
                             ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
@@ -90,13 +98,11 @@
                             </p>
                         </template>
                         <p class="text-xs text-surface-400 mt-2">
-                            Configure the office head and which titles or designations appear under Verified and
-                            Approved.
+                            {{ centralSignatoryDisplay?.saved
+                                ? 'Signatory configured in Settings > Signatories.'
+                                : 'No default saved yet in Settings > Signatories. This report will use the first office head until a default is saved.' }}
                         </p>
                     </div>
-
-                    <Button label="Configure Signatory" class="rounded" size="small"
-                        :disabled="!canManage || isSavingReport" @click="showSignatorySnapshotModal = true"><template #icon><AppIcon name="UserPen" /></template></Button>
                 </div>
 
                 <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
@@ -244,12 +250,6 @@
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
 
-        <SignatorySnapshotModal v-model:show="showSignatorySnapshotModal" :office-heads="officeHeads"
-            :initial-value="dtrSignatorySnapshotForm" modal-title="DTR Signatory" :allow-title-selection="true"
-            :allow-display-options="true"
-            title-selection-hint="Toggle the titles or designations that should appear under Verified and Approved."
-            preview-empty-text="Only the signatory name will appear under Verified and Approved."
-            @apply="applyDtrSignatorySnapshot" />
     </div>
 </template>
 
@@ -257,11 +257,12 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewModal.vue';
 import DtrReportTemplate from '@/Pages/Dtr/Pdf/DtrReportTemplate.vue';
+import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
 import dtrReportTemplateCss from '@/Pages/Dtr/Pdf/dtr-report-template.css?raw';
 
 const props = defineProps({
@@ -312,18 +313,25 @@ const RANDOM_TIME_RANGES = {
 };
 
 const showGenerateDialog = ref(false);
-const showSignatorySnapshotModal = ref(false);
 const previewingReportId = ref(null);
 const loadingEditorReportId = ref(null);
 const deletingReportId = ref(null);
 const draftValues = ref([]);
 const editingReportId = ref(null);
-const selectedOfficeHeadId = ref(null);
-const selectedOfficeHeadTitles = ref([]);
-const signatoryNameUnderline = ref(true);
-const signatoryShowDesignation = ref(true);
-const signatoryShowOffice = ref(true);
-const signatoryInfoOrder = ref('designation_first');
+// Central DTR default from Settings > Signatories (fetched when the
+// workspace opens and whenever the generate dialog opens). The backend
+// resolves the saved report's signature block from this default, so the
+// workspace never sends signatory fields of its own.
+const centralDtrDefault = ref(null);
+const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true));
+
+async function loadCentralDtrDefault() {
+    try {
+        centralDtrDefault.value = (await fetchSignatoryDefaults()).dtr;
+    } catch {
+        centralDtrDefault.value = null;
+    }
+}
 const isHydratingReport = ref(false);
 const pdfPreview = reactive({
     show: false,
@@ -340,7 +348,7 @@ const generation = reactive({
 const canOpenGenerateDialog = computed(() => Boolean(props.subject) && props.canManage);
 const isEditingReport = computed(() => editingReportId.value !== null);
 const officeHeads = computed(() => props.officeHeads ?? []);
-const selectedOfficeHead = computed(() => officeHeads.value.find((officeHead) => officeHead.id === selectedOfficeHeadId.value) ?? null);
+const selectedOfficeHead = computed(() => centralSignatoryDisplay.value?.head ?? null);
 const draftDates = computed(() => draftValues.value.map((row) => row.work_date));
 const hasValidScheduleSelection = computed(() => Boolean(selectedOfficeHead.value)
     && generation.work_days.length > 0
@@ -357,8 +365,12 @@ const generateDialogHint = computed(() => {
         return 'Add at least one Part A office head signatory before generating DTR.';
     }
 
+    if (centralSignatoryDisplay.value?.stale) {
+        return 'The saved DTR signatory default no longer exists. Update it in Settings > Signatories before generating DTR.';
+    }
+
     if (!selectedOfficeHead.value) {
-        return 'Select the signatory that will appear under Verified and Approved.';
+        return 'No signatory is available for this report.';
     }
 
     if (!hasValidScheduleSelection.value) {
@@ -395,7 +407,7 @@ const preparedByTitle = computed(() => formatUpperText(props.subject?.designatio
 const reviewerName = computed(() => formatPlainText(selectedOfficeHead.value?.name || page.props.auth?.user?.name) || '______________________________');
 const reviewerTitles = computed(() => {
     if (selectedOfficeHead.value) {
-        return formatPlainList(selectedOfficeHeadTitles.value);
+        return formatPlainList(centralSignatoryDisplay.value?.titles ?? []);
     }
 
     const fallbackTitle = formatPlainText(page.props.auth?.user?.designation || page.props.auth?.user?.office_designation) || 'Program Manager';
@@ -403,21 +415,11 @@ const reviewerTitles = computed(() => {
     return [fallbackTitle];
 });
 const reviewerOffice = computed(() => formatPlainText(selectedOfficeHead.value?.office || page.props.auth?.user?.office));
-const dtrSignatorySnapshotForm = computed(() => ({
-    office_head_id: selectedOfficeHeadId.value,
-    signatory_titles: [...selectedOfficeHeadTitles.value],
-    signatory_name_underline: signatoryNameUnderline.value,
-    signatory_show_designation: signatoryShowDesignation.value,
-    signatory_show_office: signatoryShowOffice.value,
-    signatory_info_order: signatoryInfoOrder.value,
-}));
-const signatoryPreviewLines = computed(() => buildOrderedSignatoryDetailLines(
-    selectedOfficeHeadTitles.value,
-    selectedOfficeHead.value?.office,
-    signatoryShowDesignation.value,
-    signatoryShowOffice.value,
-    signatoryInfoOrder.value,
-));
+const signatoryNameUnderline = computed(() => centralSignatoryDisplay.value?.underline ?? true);
+const signatoryShowDesignation = computed(() => centralSignatoryDisplay.value?.showDesignation ?? true);
+const signatoryShowOffice = computed(() => centralSignatoryDisplay.value?.showOffice ?? true);
+const signatoryInfoOrder = computed(() => centralSignatoryDisplay.value?.infoOrder ?? 'designation_first');
+const signatoryPreviewLines = computed(() => defaultDisplayLines(centralSignatoryDisplay.value));
 const subjectMetaLine = computed(() => {
     if (!props.subject) return 'Select a subject to generate DTR.';
 
@@ -433,23 +435,7 @@ const workspaceHint = computed(() => {
     return 'Generate DTR from the action on the right.';
 });
 
-watch(() => props.officeHeads, (nextOfficeHeads) => {
-    const availableOfficeHeads = nextOfficeHeads ?? [];
-
-    if (!availableOfficeHeads.length) {
-        selectedOfficeHeadId.value = null;
-        selectedOfficeHeadTitles.value = [];
-        return;
-    }
-
-    if (!availableOfficeHeads.some((officeHead) => officeHead.id === selectedOfficeHeadId.value)) {
-        applyOfficeHeadSelection(availableOfficeHeads[0].id);
-        return;
-    }
-
-    const currentOfficeHeadTitles = officeHeadTitlesForId(selectedOfficeHeadId.value);
-    selectedOfficeHeadTitles.value = selectedOfficeHeadTitles.value.filter((title) => currentOfficeHeadTitles.includes(title));
-}, { immediate: true, deep: true });
+onMounted(loadCentralDtrDefault);
 
 watch(() => props.reports?.length ?? 0, (currentCount, previousCount) => {
     if (!showGenerateDialog.value) return;
@@ -471,6 +457,7 @@ watch(
 function openGenerateDialog() {
     if (!canOpenGenerateDialog.value) return;
 
+    loadCentralDtrDefault();
     resetReportEditState();
     draftValues.value = [];
     showGenerateDialog.value = true;
@@ -491,11 +478,6 @@ async function openSavedReportEditor(report) {
         generation.work_days = [...(reportDetail.work_days ?? [])];
         generation.period_start_date = parseDateValue(reportDetail.period_start_date);
         generation.period_end_date = parseDateValue(reportDetail.period_end_date);
-        applyOfficeHeadSelection(reportDetail.office_head_signatory_id, reportDetail.signatory_titles ?? []);
-        signatoryNameUnderline.value = reportDetail.signatory_name_underline !== false;
-        signatoryShowDesignation.value = reportDetail.signatory_show_designation !== false;
-        signatoryShowOffice.value = reportDetail.signatory_show_office !== false;
-        signatoryInfoOrder.value = reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
         draftValues.value = cloneDraftValues(reportDetail.daily_values ?? []);
         showGenerateDialog.value = true;
     } catch (error) {
@@ -592,12 +574,6 @@ function emitSaveReport() {
     const payload = {
         period_start_date: formatDateForApi(generation.period_start_date),
         period_end_date: formatDateForApi(generation.period_end_date),
-        office_head_id: selectedOfficeHeadId.value,
-        signatory_titles: [...selectedOfficeHeadTitles.value],
-        signatory_name_underline: signatoryNameUnderline.value,
-        signatory_show_designation: signatoryShowDesignation.value,
-        signatory_show_office: signatoryShowOffice.value,
-        signatory_info_order: signatoryInfoOrder.value,
         work_days: [...generation.work_days],
         daily_values: draftValues.value.map((row) => ({
             work_date: row.work_date,
@@ -640,13 +616,6 @@ function toggleWorkDay(day) {
         .filter((value) => value === day || generation.work_days.includes(value));
 }
 
-function applyDtrSignatorySnapshot(snapshot) {
-    applyOfficeHeadSelection(snapshot.office_head_id, snapshot.signatory_titles ?? []);
-    signatoryNameUnderline.value = snapshot.signatory_name_underline !== false;
-    signatoryShowDesignation.value = snapshot.signatory_show_designation !== false;
-    signatoryShowOffice.value = snapshot.signatory_show_office !== false;
-    signatoryInfoOrder.value = snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
-}
 
 function rebuildDraftValues() {
     if (!hasValidScheduleSelection.value) {
@@ -769,41 +738,8 @@ function closeGenerateDialog() {
     draftValues.value = [];
 }
 
-function officeHeadTitlesForId(officeHeadId) {
-    const officeHead = officeHeads.value.find((entry) => entry.id === officeHeadId);
-    const titles = Array.isArray(officeHead?.titles) ? officeHead.titles : [];
 
-    return titles
-        .map((title) => String(title ?? '').trim())
-        .filter(Boolean);
-}
 
-function applyOfficeHeadSelection(officeHeadId, selectedTitles = null) {
-    const resolvedOfficeHeadId = officeHeads.value.some((entry) => entry.id === officeHeadId)
-        ? officeHeadId
-        : officeHeads.value[0]?.id ?? null;
-    const availableTitles = officeHeadTitlesForId(resolvedOfficeHeadId);
-
-    selectedOfficeHeadId.value = resolvedOfficeHeadId;
-
-    if (!Array.isArray(selectedTitles)) {
-        selectedOfficeHeadTitles.value = [...availableTitles];
-        return;
-    }
-
-    selectedOfficeHeadTitles.value = selectedTitles
-        .map((title) => String(title ?? '').trim())
-        .filter((title) => availableTitles.includes(title));
-}
-
-function buildOrderedSignatoryDetailLines(titles, office, showDesignation = true, showOffice = true, infoOrder = 'designation_first') {
-    const designationLines = showDesignation ? formatPlainList(titles) : [];
-    const officeLines = showOffice && formatPlainText(office) ? [formatPlainText(office)] : [];
-
-    return uniqueTextLines(infoOrder === 'office_first'
-        ? [...officeLines, ...designationLines]
-        : [...designationLines, ...officeLines]);
-}
 
 function uniqueTextLines(lines) {
     const seen = new Set();

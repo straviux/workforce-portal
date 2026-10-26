@@ -7,9 +7,11 @@ use App\Http\Requests\StoreNonRosCertificationRequest;
 use App\Http\Requests\UpdateNonRosCertificationRequest;
 use App\Models\Certification;
 use App\Models\Signatory;
+use App\Models\SignatoryDocumentDefault;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CertificationController extends Controller
 {
@@ -67,6 +69,8 @@ class CertificationController extends Controller
                 'data' => $certification,
                 'message' => 'Certification saved.',
             ], 201);
+        } catch (ValidationException $exception) {
+            throw $exception;
         } catch (\Throwable $exception) {
             Log::error('Error saving non-ROS certification', ['error' => $exception->getMessage()]);
 
@@ -90,6 +94,8 @@ class CertificationController extends Controller
                 'data' => $certification,
                 'message' => 'Certification updated.',
             ]);
+        } catch (ValidationException $exception) {
+            throw $exception;
         } catch (\Throwable $exception) {
             Log::error('Error updating non-ROS certification', ['id' => $id, 'error' => $exception->getMessage()]);
 
@@ -142,31 +148,17 @@ class CertificationController extends Controller
 
     private function payloadWithSignatorySnapshot(array $validated): array
     {
-        $officeHead = Signatory::query()
-            ->where('part', 'A')
-            ->findOrFail($validated['office_head_id']);
-        $availableTitles = collect($officeHead->title ?? [])
-            ->map(fn($title) => is_string($title) ? trim($title) : '')
-            ->filter()
-            ->values();
-        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
-            ? $availableTitles
-            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
-            ->values()
-            : $availableTitles;
-        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
-            ? (bool) $validated['signatory_name_underline']
-            : false;
+        // Client-supplied signatory fields are ignored: the snapshot comes
+        // from the centrally configured certification preset (or the first
+        // Part A office head when no preset exists).
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('certification');
 
-        $showDesignation = array_key_exists('signatory_show_designation', $validated)
-            ? (bool) $validated['signatory_show_designation']
-            : true;
-        $showOffice = array_key_exists('signatory_show_office', $validated)
-            ? (bool) $validated['signatory_show_office']
-            : true;
-        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
-            ? 'office_first'
-            : 'designation_first';
+        if ($signatory === null) {
+            throw ValidationException::withMessages([
+                'office_head_id' => 'No office head signatory is configured. Add one in Settings before saving a certification.',
+            ]);
+        }
+
         $subjectFirstName = trim((string) $validated['subject_firstname']);
         $subjectMiddleName = filled($validated['subject_middlename'] ?? null)
             ? trim((string) $validated['subject_middlename'])
@@ -185,14 +177,7 @@ class CertificationController extends Controller
             'designation' => $validated['designation'],
             'office' => $validated['office'],
             'issued_date' => $validated['issued_date'],
-            'office_head_signatory_id' => $officeHead->id,
-            'signatory_name' => $officeHead->name,
-            'signatory_office' => $officeHead->office,
-            'signatory_titles' => $selectedSignatoryTitles->all(),
-            'signatory_name_underline' => $nameUnderline,
-            'signatory_show_designation' => $showDesignation,
-            'signatory_show_office' => $showOffice,
-            'signatory_info_order' => $infoOrder,
+            ...$signatory,
         ];
     }
 

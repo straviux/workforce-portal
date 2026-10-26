@@ -3,6 +3,11 @@ import { ref, computed, onMounted } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import SidebarLink from '@/Components/ui/navigation/SidebarLink.vue';
+import { useDialogEscapeHandler } from '@/Composables/useDialogStack';
+
+// Single capture-phase Escape handler for the dialog stack (see
+// useDialogStack.js): one Esc press closes only the frontmost dialog.
+useDialogEscapeHandler();
 
 const page = usePage();
 const toggleMenu = ref(false);

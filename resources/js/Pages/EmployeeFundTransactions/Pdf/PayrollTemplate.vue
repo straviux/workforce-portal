@@ -375,8 +375,11 @@ function employeeListSortOrder(employee) {
 }
 
 function signatoryByPart(part) {
+    // No blank-line fallback: the print flow refuses to render at all when
+    // the signatory configuration is incomplete, so a missing part here
+    // would be a bug, not something to paper over with underscores.
     const found = props.signatories.find((entry) => entry.part === part);
-    const signatory = found ?? { name: '______________________________', title: [], office: '' };
+    const signatory = found ?? { name: '', title: [], office: '' };
     const titles = Array.isArray(signatory.title) ? signatory.title : (signatory.title ? [signatory.title] : []);
 
     return {
@@ -393,7 +396,7 @@ const approverSignatory = computed(() => signatoryByPart('D'));
 
 function formatSignatoryName(value) {
     const text = String(value ?? '').trim();
-    return text ? text.toUpperCase() : '______________________________';
+    return text ? text.toUpperCase() : '';
 }
 
 function signatoryNameStyle(nameUnderline) {

@@ -97,30 +97,34 @@
                     </div>
 
                     <div class="ios-section pb-4">
-                        <p class="ios-section-label">Signatory Snapshot</p>
-                        <div class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
+                        <p class="ios-section-label">Signatory</p>
+                        <div class="ios-card p-4">
                             <div class="space-y-1 text-sm">
-                                <p class="font-medium text-surface-800 dark:text-surface-100" :style="form.signatory_name_underline
+                                <p class="font-medium text-surface-800 dark:text-surface-100" :style="displaySignatoryUnderline
                                     ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
                                     : ''">
-                                    {{ selectedOfficeHead?.name || 'No signatory selected' }}
+                                    {{ displaySignatory?.name || 'No signatory selected' }}
                                 </p>
-                                <template v-if="selectedOfficeHead">
+                                <template v-if="displaySignatory">
                                     <p v-for="line in signatoryPreviewLines" :key="line" class="text-surface-500">{{
                                         line }}</p>
                                     <p v-if="!signatoryPreviewLines.length" class="text-surface-400">
                                         Only the signatory name will be printed.
                                     </p>
                                 </template>
-                                <p v-else class="text-surface-400">Choose the signatory and display options for the
-                                    certification footer.</p>
+                                <p v-else class="text-surface-400">No office head is available for the certification
+                                    footer.</p>
+                                <p class="text-xs text-surface-400 mt-2">
+                                    {{ !centralDefaultLoaded
+                                        ? 'Loading the signatory default…'
+                                        : centralDisplay?.saved
+                                            ? 'Signatory configured in Settings > Signatories. Saving applies that default.'
+                                            : centralDisplay
+                                                ? 'No default saved yet in Settings > Signatories. Saving will use the first office head until a default is saved.'
+                                                : 'Add at least one Part A office head in Signatories before saving a certification.' }}
+                                </p>
                             </div>
-
-                            <Button type="button" label="Configure" class="rounded" size="small"
-                                @click="showSnapshotModal = true" :disabled="!officeHeads.length"><template #icon><AppIcon name="UserPen" /></template></Button>
                         </div>
-                        <span v-if="errors.office_head_id" class="ios-hint ios-error mt-2 block">{{
-                            errors.office_head_id }}</span>
                     </div>
                 </div>
 
@@ -128,9 +132,6 @@
         </template>
     </Dialog>
 
-    <SignatorySnapshotModal v-model:show="showSnapshotModal" :office-heads="officeHeads"
-        :initial-value="signatorySnapshotForm" :allow-title-selection="true" :allow-display-options="true"
-        @apply="applySignatorySnapshot" />
 </template>
 
 <script setup>
@@ -138,6 +139,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import { resolveCertificationSubjectParts } from '@/Pages/Certifications/support/subjectName';
+import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
 
 const props = defineProps({
     show: Boolean,
@@ -160,21 +162,34 @@ const defaultForm = () => ({
     designation: '',
     office: '',
     issued_date: new Date(),
-    office_head_id: null,
-    signatory_titles: [],
-    signatory_name_underline: false,
-    signatory_show_designation: true,
-    signatory_show_office: true,
-    signatory_info_order: 'designation_first',
 });
 
 const form = reactive(defaultForm());
-const showSnapshotModal = ref(false);
+// Central Certification default from Settings > Signatories, fetched when
+// the modal opens. The backend resolves the saved certification's
+// signature block from this default, so the modal never sends signatory
+// fields of its own.
+const centralCertificationDefault = ref(null);
+const centralDefaultLoaded = ref(false);
+const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false));
+
+async function loadCentralCertificationDefault() {
+    centralDefaultLoaded.value = false;
+    try {
+        centralCertificationDefault.value = (await fetchSignatoryDefaults()).certification;
+    } catch {
+        centralCertificationDefault.value = null;
+    } finally {
+        centralDefaultLoaded.value = true;
+    }
+}
 
 watch(() => props.show, (visible) => {
     if (!visible) return;
 
     errors.value = {};
+
+    loadCentralCertificationDefault();
 
     if (props.mode === 'edit' && props.certification) {
         const subjectParts = resolveCertificationSubjectParts(props.certification);
@@ -186,36 +201,70 @@ watch(() => props.show, (visible) => {
         form.designation = props.certification.designation ?? '';
         form.office = props.certification.office ?? '';
         form.issued_date = parseDate(props.certification.issued_date) ?? new Date();
-        form.office_head_id = props.certification.office_head_signatory_id ?? props.officeHeads[0]?.id ?? null;
-        form.signatory_titles = sanitizeSelectedTitles(
-            props.certification.signatory_titles,
-            officeHeadTitlesForId(form.office_head_id),
-        );
-        form.signatory_name_underline = props.certification.signatory_name_underline === true;
-        form.signatory_show_designation = props.certification.signatory_show_designation ?? true;
-        form.signatory_show_office = props.certification.signatory_show_office ?? true;
-        form.signatory_info_order = props.certification.signatory_info_order === 'office_first'
-            ? 'office_first'
-            : 'designation_first';
+        // The document's existing snapshot, kept only as the read-only
+        // fallback display when no central default exists yet.
+        existingSnapshot.value = {
+            office_head_id: props.certification.office_head_signatory_id ?? null,
+            signatory_titles: props.certification.signatory_titles ?? null,
+            signatory_name_underline: props.certification.signatory_name_underline === true,
+            signatory_show_designation: props.certification.signatory_show_designation !== false,
+            signatory_show_office: props.certification.signatory_show_office !== false,
+            signatory_info_order: props.certification.signatory_info_order === 'office_first'
+                ? 'office_first'
+                : 'designation_first',
+        };
     } else {
         Object.assign(form, defaultForm());
-        form.office_head_id = props.officeHeads[0]?.id ?? null;
-        form.signatory_titles = officeHeadTitlesForId(form.office_head_id);
+        existingSnapshot.value = null;
     }
 
     dragOffset.value = { x: 0, y: 0 };
 });
 
-const selectedOfficeHead = computed(() => props.officeHeads.find((officeHead) => officeHead.id === form.office_head_id) ?? null);
-const signatorySnapshotForm = computed(() => ({
-    office_head_id: form.office_head_id,
-    signatory_titles: form.signatory_titles,
-    signatory_name_underline: form.signatory_name_underline,
-    signatory_show_designation: form.signatory_show_designation,
-    signatory_show_office: form.signatory_show_office,
-    signatory_info_order: form.signatory_info_order,
-}));
-const signatoryPreviewLines = computed(() => buildSignatoryDetailLines(selectedOfficeHead.value, form));
+const existingSnapshot = ref(null);
+// Read-only display: the central default first; when none exists, the
+// document's existing snapshot (edit mode) or the first office head.
+const existingDisplay = computed(() => {
+    if (!existingSnapshot.value?.office_head_id) return null;
+
+    const head = props.officeHeads.find((officeHead) => officeHead.id === existingSnapshot.value.office_head_id) ?? null;
+    if (!head) return null;
+
+    return {
+        head,
+        titles: sanitizeSelectedTitles(existingSnapshot.value.signatory_titles, officeHeadTitlesForId(head.id)),
+        underline: existingSnapshot.value.signatory_name_underline,
+        showDesignation: existingSnapshot.value.signatory_show_designation,
+        showOffice: existingSnapshot.value.signatory_show_office,
+        infoOrder: existingSnapshot.value.signatory_info_order,
+        saved: false,
+        stale: false,
+    };
+});
+const displaySignatory = computed(() => {
+    if (centralDisplay.value?.head) return centralDisplay.value.head;
+    if (centralDisplay.value?.stale) return null;
+    if (existingDisplay.value?.head) return existingDisplay.value.head;
+    return props.officeHeads[0] ?? null;
+});
+const displaySignatoryUnderline = computed(() => {
+    if (centralDisplay.value?.head) return centralDisplay.value.underline;
+    if (existingDisplay.value?.head) return existingDisplay.value.underline;
+    return false;
+});
+const signatoryPreviewLines = computed(() => {
+    if (centralDisplay.value?.head) return defaultDisplayLines(centralDisplay.value);
+    if (centralDisplay.value?.stale) return [];
+    if (existingDisplay.value?.head) return defaultDisplayLines(existingDisplay.value);
+    const firstHead = props.officeHeads[0];
+    if (!firstHead) return [];
+    return buildSignatoryDetailLines(firstHead, {
+        signatory_titles: officeHeadTitlesForId(firstHead.id),
+        signatory_show_designation: true,
+        signatory_show_office: true,
+        signatory_info_order: 'designation_first',
+    });
+});
 
 async function submit() {
     errors.value = {};
@@ -228,12 +277,6 @@ async function submit() {
         designation: form.designation,
         office: form.office,
         issued_date: formatDateForApi(form.issued_date),
-        office_head_id: form.office_head_id,
-        signatory_titles: form.signatory_titles,
-        signatory_name_underline: form.signatory_name_underline,
-        signatory_show_designation: form.signatory_show_designation,
-        signatory_show_office: form.signatory_show_office,
-        signatory_info_order: form.signatory_info_order,
     };
 
     saving.value = true;
@@ -272,21 +315,6 @@ async function submit() {
     }
 }
 
-function applySignatorySnapshot(snapshot) {
-    form.office_head_id = snapshot.office_head_id;
-    form.signatory_titles = sanitizeSelectedTitles(
-        snapshot.signatory_titles,
-        officeHeadTitlesForId(snapshot.office_head_id),
-    );
-    form.signatory_name_underline = snapshot.signatory_name_underline === true;
-    form.signatory_show_designation = snapshot.signatory_show_designation;
-    form.signatory_show_office = snapshot.signatory_show_office;
-    form.signatory_info_order = snapshot.signatory_info_order;
-
-    if (errors.value.office_head_id) {
-        delete errors.value.office_head_id;
-    }
-}
 
 function buildSignatoryDetailLines(officeHead, config) {
     if (!officeHead) {

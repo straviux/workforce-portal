@@ -18,7 +18,8 @@ class StoreSwaReportRequest extends FormRequest
         return [
             'period_start_date' => ['required', 'date'],
             'period_end_date' => ['required', 'date', 'after_or_equal:period_start_date'],
-            'office_head_id' => ['required', Rule::exists('signatories', 'id')->where('part', 'A')],
+            // Signatory fields are accepted but ignored: the snapshot is
+            // resolved server-side from the centrally configured SWA preset.
             'signatory_titles' => ['nullable', 'array'],
             'signatory_titles.*' => ['string', 'max:255'],
             'signatory_name_underline' => ['nullable', 'boolean'],

@@ -189,7 +189,15 @@
                     </p>
                 </div>
 
-                <div v-else class="ios-card p-4 flex items-start justify-between gap-4 flex-wrap">
+                <div v-else-if="centralSignatoryDisplay?.stale"
+                    class="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/20 dark:bg-amber-950/20 p-4">
+                    <p class="text-sm font-medium text-amber-900 dark:text-amber-100">Saved signatory default no longer exists</p>
+                    <p class="text-sm text-amber-800/80 dark:text-amber-100/80 mt-1">
+                        The office head saved as the SWA default in Signatories was removed. Choose a new default there before generating SWA.
+                    </p>
+                </div>
+
+                <div v-else class="ios-card p-4">
                     <div class="space-y-1 text-sm">
                         <p class="font-medium text-surface-800 dark:text-surface-100" :style="signatoryNameUnderline
                             ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
@@ -203,14 +211,11 @@
                             </p>
                         </template>
                         <p class="text-xs text-surface-400 mt-2">
-                            Configure the office head and which titles or designations appear under Verified and
-                            Approved.
+                            {{ centralSignatoryDisplay?.saved
+                                ? 'Signatory configured in Settings > Signatories.'
+                                : 'No default saved yet in Settings > Signatories. This report will use the first office head until a default is saved.' }}
                         </p>
                     </div>
-
-                    <Button label="Configure Signatory" class="rounded" size="small"
-                        :disabled="!canManage || isSavingReport || isSavingTasks"
-                        @click="showSignatorySnapshotModal = true"><template #icon><AppIcon name="UserPen" /></template></Button>
                 </div>
 
                 <div class="ios-card  p-4 flex items-start justify-between gap-4 flex-wrap">
@@ -364,12 +369,6 @@
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
 
-        <SignatorySnapshotModal v-model:show="showSignatorySnapshotModal" :office-heads="officeHeads"
-            :initial-value="swaSignatorySnapshotForm" modal-title="SWA Signatory" :allow-title-selection="true"
-            :allow-display-options="true"
-            title-selection-hint="Toggle the titles or designations that should appear under Verified and Approved."
-            preview-empty-text="Only the signatory name will appear under Verified and Approved."
-            @apply="applySwaSignatorySnapshot" />
     </div>
 </template>
 
@@ -377,11 +376,12 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import { usePage } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewModal.vue';
 import SwaReportTemplate from '@/Pages/Swa/Pdf/SwaReportTemplate.vue';
+import { fetchSignatoryDefaults, resolveDefaultDisplay, defaultDisplayLines } from '@/Composables/signatoryDefaults';
 import swaReportTemplateCss from '@/Pages/Swa/Pdf/swa-report-template.css?raw';
 
 const props = defineProps({
@@ -422,7 +422,7 @@ const DEFAULT_COUNTABLE_MAX = 9;
 
 const showTaskDialog = ref(false);
 const showGenerateDialog = ref(false);
-const showSignatorySnapshotModal = ref(false);
+
 const previewingReportId = ref(null);
 const loadingEditorReportId = ref(null);
 const deletingReportId = ref(null);
@@ -432,12 +432,20 @@ const draftRows = ref([]);
 const draftDates = ref([]);
 const editingReportId = ref(null);
 const editingReportTaskRows = ref([]);
-const selectedOfficeHeadId = ref(null);
-const selectedOfficeHeadTitles = ref([]);
-const signatoryNameUnderline = ref(true);
-const signatoryShowDesignation = ref(true);
-const signatoryShowOffice = ref(true);
-const signatoryInfoOrder = ref('designation_first');
+// Central SWA default from Settings > Signatories (fetched when the
+// workspace opens and whenever the generate dialog opens). The backend
+// resolves the saved report's signature block from this default, so the
+// workspace never sends signatory fields of its own.
+const centralSwaDefault = ref(null);
+const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralSwaDefault.value, officeHeads.value, true));
+
+async function loadCentralSwaDefault() {
+    try {
+        centralSwaDefault.value = (await fetchSignatoryDefaults()).swa;
+    } catch {
+        centralSwaDefault.value = null;
+    }
+}
 const isHydratingReport = ref(false);
 const pdfPreview = reactive({
     show: false,
@@ -461,7 +469,7 @@ const hasDraftPreview = computed(() => draftRows.value.length > 0);
 const hasDraftEditorValues = computed(() => hasDraftPreview.value && draftDates.value.length > 0);
 const isEditingReport = computed(() => editingReportId.value !== null);
 const officeHeads = computed(() => props.officeHeads ?? []);
-const selectedOfficeHead = computed(() => officeHeads.value.find((officeHead) => officeHead.id === selectedOfficeHeadId.value) ?? null);
+const selectedOfficeHead = computed(() => centralSignatoryDisplay.value?.head ?? null);
 const draftSourceRows = computed(() => isEditingReport.value && editingReportTaskRows.value.length
     ? editingReportTaskRows.value
     : normalizedTasks.value);
@@ -506,8 +514,12 @@ const generateDialogHint = computed(() => {
         return 'Add at least one Part A office head signatory before generating SWA.';
     }
 
+    if (centralSignatoryDisplay.value?.stale) {
+        return 'The saved SWA signatory default no longer exists. Update it in Settings > Signatories before generating SWA.';
+    }
+
     if (!selectedOfficeHead.value) {
-        return 'Select the signatory that will appear under Verified and Approved.';
+        return 'No signatory is available for this report.';
     }
 
     if (!isEditingReport.value && !hasValidCountableRanges.value) {
@@ -526,13 +538,13 @@ const generateDialogHint = computed(() => {
 });
 const blockedEventsInRange = computed(() => getBlockedEventsInRange(generation.period_start_date, generation.period_end_date));
 const blockedDateSet = computed(() => new Set(blockedEventsInRange.value.map((event) => event.event_date)));
-const preparedByOffice = computed(() => formatUpperText(props.subject?.office) || 'SCHOLARSHIP PROGRAM');
+const preparedByOffice = computed(() => formatUpperText(props.subject?.office));
 const preparedByName = computed(() => formatUpperText(props.subject?.display_name) || '______________________________');
 const preparedByTitle = computed(() => formatUpperText(props.subject?.designation || props.subject?.secondary_label) || '______________________________');
 const reviewerName = computed(() => formatUpperText(selectedOfficeHead.value?.name || page.props.auth?.user?.name) || '______________________________');
 const reviewerTitles = computed(() => {
     if (selectedOfficeHead.value) {
-        return formatUpperList(selectedOfficeHeadTitles.value);
+        return formatUpperList(centralSignatoryDisplay.value?.titles ?? []);
     }
 
     const fallbackTitle = formatUpperText(page.props.auth?.user?.designation || page.props.auth?.user?.office_designation) || 'PROGRAM MANAGER';
@@ -540,6 +552,10 @@ const reviewerTitles = computed(() => {
     return [fallbackTitle];
 });
 const reviewerOffice = computed(() => formatUpperText(selectedOfficeHead.value?.office || page.props.auth?.user?.office));
+const signatoryNameUnderline = computed(() => centralSignatoryDisplay.value?.underline ?? true);
+const signatoryShowDesignation = computed(() => centralSignatoryDisplay.value?.showDesignation ?? true);
+const signatoryShowOffice = computed(() => centralSignatoryDisplay.value?.showOffice ?? true);
+const signatoryInfoOrder = computed(() => centralSignatoryDisplay.value?.infoOrder ?? 'designation_first');
 const reviewerDetailLines = computed(() => buildOrderedSignatoryDetailLines(
     reviewerTitles.value,
     reviewerOffice.value,
@@ -548,21 +564,7 @@ const reviewerDetailLines = computed(() => buildOrderedSignatoryDetailLines(
     signatoryInfoOrder.value,
 ));
 const documentPeriodLabel = computed(() => formatSwaPeriodLabel(generation.period_start_date, generation.period_end_date));
-const swaSignatorySnapshotForm = computed(() => ({
-    office_head_id: selectedOfficeHeadId.value,
-    signatory_titles: [...selectedOfficeHeadTitles.value],
-    signatory_name_underline: signatoryNameUnderline.value,
-    signatory_show_designation: signatoryShowDesignation.value,
-    signatory_show_office: signatoryShowOffice.value,
-    signatory_info_order: signatoryInfoOrder.value,
-}));
-const signatoryPreviewLines = computed(() => buildOrderedSignatoryDetailLines(
-    selectedOfficeHeadTitles.value,
-    selectedOfficeHead.value?.office,
-    signatoryShowDesignation.value,
-    signatoryShowOffice.value,
-    signatoryInfoOrder.value,
-));
+const signatoryPreviewLines = computed(() => defaultDisplayLines(centralSignatoryDisplay.value));
 const draftEditorRows = computed(() => draftDates.value.map((workDate) => ({
     work_date: workDate,
     task_values: draftRows.value.map((task) => ({
@@ -594,6 +596,8 @@ const workspaceHint = computed(() => {
     return 'Open task encoding or generate SWA from the actions on the right.';
 });
 
+onMounted(loadCentralSwaDefault);
+
 watch(() => props.tasks, (tasks) => {
     const persistedRanges = loadCountableRangeSettings();
 
@@ -612,24 +616,6 @@ watch(() => props.tasks, (tasks) => {
 watch(taskRows, () => {
     persistCountableRangeSettings();
 }, { deep: true });
-
-watch(() => props.officeHeads, (nextOfficeHeads) => {
-    const availableOfficeHeads = nextOfficeHeads ?? [];
-
-    if (!availableOfficeHeads.length) {
-        selectedOfficeHeadId.value = null;
-        selectedOfficeHeadTitles.value = [];
-        return;
-    }
-
-    if (!availableOfficeHeads.some((officeHead) => officeHead.id === selectedOfficeHeadId.value)) {
-        applyOfficeHeadSelection(availableOfficeHeads[0].id);
-        return;
-    }
-
-    const currentOfficeHeadTitles = officeHeadTitlesForId(selectedOfficeHeadId.value);
-    selectedOfficeHeadTitles.value = selectedOfficeHeadTitles.value.filter((title) => currentOfficeHeadTitles.includes(title));
-}, { immediate: true, deep: true });
 
 watch(() => props.reports?.length ?? 0, (currentCount, previousCount) => {
     if (!showGenerateDialog.value) return;
@@ -658,6 +644,7 @@ function openTaskDialog() {
 function openGenerateDialog() {
     if (!canOpenGenerateDialog.value) return;
 
+    loadCentralSwaDefault();
     resetReportEditState();
     clearDraftPreview();
     showGenerateDialog.value = true;
@@ -683,11 +670,6 @@ async function openSavedReportEditor(report) {
         generation.work_days = [...(reportDetail.work_days ?? [])];
         generation.period_start_date = parseDateValue(reportDetail.period_start_date);
         generation.period_end_date = parseDateValue(reportDetail.period_end_date);
-        applyOfficeHeadSelection(reportDetail.office_head_signatory_id, reportDetail.signatory_titles ?? []);
-        signatoryNameUnderline.value = reportDetail.signatory_name_underline !== false;
-        signatoryShowDesignation.value = reportDetail.signatory_show_designation !== false;
-        signatoryShowOffice.value = reportDetail.signatory_show_office !== false;
-        signatoryInfoOrder.value = reportDetail.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
         draftRows.value = reportRows;
         draftDates.value = reportRows[0]?.daily_values?.map((value) => value.work_date) ?? [];
         showGenerateDialog.value = true;
@@ -808,12 +790,6 @@ function emitSaveReport() {
         tasks: normalizedTasks.value,
         period_start_date: formatDateForApi(generation.period_start_date),
         period_end_date: formatDateForApi(generation.period_end_date),
-        office_head_id: selectedOfficeHeadId.value,
-        signatory_titles: [...selectedOfficeHeadTitles.value],
-        signatory_name_underline: signatoryNameUnderline.value,
-        signatory_show_designation: signatoryShowDesignation.value,
-        signatory_show_office: signatoryShowOffice.value,
-        signatory_info_order: signatoryInfoOrder.value,
         work_days: [...generation.work_days],
         draft_rows: draftRows.value.map((row) => ({
             sort_order: row.sort_order,
@@ -855,13 +831,6 @@ function toggleWorkDay(day) {
         .filter((value) => value === day || generation.work_days.includes(value));
 }
 
-function applySwaSignatorySnapshot(snapshot) {
-    applyOfficeHeadSelection(snapshot.office_head_id, snapshot.signatory_titles ?? []);
-    signatoryNameUnderline.value = snapshot.signatory_name_underline !== false;
-    signatoryShowDesignation.value = snapshot.signatory_show_designation !== false;
-    signatoryShowOffice.value = snapshot.signatory_show_office !== false;
-    signatoryInfoOrder.value = snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first';
-}
 
 function prepareDraftValues() {
     if (!canPrepareDraft.value) return;
@@ -976,42 +945,8 @@ function closeGenerateDialog() {
     clearDraftPreview();
 }
 
-function officeHeadTitlesForId(officeHeadId) {
-    const officeHead = officeHeads.value.find((entry) => entry.id === officeHeadId);
-    const titles = Array.isArray(officeHead?.titles) ? officeHead.titles : [];
 
-    return titles
-        .map((title) => String(title ?? '').trim())
-        .filter(Boolean);
-}
 
-function applyOfficeHeadSelection(officeHeadId, selectedTitles = null) {
-    const resolvedOfficeHeadId = officeHeads.value.some((entry) => entry.id === officeHeadId)
-        ? officeHeadId
-        : officeHeads.value[0]?.id ?? null;
-    const availableTitles = officeHeadTitlesForId(resolvedOfficeHeadId);
-
-    selectedOfficeHeadId.value = resolvedOfficeHeadId;
-
-    if (!Array.isArray(selectedTitles)) {
-        selectedOfficeHeadTitles.value = [...availableTitles];
-        return;
-    }
-
-    selectedOfficeHeadTitles.value = selectedTitles
-        .map((title) => String(title ?? '').trim())
-        .filter((title) => availableTitles.includes(title));
-}
-
-function buildSwaSignatoryPreviewLines(officeHead, selectedTitles) {
-    return buildOrderedSignatoryDetailLines(
-        selectedTitles,
-        officeHead?.office,
-        signatoryShowDesignation.value,
-        signatoryShowOffice.value,
-        signatoryInfoOrder.value,
-    );
-}
 
 function buildOrderedSignatoryDetailLines(titles, office, showDesignation = true, showOffice = true, infoOrder = 'designation_first') {
     const designationLines = showDesignation ? formatUpperList(titles) : [];

@@ -29,10 +29,9 @@ class StoreNonRosCertificationRequest extends FormRequest
             'signatory_show_designation' => ['nullable', 'boolean'],
             'signatory_show_office' => ['nullable', 'boolean'],
             'signatory_info_order' => ['nullable', Rule::in(['designation_first', 'office_first'])],
-            'office_head_id' => [
-                'required',
-                Rule::exists('signatories', 'id')->where(fn($query) => $query->where('part', 'A')),
-            ],
+            // Signatory fields are accepted but ignored: the snapshot is
+            // resolved server-side from the centrally configured
+            // certification preset.
         ];
     }
 }

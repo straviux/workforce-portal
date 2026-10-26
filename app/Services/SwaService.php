@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Employee;
 use App\Models\CalendarEvent;
 use App\Models\Signatory;
+use App\Models\SignatoryDocumentDefault;
 use App\Models\SwaReport;
 use App\Models\SwaReportTask;
 use App\Models\SwaReportTaskDailyValue;
@@ -43,13 +44,19 @@ class SwaService
             ];
         }
 
+        // Personal (user) subjects carry only their own office/designation.
+        // Never fall back to the combined office_designation accessor here:
+        // it would print the designation on the office line (or vice versa)
+        // when only one of the two is set. When neither is set both stay
+        // null, and the report header omits the office line instead of
+        // borrowing another program's name.
         return [
             'id' => $subject->id,
             'subject_type' => 'user',
             'display_name' => $subject->name,
             'employee_no' => null,
-            'office' => $subject->office ?: $subject->office_designation,
-            'designation' => $subject->designation ?: $subject->office_designation,
+            'office' => $subject->office,
+            'designation' => $subject->designation,
             'secondary_label' => $subject->email,
         ];
     }
@@ -246,53 +253,23 @@ class SwaService
         }
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
-        $officeHead = Signatory::query()
-            ->where('part', 'A')
-            ->findOrFail($validated['office_head_id']);
-        $availableSignatoryTitles = collect($officeHead->title ?? [])
-            ->map(fn($title) => trim((string) $title))
-            ->filter()
-            ->values();
-        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
-            ? (bool) $validated['signatory_name_underline']
-            : true;
-        $showDesignation = array_key_exists('signatory_show_designation', $validated)
-            ? (bool) $validated['signatory_show_designation']
-            : true;
-        $showOffice = array_key_exists('signatory_show_office', $validated)
-            ? (bool) $validated['signatory_show_office']
-            : true;
-        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
-            ? 'office_first'
-            : 'designation_first';
-        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
-            ? $availableSignatoryTitles
-            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
-            ->values()
-            : $availableSignatoryTitles;
-        $showDesignation = array_key_exists('signatory_show_designation', $validated)
-            ? (bool) $validated['signatory_show_designation']
-            : true;
-        $showOffice = array_key_exists('signatory_show_office', $validated)
-            ? (bool) $validated['signatory_show_office']
-            : true;
-        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
-            ? 'office_first'
-            : 'designation_first';
+        // Client-supplied signatory fields are ignored: the snapshot comes
+        // from the centrally configured SWA preset (or the first Part A
+        // office head when no preset exists).
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa');
 
-        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $nameUnderline, $showDesignation, $showOffice, $infoOrder) {
+        if ($signatory === null) {
+            throw ValidationException::withMessages([
+                'office_head_id' => 'No office head signatory is configured. Add one in Settings before generating SWA.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($subject, $moduleType, $validated, $workDays, $expectedDates, $draftRows, $tasks, $signatory) {
             $report = SwaReport::query()->create([
                 'module_type' => $moduleType,
                 'subject_type' => $subject->getMorphClass(),
                 'subject_id' => $subject->getKey(),
-                'office_head_signatory_id' => $officeHead->id,
-                'signatory_name' => $officeHead->name,
-                'signatory_office' => $officeHead->office,
-                'signatory_titles' => $selectedSignatoryTitles->all(),
-                'signatory_name_underline' => $nameUnderline,
-                'signatory_show_designation' => $showDesignation,
-                'signatory_show_office' => $showOffice,
-                'signatory_info_order' => $infoOrder,
+                ...$signatory,
                 'period_start_date' => $validated['period_start_date'],
                 'period_end_date' => $validated['period_end_date'],
                 'work_days' => $workDays->all(),
@@ -371,41 +348,20 @@ class SwaService
         }
 
         $draftRows = collect($validated['draft_rows'])->keyBy('sort_order');
-        $officeHead = Signatory::query()
-            ->where('part', 'A')
-            ->findOrFail($validated['office_head_id']);
-        $availableSignatoryTitles = collect($officeHead->title ?? [])
-            ->map(fn($title) => trim((string) $title))
-            ->filter()
-            ->values();
-        $nameUnderline = array_key_exists('signatory_name_underline', $validated)
-            ? (bool) $validated['signatory_name_underline']
-            : true;
-        $showDesignation = array_key_exists('signatory_show_designation', $validated)
-            ? (bool) $validated['signatory_show_designation']
-            : true;
-        $showOffice = array_key_exists('signatory_show_office', $validated)
-            ? (bool) $validated['signatory_show_office']
-            : true;
-        $infoOrder = ($validated['signatory_info_order'] ?? 'designation_first') === 'office_first'
-            ? 'office_first'
-            : 'designation_first';
-        $selectedSignatoryTitles = array_key_exists('signatory_titles', $validated)
-            ? $availableSignatoryTitles
-            ->filter(fn($title) => collect($validated['signatory_titles'] ?? [])->contains($title))
-            ->values()
-            : $availableSignatoryTitles;
+        // Client-supplied signatory fields are ignored: the snapshot comes
+        // from the centrally configured SWA preset (or the first Part A
+        // office head when no preset exists).
+        $signatory = SignatoryDocumentDefault::resolveSnapshot('swa');
 
-        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $officeHead, $selectedSignatoryTitles, $nameUnderline, $showDesignation, $showOffice, $infoOrder) {
+        if ($signatory === null) {
+            throw ValidationException::withMessages([
+                'office_head_id' => 'No office head signatory is configured. Add one in Settings before updating SWA.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($report, $validated, $workDays, $expectedDates, $draftRows, $tasks, $signatory) {
             $report->update([
-                'office_head_signatory_id' => $officeHead->id,
-                'signatory_name' => $officeHead->name,
-                'signatory_office' => $officeHead->office,
-                'signatory_titles' => $selectedSignatoryTitles->all(),
-                'signatory_name_underline' => $nameUnderline,
-                'signatory_show_designation' => $showDesignation,
-                'signatory_show_office' => $showOffice,
-                'signatory_info_order' => $infoOrder,
+                ...$signatory,
                 'period_start_date' => $validated['period_start_date'],
                 'period_end_date' => $validated['period_end_date'],
                 'work_days' => $workDays->all(),

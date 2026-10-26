@@ -158,15 +158,6 @@
         <PdfPreviewModal v-model:show="pdfPreview.show" :html-doc="pdfPreview.html" :paper-size="pdfPreview.size"
             :title="pdfPreview.title" />
 
-        <SignatorySnapshotModal v-model:show="modals.officeHeadSelect"
-            :office-heads="pendingPrint.signatories.filter(s => s.part === 'A')" :initial-value="pendingPrint.snapshot"
-            modal-title="Document Signatory" confirm-label="Apply"
-            intro-text="Choose the office head and how the signature block should appear on this document."
-            selection-section-title="Signatory" selection-label="Office Head Signatory" :allow-title-selection="true"
-            :allow-display-options="true"
-            title-selection-hint="Toggle the titles or designations that should appear in the signature block."
-            preview-empty-text="Only the signatory name will appear on this document." @apply="onOfficeHeadSelected" />
-
     </WorkforceLayout>
 </template>
 
@@ -188,6 +179,8 @@ import StatusModal from './Modal/StatusModal.vue';
 import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
 
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
+import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
+import { fetchSignatoryDefaults, normalizeSignatoryDefault } from '@/Composables/signatoryDefaults';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
 import CwaTemplate from './Pdf/CwaTemplate.vue';
 import PayrollTemplate from './Pdf/PayrollTemplate.vue';
@@ -240,21 +233,8 @@ const modals = reactive({
     remarks: false,
     status: false,
     tracking: false,
-    officeHeadSelect: false,
 });
 
-const pendingPrint = reactive({
-    type: '',
-    signatories: [],
-    snapshot: {
-        office_head_id: null,
-        signatory_titles: null,
-        signatory_name_underline: false,
-        signatory_show_designation: true,
-        signatory_show_office: true,
-        signatory_info_order: 'designation_first',
-    },
-});
 const pdfPreview = reactive({ show: false, html: '', title: '', size: 'a4' });
 
 
@@ -586,20 +566,68 @@ async function printPdf(type) {
         return;
     }
 
+    // Completeness gate: CWA and Payroll print live B/C/D signatories, so
+    // a missing part used to render as a silent blank line. Refuse before
+    // rendering instead, with the parts that still need configuring. (OBR
+    // carries no signatory block and is not gated.) A failed fetch is also
+    // a refusal: with unknown configuration, printing could silently
+    // produce an incomplete document.
     let signatories = [];
+    let configuration = null;
+    let signatoriesLoaded = false;
+    let fundDefault = null;
+    let fundDefaultsLoaded = false;
     try {
         const res = await axios.get('/api/signatories');
         signatories = res.data.data ?? [];
-    } catch { /* non-critical — fall back to empty */ }
+        configuration = res.data.configuration ?? signatoryConfigurationStatus(signatories);
+        signatoriesLoaded = true;
+    } catch {
+        signatoriesLoaded = false;
+    }
+    try {
+        fundDefault = (await fetchSignatoryDefaults()).fund;
+        fundDefaultsLoaded = true;
+    } catch {
+        fundDefaultsLoaded = false;
+    }
 
     if (type !== 'obr') {
+        if (!signatoriesLoaded || !configuration?.complete) {
+            const missing = configuration?.missing ?? [];
+            const detail = !signatoriesLoaded
+                ? 'Could not load the signatory configuration. Please try again.'
+                : `The following still need to be configured in Settings > Signatories: ${missing.map((part) => `Part ${part}`).join(', ')}.`;
+            toast.add({ severity: 'error', summary: 'Cannot print', detail, life: 5000 });
+            return;
+        }
+    }
+
+    // Central Fund default (no picker): the Part A block is built from
+    // the default saved in Settings > Signatories. A failed defaults fetch
+    // is a refusal, like a failed signatories fetch above. With no default
+    // saved, the first Part A head is used (see the Settings note); its
+    // underline flag is left unset so each template keeps its own default
+    // (CWA underlines, Payroll does not). A saved default whose office
+    // head is gone is refused rather than silently reassigned.
+    if (type !== 'obr') {
+        if (!fundDefaultsLoaded) {
+            toast.add({ severity: 'error', summary: 'Cannot print', detail: 'Could not load the signatory defaults. Please try again.', life: 5000 });
+            return;
+        }
+
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
-            const previousPrintType = pendingPrint.type;
-            pendingPrint.type = type;
-            pendingPrint.signatories = signatories;
-            pendingPrint.snapshot = createPendingPrintSnapshot(partA, type, previousPrintType === type);
-            modals.officeHeadSelect = true;
+            const centralPartA = buildCentralFundPartA(fundDefault, partA);
+            if (!centralPartA) {
+                toast.add({ severity: 'error', summary: 'Cannot print', detail: 'The saved Fund default in Settings > Signatories points to an office head that no longer exists. Update the default, then try again.', life: 5000 });
+                return;
+            }
+
+            renderAndShow(type, voucher, [
+                ...signatories.filter((s) => s.part !== 'A'),
+                centralPartA,
+            ]);
             return;
         }
     }
@@ -607,59 +635,61 @@ async function printPdf(type) {
     renderAndShow(type, voucher, signatories);
 }
 
-function onOfficeHeadSelected(snapshot) {
-    const voucher = selectedTransaction.value;
-    const chosen = snapshot?.office_head;
-    if (!voucher || !chosen) return;
 
-    pendingPrint.snapshot = {
-        office_head_id: snapshot.office_head_id,
-        signatory_titles: [...(snapshot.signatory_titles ?? [])],
-        signatory_name_underline: snapshot.signatory_name_underline === true,
-        signatory_show_designation: snapshot.signatory_show_designation !== false,
-        signatory_show_office: snapshot.signatory_show_office !== false,
-        signatory_info_order: snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
-    };
 
-    const partADetailLines = buildPrintSignatoryDetailLines(snapshot);
-    const signatories = [
-        ...pendingPrint.signatories.filter((s) => s.part !== 'A'),
-        {
+
+function buildCentralFundPartA(fundDefault, partAOfficeHeads) {
+    const partA = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
+    const saved = normalizeSignatoryDefault(fundDefault);
+
+    if (saved) {
+        const liveHead = partA.find((entry) => entry.id === saved.office_head_signatory_id) ?? null;
+        const chosen = liveHead ?? saved.office_head;
+
+        // Saved default, but its office head no longer exists anywhere.
+        if (!chosen) return null;
+
+        const snapshot = {
+            office_head: chosen,
+            signatory_titles: saved.signatory_titles,
+            signatory_show_designation: saved.signatory_show_designation,
+            signatory_show_office: saved.signatory_show_office,
+            signatory_info_order: saved.signatory_info_order,
+        };
+        const partADetailLines = buildPrintSignatoryDetailLines(snapshot);
+
+        return {
             ...chosen,
             part: 'A',
-            name_underline: snapshot.signatory_name_underline === true,
+            name_underline: saved.signatory_name_underline,
             title: partADetailLines,
             titles: partADetailLines,
             office: '',
-        },
-    ];
-    renderAndShow(pendingPrint.type, voucher, signatories);
-}
+        };
+    }
 
-function createPendingPrintSnapshot(partAOfficeHeads, printType, preservePreviousSettings = false) {
-    const officeHeads = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
-    const fallbackOfficeHead = officeHeads[0] ?? null;
-    const hasPreviousOfficeHead = officeHeads.some((officeHead) => officeHead.id === pendingPrint.snapshot.office_head_id);
-    const selectedOfficeHead = hasPreviousOfficeHead
-        ? officeHeads.find((officeHead) => officeHead.id === pendingPrint.snapshot.office_head_id)
-        : fallbackOfficeHead;
+    // No default saved yet: first office head, all of its titles, and no
+    // forced underline flag, so CWA keeps underlining and Payroll keeps
+    // not underlining (their template-level defaults).
+    const chosen = partA[0] ?? null;
+    if (!chosen) return null;
+
+    const snapshot = {
+        office_head: chosen,
+        signatory_titles: null,
+        signatory_show_designation: true,
+        signatory_show_office: true,
+        signatory_info_order: 'designation_first',
+    };
+    const partADetailLines = buildPrintSignatoryDetailLines(snapshot);
 
     return {
-        office_head_id: selectedOfficeHead?.id ?? null,
-        signatory_titles: normalizeSignatoryTitles(
-            hasPreviousOfficeHead ? pendingPrint.snapshot.signatory_titles : selectedOfficeHead?.title ?? selectedOfficeHead?.titles,
-        ),
-        signatory_name_underline: preservePreviousSettings
-            ? pendingPrint.snapshot.signatory_name_underline === true
-            : defaultPrintSignatoryUnderline(printType),
-        signatory_show_designation: pendingPrint.snapshot.signatory_show_designation !== false,
-        signatory_show_office: pendingPrint.snapshot.signatory_show_office !== false,
-        signatory_info_order: pendingPrint.snapshot.signatory_info_order === 'office_first' ? 'office_first' : 'designation_first',
+        ...chosen,
+        part: 'A',
+        title: partADetailLines,
+        titles: partADetailLines,
+        office: '',
     };
-}
-
-function defaultPrintSignatoryUnderline(printType) {
-    return printType === 'cwa';
 }
 
 function buildPrintSignatoryDetailLines(snapshot) {

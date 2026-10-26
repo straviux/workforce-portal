@@ -66,67 +66,78 @@
 	height: 24px;
 }
 
-.swa-date-header {
-	position: absolute;
-	left: 26px;
-	top: 60px;
-	word-wrap: break-word;
-	transform: rotate(-46deg);
-	transform-origin: left bottom;
-	font-size: 10pt;
-	text-align: center;
-	font-weight: 700;
-}
-
-.swa-task-header {
-	position: relative;
-	height: 100px;
-	padding: 0;
+/* Slanted task headers: true parallelogram cells at 45 degrees.
+ *
+ * Geometry: each task column's left boundary is ONE shared diagonal divider
+ * (bottom-left corner of the cell rising to the top edge one header-height
+ * to the right), so neighbouring cells share a divider instead of drawing
+ * two parallel lines. The region between two adjacent dividers, capped by
+ * the straight top and bottom frame borders, is the parallelogram cell.
+ * The row height comes from the --swa-header-height variable set inline on
+ * the header row (estimated from the tallest title in the component); the
+ * divider length is header-height * sqrt(2) so it spans exactly that height
+ * at 45 degrees. Dividers use a border, not a background, so they print
+ * even when background graphics are off. The DATE column stays a plain
+ * rectangle with a horizontal label; its right edge is the first divider,
+ * and the trailing empty column closes the rectangular outer frame. */
+.swa-layout-table thead th {
+	border: none;
 	vertical-align: bottom;
 }
 
-/* .swa-task-header::before {
-	content: '';
+.swa-layout-table thead .swa-date-header-cell {
+	width: 40pt;
+	padding: 0 2px 4px;
+	text-align: center;
+	border-top: 1px solid #111827;
+	border-bottom: 1px solid #111827;
+	border-left: 1px solid #111827;
+}
+
+.swa-date-header-cell__text {
+	font-size: 10pt;
+	font-weight: 700;
+}
+
+.swa-layout-table thead .swa-task-header {
+	position: relative;
+	padding: 0;
+	border-top: 1px solid #111827;
+	border-bottom: 1px solid #111827;
+}
+
+.swa-layout-table thead .swa-task-header--trailing {
+	border-right: 1px solid #111827;
+}
+
+.swa-task-header__divider {
 	position: absolute;
-	inset: 0;
-	background: linear-gradient(
-		135deg,
-		transparent calc(50% - 0.6px),
-		#111827 calc(50% - 0.6px),
-		#111827 calc(50% + 0.6px),
-		transparent calc(50% + 0.6px)
-	);
-	pointer-events: none;
-} */
+	left: 0;
+	bottom: 0;
+	width: 0;
+	height: calc(var(--swa-header-height, 100px) * 1.4142);
+	border-left: 1px solid #111827;
+	transform: rotate(45deg);
+	transform-origin: left bottom;
+}
 
 .swa-task-header__text {
 	position: absolute;
-	left: 55px;
-	bottom: 6px;
+	left: 6px;
+	bottom: 3px;
 	display: block;
-	width: 100px;
-	height: auto;
+	width: 106px;
+	max-width: 106px;
 	white-space: normal;
-	word-wrap: break-word;
 	overflow-wrap: anywhere;
 	word-break: break-word;
-	transform: rotate(-46deg);
+	hyphens: auto;
+	transform: rotate(-45deg);
 	transform-origin: left bottom;
 	font-size: 7pt;
 	line-height: 1.15;
 	text-align: left;
 	font-weight: 700;
-}
-
-.swa-task-header:not(:last-child) {
-	border-right: none !important;
-}
-
-.swa-task-header__type {
-	display: block;
-	margin-top: 3px;
-	font-size: 8px;
-	font-weight: 600;
 }
 
 .swa-date-cell {

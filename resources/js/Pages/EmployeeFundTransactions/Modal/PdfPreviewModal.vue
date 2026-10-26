@@ -75,7 +75,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import Dialog from 'primevue/dialog';
 import { PAPER_SIZES } from '@/Pages/EmployeeFundTransactions/Pdf/pdf-styles.js';
 
 // ── Props / Emits ──────────────────────────────────────────────────────
