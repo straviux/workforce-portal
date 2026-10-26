@@ -612,6 +612,7 @@ async function printPdf(type) {
     let signatoriesLoaded = false;
     let fundDefault = null;
     let fundDefaultsLoaded = false;
+    let officeMappings = [];
     try {
         const res = await axios.get('/api/signatories');
         signatories = res.data.data ?? [];
@@ -621,7 +622,9 @@ async function printPdf(type) {
         signatoriesLoaded = false;
     }
     try {
-        fundDefault = (await fetchSignatoryDefaults()).fund;
+        const defaults = await fetchSignatoryDefaults();
+        fundDefault = defaults.fund;
+        officeMappings = defaults.office_mappings;
         fundDefaultsLoaded = true;
     } catch {
         fundDefaultsLoaded = false;
@@ -653,7 +656,7 @@ async function printPdf(type) {
 
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
-            const centralPartA = buildCentralFundPartA(fundDefault, partA, voucher.office);
+            const centralPartA = buildCentralFundPartA(fundDefault, partA, voucher.office, officeMappings);
             if (!centralPartA) {
                 toast.add({ severity: 'error', summary: 'Cannot print', detail: 'The saved Fund default in Settings > Signatories points to an office head that no longer exists. Update the default, then try again.', life: 5000 });
                 return;
@@ -673,25 +676,33 @@ async function printPdf(type) {
 
 
 
-function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = null) {
+function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = null, officeMappings = []) {
     const partA = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
     const saved = normalizeSignatoryDefault(fundDefault);
 
-    // By-office first, mirroring the backend: the Part A head matching
-    // the voucher's office wins over the saved default, which stays as
-    // the fallback. The saved title subset only applies when the matched
-    // head is the saved head; otherwise all of the matched head's titles.
+    // By-office first, mirroring the backend: an explicit office
+    // assignment for the voucher's office wins, then a Part A head whose
+    // office matches it, then the saved default. The saved title subset
+    // only applies when the chosen head is the saved head; otherwise all
+    // of the chosen head's titles.
     const wanted = String(voucherOffice ?? '').trim().toLowerCase();
-    const match = wanted
+    const mapping = wanted
+        ? (officeMappings ?? []).find((entry) => String(entry?.office ?? '').trim().toLowerCase() === wanted) ?? null
+        : null;
+    const mappedHead = mapping
+        ? partA.find((entry) => entry.id === mapping.office_head_signatory_id)
+            ?? mapping.office_head ?? null
+        : null;
+    const officeMatch = wanted
         ? partA.find((entry) => String(entry.office ?? '').trim().toLowerCase() === wanted) ?? null
         : null;
 
     if (saved) {
         const liveHead = partA.find((entry) => entry.id === saved.office_head_signatory_id) ?? null;
-        const chosen = match ?? liveHead ?? saved.office_head;
+        const chosen = mappedHead ?? officeMatch ?? liveHead ?? saved.office_head;
 
         // Saved default, but its office head no longer exists anywhere
-        // and no office head matches the voucher's office.
+        // and no assignment or office head matches the voucher's office.
         if (!chosen) return null;
 
         const useSavedTitles = saved.office_head_signatory_id != null && chosen.id === saved.office_head_signatory_id;
@@ -714,11 +725,11 @@ function buildCentralFundPartA(fundDefault, partAOfficeHeads, voucherOffice = nu
         };
     }
 
-    // No default saved yet: the office-matching head when one matches,
-    // else the first office head, all of its titles, and no forced
-    // underline flag, so CWA keeps underlining and Payroll keeps not
-    // underlining (their template-level defaults).
-    const chosen = match ?? partA[0] ?? null;
+    // No default saved yet: the assigned or office-matching head when
+    // one matches, else the first office head, all of its titles, and no
+    // forced underline flag, so CWA keeps underlining and Payroll keeps
+    // not underlining (their template-level defaults).
+    const chosen = mappedHead ?? officeMatch ?? partA[0] ?? null;
     if (!chosen) return null;
 
     const snapshot = {

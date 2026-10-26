@@ -178,15 +178,19 @@ const form = reactive(defaultForm());
 // signature block from this default, so the modal never sends signatory
 // fields of its own.
 const centralCertificationDefault = ref(null);
+const centralOfficeMappings = ref([]);
 const centralDefaultLoaded = ref(false);
-const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false, form.office));
+const centralDisplay = computed(() => resolveDefaultDisplay(centralCertificationDefault.value, props.officeHeads, false, form.office, centralOfficeMappings.value));
 
 async function loadCentralCertificationDefault() {
     centralDefaultLoaded.value = false;
     try {
-        centralCertificationDefault.value = (await fetchSignatoryDefaults()).certification;
+        const defaults = await fetchSignatoryDefaults();
+        centralCertificationDefault.value = defaults.certification;
+        centralOfficeMappings.value = defaults.office_mappings;
     } catch {
         centralCertificationDefault.value = null;
+        centralOfficeMappings.value = [];
     } finally {
         centralDefaultLoaded.value = true;
     }

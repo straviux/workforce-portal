@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SignatoryController;
 use App\Http\Controllers\Api\SignatoryDefaultController;
+use App\Http\Controllers\Api\SignatoryOfficeMappingController;
 use App\Http\Controllers\Api\SwaController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -171,6 +172,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/signatory-defaults', [SignatoryDefaultController::class, 'index'])
         ->middleware('check.permission:signatories.view');
     Route::put('/signatory-defaults', [SignatoryDefaultController::class, 'update'])
+        ->middleware('check.permission:signatories.manage');
+
+    // Signatory office assignments (explicit head per office)
+    Route::put('/signatory-office-mappings', [SignatoryOfficeMappingController::class, 'update'])
         ->middleware('check.permission:signatories.manage');
 
     // Users

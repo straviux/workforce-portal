@@ -29,11 +29,12 @@
             </div>
 
             <!-- Document defaults: the fallback signatory block per
-                 document type. Generation first matches the Part A office
-                 head by the document's office (for employees, the office
-                 of assignment when set, else the office); the default
-                 here applies only when no head matches that office.
-                 There are no per-report signatory pickers anymore. -->
+                 document type. Generation first uses an office assignment
+                 when one matches the document's office, then the Part A
+                 head matching that office (for employees, the office of
+                 assignment when set, else the office); the default here
+                 applies only when neither matches. There are no
+                 per-report signatory pickers anymore. -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
@@ -44,10 +45,10 @@
                         :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
                 </div>
                 <p class="text-sm text-surface-400 mb-4">
-                    These defaults are the fallback for each document type: a new document first uses the
-                    office head matching its office (for employees, the office of assignment when set),
-                    and only falls back to the default here when no head matches. Change them here instead of
-                    per document.
+                    These defaults are the fallback for each document type: a new document first uses an
+                    office assignment when one matches its office, then the office head matching its office
+                    (for employees, the office of assignment when set), and only falls back to the default
+                    here when neither matches. Change them here instead of per document.
                 </p>
 
                 <div class="space-y-4">
@@ -149,6 +150,46 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Office assignments: explicit head per office -->
+            <div class="ios-card p-6">
+                <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                    <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
+                        Office assignments
+                    </p>
+                    <Button v-if="canManageSignatories" :label="saveMappingsAction.label" class="rounded" size="small"
+                        :loading="saveMappingsAction.loading" :disabled="saveMappingsAction.disabled"
+                        :class="saveMappingsAction.morphClass" @click="saveMappings"><template #icon><AppIcon v-if="saveMappingsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
+                </div>
+                <p class="text-sm text-surface-400 mb-4">
+                    Assign a specific office head per office. When a document's office matches an assignment
+                    here, that head is used, ahead of the office-name match and the document default.
+                </p>
+
+                <div v-if="mappingsForm.length" class="space-y-3">
+                    <div v-for="(row, idx) in mappingsForm" :key="idx"
+                        class="flex items-end gap-3 rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
+                        <div class="ios-form-group flex-1 min-w-0">
+                            <label class="ios-label">Office</label>
+                            <Select v-model="row.office" :options="officeSuggestions" editable
+                                placeholder="Select or type an office" class="w-full"
+                                :disabled="!canManageSignatories" />
+                        </div>
+                        <div class="ios-form-group flex-1 min-w-0">
+                            <label class="ios-label">Office head</label>
+                            <Select v-model="row.office_head_signatory_id" :options="officeHeads"
+                                optionLabel="name" optionValue="id" placeholder="Select office head" class="w-full"
+                                showClear :disabled="!canManageSignatories" />
+                        </div>
+                        <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
+                            @click="mappingsForm.splice(idx, 1)"><template #icon><AppIcon name="Trash2" /></template></Button>
+                    </div>
+                </div>
+                <p v-else class="text-sm text-surface-400 mb-3">No office assignments yet.</p>
+
+                <Button v-if="canManageSignatories" label="Add assignment" class="rounded mt-3" size="small"
+                    severity="secondary" outlined @click="mappingsForm.push({ office: '', office_head_signatory_id: null })"><template #icon><AppIcon name="Plus" /></template></Button>
             </div>
 
             <!-- Office Heads (multiple) -->
@@ -485,6 +526,56 @@ const saveDefaultsAction = useActionButton({
     successLabel: 'Saved',
 });
 
+// ── Office assignments (explicit head per office) ──
+const mappingsForm = ref([]);
+const officeSuggestions = ref([]);
+const saveMappingsAction = useActionButton({
+    idleLabel: 'Save assignments',
+    processingLabel: 'Saving...',
+    successLabel: 'Saved',
+});
+
+function applyMappingsToForm(defaults) {
+    mappingsForm.value = (defaults.office_mappings ?? []).map((mapping) => ({
+        office: mapping.office ?? '',
+        office_head_signatory_id: mapping.office_head_signatory_id ?? null,
+    }));
+    officeSuggestions.value = defaults.office_suggestions ?? [];
+}
+
+async function saveMappings() {
+    const rows = mappingsForm.value.map((row) => ({
+        office: String(row.office ?? '').trim(),
+        office_head_signatory_id: row.office_head_signatory_id ?? null,
+    }));
+
+    if (rows.some((row) => !row.office || !row.office_head_signatory_id)) {
+        toast.add({ severity: 'warn', summary: 'Incomplete assignment', detail: 'Every assignment needs an office and an office head, or remove the row.', life: 3500 });
+        return;
+    }
+
+    const seen = new Set();
+    for (const row of rows) {
+        const key = row.office.toLowerCase();
+        if (seen.has(key)) {
+            toast.add({ severity: 'warn', summary: 'Duplicate office', detail: `Two assignments point at ${row.office}. Keep one.`, life: 3500 });
+            return;
+        }
+        seen.add(key);
+    }
+
+    try {
+        await saveMappingsAction.run(async () => {
+            await axios.put('/api/signatory-office-mappings', { mappings: rows });
+            toast.add({ severity: 'success', summary: 'Saved', detail: 'Office assignments saved.', life: 3000 });
+            await loadDefaults(true);
+        });
+    } catch (err) {
+        const msg = err.response?.data?.message ?? 'Could not save office assignments.';
+        toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3500 });
+    }
+}
+
 function emptyDefaultForm(underline = false) {
     return {
         office_head_signatory_id: null,
@@ -602,6 +693,7 @@ async function loadDefaults(silent = false) {
         for (const docType of defaultTypes) {
             applyDefaultToForm(docType.key, defaults[docType.key]);
         }
+        applyMappingsToForm(defaults);
     } catch {
         if (!silent) {
             toast.add({ severity: 'error', summary: 'Error', detail: 'Could not load document defaults.', life: 3000 });

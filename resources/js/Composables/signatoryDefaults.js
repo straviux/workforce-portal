@@ -15,10 +15,8 @@
  *   }
  *
  * Display resolution (resolveDefaultDisplay):
- * - When an office is given, the Part A office head matching that office
- *   wins over the saved default (which stays as the fallback), mirroring
- *   the backend. The saved title subset only applies when the matched
- *   head is the saved head.
+ * - An explicit office assignment for the document's office wins first,
+ *   then a Part A head whose office matches it, mirroring the backend.
  * - A saved default whose office head still exists wins, with the live
  *   office-head row (name/office) taking precedence over the snapshot copy.
  * - A saved default whose office head is gone is STALE: it resolves to no
@@ -74,6 +72,24 @@ export function normalizeSignatoryDefault(raw) {
     };
 }
 
+export function normalizeOfficeMapping(raw) {
+    if (!raw) return null;
+
+    return {
+        id: raw.id ?? null,
+        office: String(raw.office ?? '').trim() || null,
+        office_head_signatory_id: raw.office_head_signatory_id ?? null,
+        office_head: raw.office_head
+            ? {
+                id: raw.office_head.id ?? null,
+                name: String(raw.office_head.name ?? '').trim(),
+                office: String(raw.office_head.office ?? '').trim() || null,
+                titles: toTitleList(raw.office_head.titles ?? raw.office_head.title),
+            }
+            : null,
+    };
+}
+
 export async function fetchSignatoryDefaults() {
     const { data } = await axios.get('/api/signatory-defaults');
     const defaults = data?.defaults ?? {};
@@ -83,6 +99,8 @@ export async function fetchSignatoryDefaults() {
         dtr: normalizeSignatoryDefault(defaults.dtr),
         certification: normalizeSignatoryDefault(defaults.certification),
         fund: normalizeSignatoryDefault(defaults.fund),
+        office_mappings: (data?.office_mappings ?? []).map(normalizeOfficeMapping).filter(Boolean),
+        office_suggestions: (data?.office_suggestions ?? []).map((office) => String(office ?? '').trim()).filter(Boolean),
     };
 }
 
@@ -91,14 +109,15 @@ export async function fetchSignatoryDefaults() {
  * underline value used only for the unsaved-default fallback (SWA/DTR
  * previously defaulted to underlined, certifications to not underlined);
  * a saved default always supplies its own flag. `office`, when given,
- * matches a Part A office head by office first (case-insensitive,
- * trimmed), mirroring the backend: the matched head wins over the saved
- * default, which stays as the fallback, and the saved title subset only
- * applies when the matched head is the saved head.
+ * resolves a Part A office head first (case-insensitive, trimmed),
+ * mirroring the backend: an explicit office assignment wins, then a
+ * head whose office matches, and the saved default stays as the
+ * fallback. The saved title subset only applies when the resolved head
+ * is the saved head.
  * Returns null, or { head, titles, underline, showDesignation, showOffice,
  * infoOrder, saved, stale }.
  */
-export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, office = null) {
+export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, office = null, mappings = []) {
     const heads = (officeHeads ?? []).map((head) => ({
         ...head,
         name: String(head?.name ?? '').trim(),
@@ -109,18 +128,33 @@ export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, offic
     if (!heads.length) return null;
 
     const wanted = String(office ?? '').trim().toLowerCase();
-    const match = wanted
+    const mapping = wanted
+        ? (mappings ?? []).find((entry) => String(entry?.office ?? '').trim().toLowerCase() === wanted) ?? null
+        : null;
+    const mappedHead = mapping
+        ? heads.find((head) => head.id === mapping.office_head_signatory_id)
+            ?? (mapping.office_head
+                ? {
+                    id: mapping.office_head.id ?? null,
+                    name: String(mapping.office_head.name ?? '').trim(),
+                    office: String(mapping.office_head.office ?? '').trim() || null,
+                    titles: toTitleList(mapping.office_head.titles ?? mapping.office_head.title),
+                }
+                : null)
+        : null;
+    const officeMatch = wanted
         ? heads.find((head) => (head.office ?? '').toLowerCase() === wanted) ?? null
         : null;
+    const resolved = mappedHead ?? officeMatch;
 
-    if (match) {
+    if (resolved) {
         const useSavedTitles = def
-            && def.office_head_signatory_id === match.id
+            && def.office_head_signatory_id === resolved.id
             && Array.isArray(def.signatory_titles);
 
         return {
-            head: match,
-            titles: useSavedTitles ? def.signatory_titles : [...match.titles],
+            head: resolved,
+            titles: useSavedTitles ? def.signatory_titles : [...resolved.titles],
             underline: def ? def.signatory_name_underline : Boolean(fallbackUnderline),
             showDesignation: def ? def.signatory_show_designation : true,
             showOffice: def ? def.signatory_show_office : true,
