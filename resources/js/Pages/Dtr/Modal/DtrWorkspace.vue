@@ -34,18 +34,8 @@
                         </div>
 
                         <div class="flex items-center gap-2 flex-wrap">
-                            <Button label="Preview" severity="secondary" text size="small"
-                                :loading="previewingReportId === report.id"
-                                :disabled="loadingEditorReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportPreview(report)"><template #icon><AppIcon name="Eye" /></template></Button>
-                            <Button v-if="canManage" label="Edit" severity="secondary" text
-                                size="small" :loading="loadingEditorReportId === report.id"
-                                :disabled="isSavingReport || isDeletingReport || previewingReportId === report.id || deletingReportId === report.id"
-                                @click="openSavedReportEditor(report)"><template #icon><AppIcon name="Pencil" /></template></Button>
-                            <Button v-if="canManage" label="Delete" severity="danger" text
-                                size="small" :loading="deletingReportId === report.id"
-                                :disabled="isSavingReport || isDeletingReport || loadingEditorReportId === report.id || previewingReportId === report.id"
-                                @click="deleteSavedReport(report)"><template #icon><AppIcon name="Trash2" /></template></Button>
+                            <Button severity="secondary" text rounded size="small"
+                                @click="(e) => openRowMenu(e, report)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                             <Tag :value="`${report.day_count} days`" severity="secondary" />
                             <Tag :value="formatCreatedAt(report.created_at)" severity="info" />
                         </div>
@@ -58,6 +48,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- Saved-report row menu -->
+        <ContextMenu ref="rowMenuRef" :model="rowMenuItems">
+            <template #item="{ item, label, props }">
+                <a v-bind="props.action">
+                    <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                    <span v-bind="props.label">{{ label }}</span>
+                </a>
+            </template>
+        </ContextMenu>
 
         <Dialog v-model:visible="showGenerateDialog" modal :header="generateDialogTitle" :draggable="false"
             :style="{ width: 'min(auto,96vw)' }">
@@ -259,6 +259,7 @@ import dayjs from 'dayjs';
 import { usePage } from '@inertiajs/vue3';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import ContextMenu from 'primevue/contextmenu';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import PdfPreviewModal from '@/Pages/EmployeeFundTransactions/Modal/PdfPreviewModal.vue';
 import DtrReportTemplate from '@/Pages/Dtr/Pdf/DtrReportTemplate.vue';
@@ -316,6 +317,60 @@ const showGenerateDialog = ref(false);
 const previewingReportId = ref(null);
 const loadingEditorReportId = ref(null);
 const deletingReportId = ref(null);
+
+// ── Saved-report row menu ─────────────────────────────────
+const rowMenuRef = ref(null);
+const rowMenuItems = ref([]);
+
+function setRowMenuItems(report) {
+    const items = [
+        {
+            label: 'Preview',
+            iconName: 'Eye',
+            disabled: previewingReportId.value === report.id
+                || loadingEditorReportId.value === report.id
+                || deletingReportId.value === report.id,
+            command: () => openSavedReportPreview(report),
+        },
+    ];
+
+    if (props.canManage) {
+        items.push(
+            {
+                label: 'Edit',
+                iconName: 'Pencil',
+                disabled: props.isSavingReport || props.isDeletingReport
+                    || previewingReportId.value === report.id
+                    || deletingReportId.value === report.id
+                    || loadingEditorReportId.value === report.id,
+                command: () => openSavedReportEditor(report),
+            },
+            {
+                label: 'Delete',
+                iconName: 'Trash2',
+                class: 'text-red-500',
+                disabled: props.isSavingReport || props.isDeletingReport
+                    || loadingEditorReportId.value === report.id
+                    || previewingReportId.value === report.id
+                    || deletingReportId.value === report.id,
+                command: () => deleteSavedReport(report),
+            },
+        );
+    }
+
+    rowMenuItems.value = items;
+}
+
+function openRowMenu(mouseEvent, report) {
+    setRowMenuItems(report);
+
+    if (typeof rowMenuRef.value?.show === 'function') {
+        rowMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    rowMenuRef.value?.toggle(mouseEvent);
+}
 const draftValues = ref([]);
 const editingReportId = ref(null);
 // Central DTR default from Settings > Signatories (fetched when the

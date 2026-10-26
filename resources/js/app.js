@@ -83,9 +83,10 @@ import AppIcon from '@/Components/ui/AppIcon.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Workforcify';
 
-// Material Design 3 preset: green primary seed (#2e7d32) + MD3 shapes.
-// The tonal scale mirrors the Tailwind tokens in resources/css/app.css;
-// the single seed variable lives there (--md-primary-seed).
+// Material Design 3 preset: user palette (primary #355c7d, secondary
+// #6c5b7b, tertiary #c06c84, error #f67280, peach #f8b195) + MD3 shapes.
+// The tonal scales mirror the Tailwind tokens in resources/css/app.css;
+// the single seed variables live there (--md-*-seed).
 const Md3 = definePreset(Aura, {
 	primitive: {
 		// MD3 corner shapes: xs 4, sm 8, md 12, lg 16, xl 28.
@@ -100,31 +101,83 @@ const Md3 = definePreset(Aura, {
 	},
 	semantic: {
 		primary: {
-			50: '#edf7ed',
-			100: '#d7ecd8',
-			200: '#b9dfbb',
-			300: '#8fca94',
-			400: '#5fb266',
-			500: '#3a9a44',
-			600: '#2f8a39',
-			700: '#2e7d32',
-			800: '#256b2a',
-			900: '#1b5e20',
-			950: '#123f15',
+			50: '#f5f7f8',
+			100: '#e9edf1',
+			200: '#d7dee5',
+			300: '#b8c6d2',
+			400: '#90a5b8',
+			500: '#61809a',
+			600: '#456987',
+			700: '#355c7d',
+			800: '#2b4b67',
+			900: '#21394e',
+			950: '#162735',
+		},
+		secondary: {
+			50: '#f8f7f8',
+			100: '#efedf0',
+			200: '#e2dee5',
+			300: '#ccc6d1',
+			400: '#aea5b6',
+			500: '#8c7f98',
+			600: '#786886',
+			700: '#6c5b7b',
+			800: '#594b65',
+			900: '#43384c',
+			950: '#2d2634',
+		},
+		tertiary: {
+			50: '#fcf8f9',
+			100: '#f8eff1',
+			200: '#f2e2e6',
+			300: '#e9ccd4',
+			400: '#dcaebb',
+			500: '#ce8c9f',
+			600: '#c5788e',
+			700: '#c06c84',
+			800: '#9d596c',
+			900: '#774352',
+			950: '#512d37',
+		},
+		error: {
+			50: '#fff8f9',
+			100: '#feeff1',
+			200: '#fde3e6',
+			300: '#fcced3',
+			400: '#fab1b9',
+			500: '#f8919c',
+			600: '#f77d8a',
+			700: '#f67280',
+			800: '#ca5d69',
+			900: '#99474f',
+			950: '#673036',
+		},
+		peach: {
+			50: '#fffbfa',
+			100: '#fef6f3',
+			200: '#feefea',
+			300: '#fde4da',
+			400: '#fbd4c5',
+			500: '#fac2ac',
+			600: '#f9b79d',
+			700: '#f8b195',
+			800: '#cb917a',
+			900: '#9a6e5c',
+			950: '#684a3f',
 		},
 		colorScheme: {
 			light: {
 				primary: {
-					color: '#2e7d32',
+					color: '#355c7d',
 					inverseColor: '#ffffff',
-					hoverColor: '#256b2a',
-					activeColor: '#1b5e20',
+					hoverColor: '#2b4b67',
+					activeColor: '#21394e',
 				},
 				highlight: {
-					background: '#d7ecd8',
-					focusBackground: '#b9dfbb',
-					color: '#123f15',
-					focusColor: '#123f15',
+					background: '#fef6f3',
+					focusBackground: '#feefea',
+					color: '#684a3f',
+					focusColor: '#684a3f',
 				},
 			},
 			dark: {
@@ -144,14 +197,14 @@ const Md3 = definePreset(Aura, {
 					950: '#1a1e27',
 				},
 				primary: {
-					color: '#b9dfbb',
-					inverseColor: '#1b5e20',
-					hoverColor: '#c8e6c9',
-					activeColor: '#a5d6a7',
+					color: '#d7dee5',
+					inverseColor: '#21394e',
+					hoverColor: '#e9edf1',
+					activeColor: '#b8c6d2',
 				},
 				highlight: {
-					background: 'rgba(185, 223, 187, .16)',
-					focusBackground: 'rgba(185, 223, 187, .24)',
+					background: 'rgba(254, 239, 234, .16)',
+					focusBackground: 'rgba(254, 239, 234, .24)',
 					color: 'rgba(255,255,255,.87)',
 					focusColor: 'rgba(255,255,255,.87)',
 				},

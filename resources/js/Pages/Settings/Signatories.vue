@@ -168,9 +168,7 @@
                             </div>
                         </div>
                         <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
-                            @click="openEditOh(oh)"><template #icon><AppIcon name="Pencil" /></template></Button>
-                        <Button v-if="canManageSignatories" severity="danger" text rounded size="small"
-                            :loading="deletingId === oh.id" @click="removeOfficeHead(oh)"><template #icon><AppIcon name="Trash2" /></template></Button>
+                            :loading="deletingId === oh.id" @click="(e) => openOhMenu(e, oh)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                     </div>
                 </div>
                 <p v-else class="text-sm text-surface-400">No office heads added yet.</p>
@@ -200,6 +198,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- Office-head row menu -->
+        <ContextMenu ref="ohMenuRef" :model="ohMenuItems">
+            <template #item="{ item, label, props }">
+                <a v-bind="props.action">
+                    <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                    <span v-bind="props.label">{{ label }}</span>
+                </a>
+            </template>
+        </ContextMenu>
 
         <!-- Office Head Modal (Add & Edit) -->
         <Dialog v-model:visible="ohModal.show" modal :header="ohModal.editId ? `Edit Office Head` : `Add Office Head`"
@@ -286,6 +294,7 @@
 import { computed, ref, reactive, onMounted } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
+import ContextMenu from 'primevue/contextmenu';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
@@ -296,6 +305,28 @@ const page = usePage();
 const deletingId = ref(null);
 const userPermissions = computed(() => page.props.auth?.user?.permissions ?? []);
 const canManageSignatories = computed(() => userPermissions.value.includes('signatories.manage'));
+
+// ── Office-head row menu (kebab, same pattern as Employees/index.vue) ──
+const ohMenuRef = ref(null);
+const ohMenuItems = ref([]);
+
+function setOhMenuItems(oh) {
+    ohMenuItems.value = [
+        { label: 'Edit', iconName: 'Pencil', command: () => openEditOh(oh) },
+        { separator: true },
+        { label: 'Delete', iconName: 'Trash2', class: 'text-red-500', command: () => removeOfficeHead(oh) },
+    ];
+}
+
+function openOhMenu(event, oh) {
+    setOhMenuItems(oh);
+    if (typeof ohMenuRef.value?.show === 'function') {
+        ohMenuRef.value.show(event);
+        return;
+    }
+
+    ohMenuRef.value?.toggle(event);
+}
 
 // Part labels come from the backend (Signatory::$partLabels via the
 // signatories API response) — the single source of truth, never hardcoded

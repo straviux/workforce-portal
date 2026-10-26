@@ -239,16 +239,11 @@
                     </template>
                 </Column>
 
-                <Column header="" style="width:190px;min-width:190px;" frozen alignFrozen="right">
+                <Column header="" style="width:60px;min-width:60px;" frozen alignFrozen="right">
                     <template #body="{ data }">
-                        <div class="flex items-center justify-end gap-2">
-                            <Button v-if="canManageCalendar && !data.is_system"
-                                :severity="data.is_active ? 'secondary' : 'success'" text rounded size="small"
-                                :disabled="statusUpdatingIds.includes(data.id)" @click="toggleActive(data)"><template #icon><AppIcon :name="data.is_active ? 'EyeOff' : 'Eye'" /></template></Button>
+                        <div class="flex items-center justify-end">
                             <Button v-if="canManageCalendar && !data.is_system" severity="secondary"
-                                text rounded size="small" @click="openEdit(data)"><template #icon><AppIcon name="Pencil" /></template></Button>
-                            <Button v-if="canManageCalendar && !data.is_system" severity="danger"
-                                text rounded size="small" @click="deleteEvent(data)"><template #icon><AppIcon name="Trash2" /></template></Button>
+                                text rounded size="small" @click="(e) => openRowMenu(e, data)"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                             <Tag v-else value="Locked" severity="warn" />
                         </div>
                     </template>
@@ -256,6 +251,16 @@
             </DataTable>
         </div>
     </div>
+
+    <!-- Row menu -->
+    <ContextMenu ref="rowMenuRef" :model="rowMenuItems">
+        <template #item="{ item, label, props }">
+            <a v-bind="props.action">
+                <AppIcon v-if="item.iconName" :name="item.iconName" :size="16" class="mr-2 shrink-0" />
+                <span v-bind="props.label">{{ label }}</span>
+            </a>
+        </template>
+    </ContextMenu>
 
     <CalendarEventModal v-model:show="showEventModal" :mode="eventModalMode" :event="selectedEvent"
         @saved="handleSaved" />
@@ -267,6 +272,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
+import ContextMenu from 'primevue/contextmenu';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import CalendarEventModal from '@/Pages/Calendar/Modal/CalendarEventModal.vue';
 
@@ -284,6 +290,34 @@ const eventModalMode = ref('create');
 const selectedEvent = ref(null);
 const monthCursor = ref(dayjs().startOf('month'));
 const statusUpdatingIds = ref([]);
+
+// ── Row menu ──────────────────────────────────────────────
+const rowMenuRef = ref(null);
+const rowMenuItems = ref([]);
+
+function setRowMenuItems(event) {
+    rowMenuItems.value = [
+        {
+            label: event.is_active ? 'Deactivate' : 'Activate',
+            iconName: event.is_active ? 'EyeOff' : 'Eye',
+            disabled: statusUpdatingIds.value.includes(event.id),
+            command: () => toggleActive(event),
+        },
+        { label: 'Edit', iconName: 'Pencil', command: () => openEdit(event) },
+        { label: 'Delete', iconName: 'Trash2', class: 'text-red-500', command: () => deleteEvent(event) },
+    ];
+}
+
+function openRowMenu(mouseEvent, event) {
+    setRowMenuItems(event);
+
+    if (typeof rowMenuRef.value?.show === 'function') {
+        rowMenuRef.value.show(mouseEvent);
+        return;
+    }
+
+    rowMenuRef.value?.toggle(mouseEvent);
+}
 
 const filters = reactive({
     search: '',

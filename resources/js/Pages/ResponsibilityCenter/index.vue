@@ -112,15 +112,15 @@ const openRCContextMenu = (event, rc) => {
     showContextMenu(event);
 };
 
-const openParticularContextMenu = (event, rc) => {
-    const particular = event.data;
+// Kebab-menu model builders (shared with the right-click menus where the
+// action set matches; see openRCKebabMenu below for why the RC kebab has
+// its own builder). Labels here are the short row-action labels.
+const buildParticularMenuItems = (rc, particular, editLabel = 'Edit', deleteLabel = 'Delete') => {
     const items = [];
-
-    contextMenuParticular.value = particular;
 
     if (canManageResponsibilityCenters.value) {
         items.push({
-            label: 'Edit Particular',
+            label: editLabel,
             iconName: 'Pencil',
             command: () => openParticularsModal(rc, particular),
         });
@@ -132,12 +132,75 @@ const openParticularContextMenu = (event, rc) => {
         }
 
         items.push({
-            label: 'Delete Particular',
+            label: deleteLabel,
             iconName: 'Trash2',
             class: 'text-red-500',
             command: () => confirmDeleteParticular(rc.id, particular),
         });
     }
+
+    return items;
+};
+
+const buildRCKebabMenuItems = (rc) => {
+    const items = [];
+
+    if (canManageResponsibilityCenters.value) {
+        items.push({
+            label: 'Edit RC',
+            iconName: 'Pencil',
+            command: () => openRCModal(rc),
+        });
+    }
+
+    if (canDeleteResponsibilityCenters.value) {
+        if (items.length > 0) {
+            items.push({ separator: true });
+        }
+
+        items.push({
+            label: 'Delete RC',
+            iconName: 'Trash2',
+            class: 'text-red-500',
+            command: () => deleteRC(rc),
+        });
+    }
+
+    return items;
+};
+
+// Kebab buttons reuse the single shared ContextMenu (contextMenuRef /
+// contextMenuItems) that the right-click menus already use.
+const openRCKebabMenu = (event, rc) => {
+    const items = buildRCKebabMenuItems(rc);
+
+    if (items.length === 0) {
+        return;
+    }
+
+    contextMenuItems.value = items;
+    showContextMenu(event);
+};
+
+const openParticularKebabMenu = (event, rc, particular) => {
+    const items = buildParticularMenuItems(rc, particular);
+
+    if (items.length === 0) {
+        return;
+    }
+
+    contextMenuParticular.value = particular;
+    contextMenuItems.value = items;
+    showContextMenu(event);
+};
+
+const openParticularContextMenu = (event, rc) => {
+    const particular = event.data;
+    // Right-click keeps its original labels verbatim; only the kebab uses
+    // the short 'Edit' / 'Delete' labels.
+    const items = buildParticularMenuItems(rc, particular, 'Edit Particular', 'Delete Particular');
+
+    contextMenuParticular.value = particular;
 
     if (items.length === 0) {
         return;
@@ -245,10 +308,9 @@ onMounted(fetchResponsibilityCenters);
                     <div class="flex items-center gap-2">
                         <Button v-if="canManageResponsibilityCenters" size="small" severity="success"
                             rounded text @click="openParticularsModal(rc)" v-tooltip.bottom="`Add Particular`"><template #icon><AppIcon name="Plus" /></template></Button>
-                        <Button v-if="canManageResponsibilityCenters" severity="secondary" text
-                            rounded size="small" @click="openRCModal(rc)" v-tooltip.bottom="`Edit RC`"><template #icon><AppIcon name="Pencil" /></template></Button>
-                        <Button v-if="canDeleteResponsibilityCenters" severity="danger" text rounded
-                            size="small" @click="deleteRC(rc)" v-tooltip.bottom="`Delete RC`"><template #icon><AppIcon name="Trash2" /></template></Button>
+                        <Button v-if="canManageResponsibilityCenters || canDeleteResponsibilityCenters"
+                            severity="secondary" text rounded size="small" @click="(e) => openRCKebabMenu(e, rc)"
+                            v-tooltip.bottom="`Actions`"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                     </div>
                 </div>
 
@@ -295,12 +357,9 @@ onMounted(fetchResponsibilityCenters);
                         style="width: 90px">
                         <template #body="{ data }">
                             <div class="flex items-center gap-1 justify-end">
-                                <Button v-if="canManageResponsibilityCenters" severity="secondary"
-                                    text rounded size="small" @click="openParticularsModal(rc, data)"
-                                    v-tooltip.top="`Edit`"><template #icon><AppIcon name="Pencil" /></template></Button>
-                                <Button v-if="canDeleteResponsibilityCenters" severity="danger" text
-                                    rounded size="small" @click="confirmDeleteParticular(rc.id, data)"
-                                    v-tooltip.top="`Delete`"><template #icon><AppIcon name="Trash2" /></template></Button>
+                                <Button severity="secondary" text rounded size="small"
+                                    @click="(e) => openParticularKebabMenu(e, rc, data)"
+                                    v-tooltip.top="`Actions`"><template #icon><AppIcon name="EllipsisVertical" /></template></Button>
                             </div>
                         </template>
                     </Column>

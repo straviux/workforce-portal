@@ -63,18 +63,38 @@
 
 /* ============================================
    Material Design 3 tokens.
-   SINGLE SEED: change --md-primary-seed below to retheme the app.
-   The tonal scale and the PrimeVue preset (resources/js/app.js)
-   mirror this seed; roles flip between light/dark through --md-*.
+   USER PALETTE (single retheme block): change the --md-*-seed
+   values below to retheme the app. The tonal scales live in
+   @theme; the PrimeVue preset (resources/js/app.js) mirrors
+   them; roles flip between light/dark through --md-*.
+   Surfaces and outlines are intentionally left as-is; only the
+   accent roles (primary / secondary / tertiary / error / peach)
+   carry the palette.
    ============================================ */
 :root {
-	--md-primary-seed: #2e7d32;
+	--md-primary-seed: #355c7d;
+	--md-secondary-seed: #6c5b7b;
+	--md-tertiary-seed: #c06c84;
+	--md-error-seed: #f67280;
+	--md-peach-seed: #f8b195;
 
 	/* Light roles */
-	--md-primary: #2e7d32;
+	--md-primary: #355c7d;
 	--md-on-primary: #ffffff;
-	--md-primary-container: #d7ecd8;
-	--md-on-primary-container: #123f15;
+	--md-primary-container: #e9edf1;
+	--md-on-primary-container: #162735;
+	--md-secondary: #6c5b7b;
+	--md-on-secondary: #ffffff;
+	--md-secondary-container: #efedf0;
+	--md-on-secondary-container: #2d2634;
+	--md-tertiary: #c06c84;
+	--md-on-tertiary: #ffffff;
+	--md-tertiary-container: #f8eff1;
+	--md-on-tertiary-container: #512d37;
+	--md-peach: #f8b195;
+	--md-on-peach: #4a2410;
+	--md-peach-container: #fef6f3;
+	--md-on-peach-container: #684a3f;
 	--md-surface: #fbfdfb;
 	--md-surface-container-lowest: #ffffff;
 	--md-surface-container-low: #f2f6f2;
@@ -83,16 +103,33 @@
 	--md-surface-container-highest: #d2dad2;
 	--md-outline: #75796f;
 	--md-outline-variant: #c2c8bd;
-	--md-error: #ba1a1a;
-	--md-on-error: #ffffff;
+	--md-error: #f67280;
+	--md-on-error: #452024;
+	--md-error-container: #feeff1;
+	--md-on-error-container: #673036;
 }
 
 .dark {
-	/* Dark roles (page surface stays close to the app's #222831) */
-	--md-primary: #b9dfbb;
-	--md-on-primary: #1b5e20;
-	--md-primary-container: #256b2a;
-	--md-on-primary-container: #d7ecd8;
+	/* Dark roles: surfaces stay exactly as before (#222831 page,
+	   #1a1e27 deepest); only the accents change. Dark primary is
+	   the lightened 200-tint of #355c7d, not the raw seed, so it
+	   keeps contrast on dark surfaces (10.93:1 on #222831). */
+	--md-primary: #d7dee5;
+	--md-on-primary: #21394e;
+	--md-primary-container: #2b4b67;
+	--md-on-primary-container: #e9edf1;
+	--md-secondary: #e2dee5;
+	--md-on-secondary: #43384c;
+	--md-secondary-container: #594b65;
+	--md-on-secondary-container: #efedf0;
+	--md-tertiary: #f2e2e6;
+	--md-on-tertiary: #774352;
+	--md-tertiary-container: #9d596c;
+	--md-on-tertiary-container: #f8eff1;
+	--md-peach: #feefea;
+	--md-on-peach: #9a6e5c;
+	--md-peach-container: #cb917a;
+	--md-on-peach-container: #fef6f3;
 	--md-surface: #222831;
 	--md-surface-container-lowest: #1a1e27;
 	--md-surface-container-low: #222831;
@@ -101,29 +138,97 @@
 	--md-surface-container-highest: #3a4453;
 	--md-outline: #8d938a;
 	--md-outline-variant: #434a43;
-	--md-error: #ffb4ab;
-	--md-on-error: #690005;
+	--md-error: #fde3e6;
+	--md-on-error: #673036;
+	--md-error-container: #99474f;
+	--md-on-error-container: #feeff1;
 }
 
 @theme {
-	/* Primary tonal scale, built around --md-primary-seed (#2e7d32 family) */
-	--color-primary-50: #edf7ed;
-	--color-primary-100: #d7ecd8;
-	--color-primary-200: #b9dfbb;
-	--color-primary-300: #8fca94;
-	--color-primary-400: #5fb266;
-	--color-primary-500: #3a9a44;
-	--color-primary-600: #2f8a39;
-	--color-primary-700: #2e7d32;
-	--color-primary-800: #256b2a;
-	--color-primary-900: #1b5e20;
-	--color-primary-950: #123f15;
+	/* Tonal scales, each built around its seed by mixing toward white
+	   (50-600) and black (800-950); 700 is the seed itself. */
+	/* Primary: #355c7d dark slate blue */
+	--color-primary-50: #f5f7f8;
+	--color-primary-100: #e9edf1;
+	--color-primary-200: #d7dee5;
+	--color-primary-300: #b8c6d2;
+	--color-primary-400: #90a5b8;
+	--color-primary-500: #61809a;
+	--color-primary-600: #456987;
+	--color-primary-700: #355c7d;
+	--color-primary-800: #2b4b67;
+	--color-primary-900: #21394e;
+	--color-primary-950: #162735;
+
+	/* Secondary: #6c5b7b muted purple */
+	--color-secondary-50: #f8f7f8;
+	--color-secondary-100: #efedf0;
+	--color-secondary-200: #e2dee5;
+	--color-secondary-300: #ccc6d1;
+	--color-secondary-400: #aea5b6;
+	--color-secondary-500: #8c7f98;
+	--color-secondary-600: #786886;
+	--color-secondary-700: #6c5b7b;
+	--color-secondary-800: #594b65;
+	--color-secondary-900: #43384c;
+	--color-secondary-950: #2d2634;
+
+	/* Tertiary: #c06c84 mauve */
+	--color-tertiary-50: #fcf8f9;
+	--color-tertiary-100: #f8eff1;
+	--color-tertiary-200: #f2e2e6;
+	--color-tertiary-300: #e9ccd4;
+	--color-tertiary-400: #dcaebb;
+	--color-tertiary-500: #ce8c9f;
+	--color-tertiary-600: #c5788e;
+	--color-tertiary-700: #c06c84;
+	--color-tertiary-800: #9d596c;
+	--color-tertiary-900: #774352;
+	--color-tertiary-950: #512d37;
+
+	/* Error / accent: #f67280 coral */
+	--color-error-50: #fff8f9;
+	--color-error-100: #feeff1;
+	--color-error-200: #fde3e6;
+	--color-error-300: #fcced3;
+	--color-error-400: #fab1b9;
+	--color-error-500: #f8919c;
+	--color-error-600: #f77d8a;
+	--color-error-700: #f67280;
+	--color-error-800: #ca5d69;
+	--color-error-900: #99474f;
+	--color-error-950: #673036;
+
+	/* Peach: #f8b195 (light containers and highlights) */
+	--color-peach-50: #fffbfa;
+	--color-peach-100: #fef6f3;
+	--color-peach-200: #feefea;
+	--color-peach-300: #fde4da;
+	--color-peach-400: #fbd4c5;
+	--color-peach-500: #fac2ac;
+	--color-peach-600: #f9b79d;
+	--color-peach-700: #f8b195;
+	--color-peach-800: #cb917a;
+	--color-peach-900: #9a6e5c;
+	--color-peach-950: #684a3f;
 
 	/* Roles (resolve through --md-* so .dark flips them) */
 	--color-primary: var(--md-primary);
 	--color-on-primary: var(--md-on-primary);
 	--color-primary-container: var(--md-primary-container);
 	--color-on-primary-container: var(--md-on-primary-container);
+	--color-secondary: var(--md-secondary);
+	--color-on-secondary: var(--md-on-secondary);
+	--color-secondary-container: var(--md-secondary-container);
+	--color-on-secondary-container: var(--md-on-secondary-container);
+	--color-tertiary: var(--md-tertiary);
+	--color-on-tertiary: var(--md-on-tertiary);
+	--color-tertiary-container: var(--md-tertiary-container);
+	--color-on-tertiary-container: var(--md-on-tertiary-container);
+	--color-peach: var(--md-peach);
+	--color-on-peach: var(--md-on-peach);
+	--color-peach-container: var(--md-peach-container);
+	--color-on-peach-container: var(--md-on-peach-container);
 	--color-surface: var(--md-surface);
 	--color-surface-container-lowest: var(--md-surface-container-lowest);
 	--color-surface-container-low: var(--md-surface-container-low);
@@ -134,6 +239,8 @@
 	--color-outline-variant: var(--md-outline-variant);
 	--color-error: var(--md-error);
 	--color-on-error: var(--md-on-error);
+	--color-error-container: var(--md-error-container);
+	--color-on-error-container: var(--md-on-error-container);
 
 	/* MD3 shape tokens (corners) */
 	--radius-md3-xs: 4px;
