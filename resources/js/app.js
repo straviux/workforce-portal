@@ -229,6 +229,61 @@ const Md3 = definePreset(Aura, {
 				borderRadius: '12px',
 			},
 		},
+		// Bold palette: DataTable column-header row is slate blue with light
+		// text in both modes. Hover/selected header-cell tokens are pinned to
+		// the same colors so sortable/sorted headers do not revert to the
+		// default light surface or highlight tint. Weight, padding and
+		// borders are untouched (Aura defaults).
+		datatable: {
+			colorScheme: {
+				light: {
+					headerCell: {
+						background: '#355C7D',
+						color: '#ffffff',
+						hoverBackground: '#355C7D',
+						hoverColor: '#ffffff',
+						selectedBackground: '#355C7D',
+						selectedColor: '#ffffff',
+					},
+				},
+				dark: {
+					headerCell: {
+						background: '#2b4b67',
+						color: '#e9edf1',
+						hoverBackground: '#2b4b67',
+						hoverColor: '#e9edf1',
+						selectedBackground: '#2b4b67',
+						selectedColor: '#e9edf1',
+					},
+				},
+			},
+		},
+		// Bold palette: the active tab's label/icon and its underline bar are
+		// coral in light mode and pale coral in dark mode. activeBorderColor
+		// is set to the same color so the tab's own bottom border does not
+		// show the default slate-blue line under the coral active bar.
+		tabs: {
+			colorScheme: {
+				light: {
+					tab: {
+						activeColor: '#F67280',
+						activeBorderColor: '#F67280',
+					},
+					activeBar: {
+						background: '#F67280',
+					},
+				},
+				dark: {
+					tab: {
+						activeColor: '#fde3e6',
+						activeBorderColor: '#fde3e6',
+					},
+					activeBar: {
+						background: '#fde3e6',
+					},
+				},
+			},
+		},
 	},
 });
 

@@ -39,15 +39,15 @@
 /* Content background with radial gradients */
 .content-bg {
 	background:
-		radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 60%),
-		radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.04) 0%, transparent 60%), #f1f5f9;
+		radial-gradient(ellipse at 20% 50%, rgba(248, 177, 149, 0.04) 0%, transparent 60%),
+		radial-gradient(ellipse at 80% 20%, rgba(192, 108, 132, 0.04) 0%, transparent 60%), #f1f5f9;
 	backdrop-filter: blur(1px);
 }
 
 .dark .content-bg {
 	background:
-		radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.06) 0%, transparent 60%),
-		radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.06) 0%, transparent 60%), #1a1e27;
+		radial-gradient(ellipse at 20% 50%, rgba(53, 92, 125, 0.06) 0%, transparent 60%),
+		radial-gradient(ellipse at 80% 20%, rgba(53, 92, 125, 0.06) 0%, transparent 60%), #1a1e27;
 }
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
