@@ -86,8 +86,18 @@
 
 .ios-nav-btn {
 	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
+	/* Transform-free vertical centering: top/bottom 0 plus auto
+	   margins centers the button without translateY(-50%), so no
+	   hover, active, morph, or disabled rule can ever drop it by
+	   half its height again (the modal Save button fell ~17px on
+	   click and during loading, and pinning the transform did not
+	   hold). Height must stay definite (fit-content) for the auto
+	   margins to center instead of stretching. */
+	top: 0;
+	bottom: 0;
+	margin-top: auto;
+	margin-bottom: auto;
+	height: fit-content;
 	background: none;
 	border: none;
 	font-size: 17px;
