@@ -279,3 +279,78 @@
 .dpr-zoom .floating-drawer.p-drawer {
 	height: calc(125vh - 2rem) !important;
 }
+
+/* ============================================
+   Buttons: rounded-xl corners + Material 3 Expressive motion.
+   - Radius: the preset token covers plain .p-button. The pins below
+     cover the variants whose own classes would otherwise render
+     pill-shaped or circular regardless of the token (the `rounded`
+     prop, dialog/drawer close buttons, datepicker nav buttons).
+   - Motion (squishy press, springy release): transform scale only,
+     so no layout property animates and nothing reflows. Press is a
+     fast 100ms squish to 0.95; release and hover use a 400ms spring
+     with overshoot (cubic-bezier 0.34, 1.56, 0.64, 1). The existing
+     ripple is untouched and keeps working inside the button.
+   - Excluded: legacy .ios-nav-btn buttons (they rely on
+     translateY(-50%) for centering, which a transform rule would
+     override), disabled/loading buttons, and tab-list buttons (tabs
+     are not buttons for this purpose). `translate` stays in the
+     transition list so the landing-card buttons keep their smooth
+     hover lift alongside the squish.
+   ============================================ */
+.p-button.p-button-rounded,
+.p-dialog .p-dialog-close-button,
+.p-drawer .p-drawer-close-button,
+.p-datepicker .p-datepicker-prev-button,
+.p-datepicker .p-datepicker-next-button {
+	border-radius: 12px;
+}
+
+.p-button,
+button:not(.ios-nav-btn) {
+	transition:
+		transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		translate 200ms ease,
+		background-color 200ms ease,
+		color 200ms ease,
+		border-color 200ms ease,
+		box-shadow 200ms ease,
+		outline-color 200ms ease;
+}
+.p-button:hover,
+button:not(.ios-nav-btn):hover {
+	transform: scale(1.02);
+}
+.p-button:active,
+button:not(.ios-nav-btn):active {
+	transform: scale(0.95);
+	transition-duration: 100ms, 200ms, 200ms, 200ms, 200ms, 200ms, 200ms;
+	transition-timing-function: ease-out, ease, ease, ease, ease, ease, ease;
+}
+/* Disabled and loading buttons stay still. */
+.p-button:disabled,
+.p-button.p-button-loading,
+button:disabled,
+.p-button:disabled:hover,
+.p-button.p-button-loading:hover,
+button:disabled:hover {
+	transform: none;
+}
+/* Tabs are not buttons: never squish tab-list buttons. */
+.p-tablist button,
+.p-tablist button:hover,
+.p-tablist button:active {
+	transform: none;
+	transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+	.p-button,
+	.p-button:hover,
+	.p-button:active,
+	button,
+	button:hover,
+	button:active {
+		transform: none;
+		transition: none;
+	}
+}

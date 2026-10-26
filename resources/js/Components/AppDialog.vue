@@ -58,3 +58,27 @@ function onUpdateVisible(value) {
         </template>
     </PrimeDialog>
 </template>
+
+<style>
+/* Uniform modal chrome for container dialogs (unscoped: the Dialog is
+   teleported to <body>, and this wrapper is imported by app.js so the
+   rules ship in the main bundle). Container dialogs bypass PrimeVue's
+   header/content/footer and render their own shell (.ios-modal +
+   .ios-nav-bar), whose background otherwise comes from
+   --md-surface-container-high (light #dde5dd / dark #333d4b) in
+   ios-design-system.css — a file this pass must not touch. These rules
+   out-specify that single-class rule (0,3,0 vs 0,1,0) and pin the shell
+   and its nav bar to the same card surface the dialog preset sets for
+   standard dialogs, so header and body can never diverge. .ios-body has
+   no background of its own and inherits the shell color. Inner content
+   surfaces (cards, callouts, inputs, the PDF canvas area) are untouched. */
+.p-dialog.ios-dialog-root .ios-modal,
+.p-dialog.ios-dialog-root .ios-nav-bar {
+    background: #ffffff;
+}
+
+.dark .p-dialog.ios-dialog-root .ios-modal,
+.dark .p-dialog.ios-dialog-root .ios-nav-bar {
+    background: #2b3440;
+}
+</style>

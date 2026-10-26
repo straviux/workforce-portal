@@ -114,7 +114,7 @@ onMounted(async () => {
 
         <!-- Floating Sidebar -->
         <aside
-            class="sidebar-shell fixed z-30 md:z-20 top-0 left-0 md:top-20 md:left-4 flex flex-col bg-[#355C7D] dark:bg-[#162735] shadow-xl backdrop-blur-xl ring-1 ring-black/10 dark:ring-white/10 transition-[width,transform] duration-300 rounded-4xl min-w-0 h-full md:h-[calc(100vh-96px)]"
+            class="sidebar-shell fixed z-30 md:z-20 top-0 left-0 md:top-20 md:left-4 flex flex-col bg-[#222831] shadow-xl backdrop-blur-xl transition-[width,transform] duration-300 rounded-4xl min-w-0 h-full md:h-[calc(100vh-96px)]"
             :class="[
                 sidebarMinimized ? 'md:w-[110px]' : 'md:w-[220px]',
                 toggleMenu ? 'w-[280px] translate-x-0' : '-translate-x-full md:translate-x-0',
@@ -122,7 +122,7 @@ onMounted(async () => {
             <div class="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden rounded-4xl">
                 <!-- Minimize toggle (desktop only) -->
                 <button @click="toggleSidebarMinimized"
-                    class="hidden md:flex w-full pt-4 px-4 text-[rgba(215,222,229,0.7)] hover:text-white dark:text-[rgba(184,198,210,0.7)] dark:hover:text-[#e9edf1] cursor-pointer justify-end transition">
+                    class="hidden md:flex w-full pt-4 px-4 text-gray-500 hover:text-gray-300 cursor-pointer justify-end transition">
                     <AppIcon :name="sidebarMinimized ? 'Maximize2' : 'Minus'" :size="11" style="margin-right: 8px;" />
                 </button>
 
@@ -136,8 +136,8 @@ onMounted(async () => {
                             <AppIcon v-else name="User" :size="14" class="text-white" />
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-white dark:text-[#e9edf1] text-sm font-medium truncate">{{ user?.name ?? 'User' }}</p>
-                            <p class="text-[rgba(215,222,229,0.7)] dark:text-[rgba(184,198,210,0.7)] text-xs truncate">{{ userRole }}</p>
+                            <p class="text-white text-sm font-medium truncate">{{ user?.name ?? 'User' }}</p>
+                            <p class="text-gray-400 text-xs truncate">{{ userRole }}</p>
                         </div>
                     </div>
                 </div>
@@ -280,7 +280,7 @@ onMounted(async () => {
                 <!-- Mobile: logout at bottom -->
                 <div class="md:hidden border-t border-white/10 p-3">
                     <button @click="handleLogout"
-                        class="flex items-center gap-3 px-3 py-2 rounded-2xl text-red-300 hover:text-red-200 dark:text-red-400 dark:hover:text-red-300 hover:bg-white/10 transition w-full text-sm">
+                        class="flex items-center gap-3 px-3 py-2 rounded-2xl text-red-400 hover:text-red-300 hover:bg-white/10 transition w-full text-sm">
                         <AppIcon name="LogOut" />
                         <span>Sign Out</span>
                     </button>
@@ -353,43 +353,3 @@ onMounted(async () => {
         </div>
     </div>
 </template>
-
-<style scoped>
-/*
- * Bold palette sidebar recolor. SidebarLink.vue is intentionally untouched:
- * it renders one <a> per nav item, active links carrying .text-white plus the
- * gradient utilities, inactive links carrying .text-gray-400. These overrides
- * (higher specificity than the single-class Tailwind utilities) restyle them
- * in place. Icons inherit the link color (Lucide currentColor).
- * Active padding-left drops 16px -> 12px so the 4px left bar occupies the same
- * total gutter and link text does not shift.
- */
-/* Light mode: sidebar bg #355C7D (set on the <aside> via Tailwind classes). */
-.sidebar-shell :deep(nav a) {
-    color: rgba(215, 222, 229, 0.7);
-}
-.sidebar-shell :deep(nav a:hover) {
-    color: #ffffff;
-}
-.sidebar-shell :deep(nav a.text-white) {
-    color: #ffffff;
-    background-image: none;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-left: 4px solid #F67280;
-    padding-left: 12px;
-}
-/* Dark mode: sidebar bg #162735 (set on the <aside> via dark: Tailwind class). */
-.dark .sidebar-shell :deep(nav a) {
-    color: rgba(184, 198, 210, 0.7);
-}
-.dark .sidebar-shell :deep(nav a:hover) {
-    color: #ffffff;
-}
-.dark .sidebar-shell :deep(nav a.text-white) {
-    color: #e9edf1;
-    background-image: none;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-left: 4px solid #F67280;
-    padding-left: 12px;
-}
-</style>

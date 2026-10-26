@@ -31,7 +31,7 @@
                             bg-[#f2f2f7] dark:bg-[#1e242b]
                             border-b border-[#e5e5ea] dark:border-white/10">
                     <div class="flex items-center gap-1.5">
-                        <button @click="zoomOut" class="w-7 h-7 rounded-full flex items-center justify-center
+                        <button @click="zoomOut" class="w-7 h-7 rounded-xl flex items-center justify-center
                                    bg-white dark:bg-[#2a3040] border border-[#e5e5ea] dark:border-white/10
                                    text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#343d4e]
                                    transition-colors disabled:opacity-40" :disabled="zoomLevel <= 40">
@@ -40,13 +40,13 @@
                         <span class="text-xs font-medium text-gray-600 dark:text-gray-400 w-12 text-center">
                             {{ zoomLevel }}%
                         </span>
-                        <button @click="zoomIn" class="w-7 h-7 rounded-full flex items-center justify-center
+                        <button @click="zoomIn" class="w-7 h-7 rounded-xl flex items-center justify-center
                                    bg-white dark:bg-[#2a3040] border border-[#e5e5ea] dark:border-white/10
                                    text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#343d4e]
                                    transition-colors disabled:opacity-40" :disabled="zoomLevel >= 150">
                             <AppIcon name="Plus" :size="10" />
                         </button>
-                        <button @click="fitToWidth" class="ml-1 px-2 h-7 rounded-full flex items-center justify-center gap-1
+                        <button @click="fitToWidth" class="ml-1 px-2 h-7 rounded-xl flex items-center justify-center gap-1
                                    bg-white dark:bg-[#2a3040] border border-[#e5e5ea] dark:border-white/10
                                    text-xs text-gray-600 dark:text-gray-300
                                    hover:bg-gray-100 dark:hover:bg-[#343d4e] transition-colors">

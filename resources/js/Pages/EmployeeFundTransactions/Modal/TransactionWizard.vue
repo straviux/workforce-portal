@@ -117,7 +117,7 @@
                         </div>
 
                         <!-- Content -->
-                        <div class="flex-1 overflow-y-auto p-4" style="background:#f2f2f7;">
+                        <div class="flex-1 overflow-y-auto p-4">
                             <!-- Empty state -->
                             <div v-if="selectedEmployees.length === 0"
                                 class="h-full flex flex-col items-center justify-center gap-2 text-surface-400">

@@ -212,15 +212,34 @@ const Md3 = definePreset(Aura, {
 		},
 	},
 	components: {
-		// MD3 buttons are full-round; dialogs use the 28px extra-large corner.
+		// Buttons are rounded-xl (12px); dialogs use the 28px extra-large corner.
 		button: {
 			root: {
-				borderRadius: '9999px',
+				borderRadius: '12px',
 			},
 		},
 		dialog: {
 			root: {
 				borderRadius: '28px',
+				// Uniform modal chrome: the card surface in both modes.
+				// PrimeVue 4.5 paints only .p-dialog itself (dialog.background);
+				// header, content and footer have no own background in its
+				// stylesheet, so they inherit this root color — there is no
+				// separate header strip color. The dark colorScheme entry
+				// below overrides this light value when .dark is present.
+				background: '#ffffff',
+			},
+			colorScheme: {
+				light: {
+					root: {
+						background: '#ffffff',
+					},
+				},
+				dark: {
+					root: {
+						background: '#2b3440',
+					},
+				},
 			},
 		},
 		// MD3 cards use the 12px medium corner (Aura defaults them to xl/28px).
