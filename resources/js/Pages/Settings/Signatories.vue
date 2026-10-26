@@ -28,130 +28,6 @@
                 <p class="text-sm text-emerald-900 dark:text-emerald-100">Signatory configuration complete. Fund documents can be printed.</p>
             </div>
 
-            <!-- Document defaults: the fallback signatory block per
-                 document type. Generation first uses an office assignment
-                 when one matches the document's office, then the Part A
-                 head matching that office (for employees, the office of
-                 assignment when set, else the office); the default here
-                 applies only when neither matches. There are no
-                 per-report signatory pickers anymore. -->
-            <div class="ios-card p-6">
-                <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
-                    <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
-                        Document defaults
-                    </p>
-                    <Button v-if="canManageSignatories" :label="saveDefaultsAction.label" class="rounded" size="small"
-                        :loading="saveDefaultsAction.loading" :disabled="saveDefaultsAction.disabled"
-                        :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
-                </div>
-                <p class="text-sm text-surface-400 mb-4">
-                    These defaults are the fallback for each document type: a new document first uses an
-                    office assignment when one matches its office, then the office head matching its office
-                    (for employees, the office of assignment when set), and only falls back to the default
-                    here when neither matches. Change them here instead of per document.
-                </p>
-
-                <div class="space-y-4">
-                    <div v-for="docType in defaultTypes" :key="docType.key"
-                        class="rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
-                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100 mb-3">
-                            {{ docType.label }}
-                        </p>
-
-                        <p v-if="!savedDefaults[docType.key]"
-                            class="text-xs text-surface-400 mb-3">
-                            No default saved yet. Reports will use the first office head until a default is saved.
-                        </p>
-                        <p v-else-if="savedDefaults[docType.key]?.office_head_signatory_id && !officeHeads.some((h) => h.id === savedDefaults[docType.key].office_head_signatory_id)"
-                            class="text-xs text-amber-700 dark:text-amber-200 mb-3">
-                            The saved default's office head no longer exists. Choose another office head below and save.
-                        </p>
-
-                        <div class="space-y-4">
-                            <div class="ios-form-group">
-                                <label class="ios-label">Default office head</label>
-                                <Select v-model="defaultsForm[docType.key].office_head_signatory_id"
-                                    :options="officeHeads" optionLabel="name" optionValue="id"
-                                    placeholder="Select office head" class="w-full" showClear
-                                    :disabled="!canManageSignatories"
-                                    @change="onDefaultHeadChange(docType.key)" />
-                            </div>
-
-                            <template v-if="defaultsForm[docType.key].office_head_signatory_id">
-                                <div>
-                                    <p class="ios-label mb-2">Titles / Designations</p>
-                                    <div class="space-y-2">
-                                        <div v-for="(title, idx) in defaultsForm[docType.key].orderedTitles" :key="title"
-                                            class="flex items-center gap-2 rounded-2xl border border-surface-200 dark:border-surface-700 px-3 py-2">
-                                            <Checkbox :modelValue="defaultsForm[docType.key].selectedTitles.includes(title)"
-                                                :binary="true" size="small" severity="success"
-                                                :disabled="!canManageSignatories"
-                                                @update:modelValue="(value) => setDefaultTitleSelected(docType.key, title, value)" />
-                                            <span class="min-w-0 flex-1 text-sm text-surface-800 dark:text-surface-100">{{ title }}</span>
-                                            <Button severity="secondary" text rounded size="small"
-                                                :disabled="!canManageSignatories || idx === 0"
-                                                @click="moveDefaultTitle(docType.key, idx, -1)"><template #icon><AppIcon name="ChevronUp" /></template></Button>
-                                            <Button severity="secondary" text rounded size="small"
-                                                :disabled="!canManageSignatories || idx === defaultsForm[docType.key].orderedTitles.length - 1"
-                                                @click="moveDefaultTitle(docType.key, idx, 1)"><template #icon><AppIcon name="ChevronDown" /></template></Button>
-                                        </div>
-                                    </div>
-                                    <p class="text-xs text-surface-400 mt-2">
-                                        Check the titles to print, and use the arrows to set their order.
-                                    </p>
-                                </div>
-
-                                <div class="space-y-3">
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline</p>
-                                            <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory name.</p>
-                                        </div>
-                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_name_underline"
-                                            :disabled="!canManageSignatories" />
-                                    </div>
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show designation</p>
-                                            <p class="text-xs text-surface-500 mt-1">Print the titles above under the name.</p>
-                                        </div>
-                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_designation"
-                                            :disabled="!canManageSignatories" />
-                                    </div>
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show office</p>
-                                            <p class="text-xs text-surface-500 mt-1">Print the office under the name.</p>
-                                        </div>
-                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_office"
-                                            :disabled="!canManageSignatories" />
-                                    </div>
-                                    <div class="ios-form-group">
-                                        <label class="ios-label">Information order</label>
-                                        <Select v-model="defaultsForm[docType.key].signatory_info_order"
-                                            :options="infoOrderOptions" optionLabel="label" optionValue="value"
-                                            class="w-full" :disabled="!canManageSignatories" />
-                                    </div>
-                                </div>
-
-                                <div class="rounded-2xl bg-surface-50 dark:bg-surface-800 p-3 space-y-1 text-sm">
-                                    <p class="font-medium text-surface-800 dark:text-surface-100"
-                                        :style="defaultsForm[docType.key].signatory_name_underline
-                                            ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
-                                            : ''">
-                                        {{ defaultHeadFor(docType.key)?.name || 'No signatory selected' }}
-                                    </p>
-                                    <p v-for="line in defaultPreviewLines(docType.key)" :key="line" class="text-surface-500">{{ line }}</p>
-                                    <p v-if="!defaultPreviewLines(docType.key).length" class="text-surface-400">
-                                        Only the signatory name will be printed.
-                                    </p>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Office assignments: explicit head per office -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
@@ -190,9 +66,133 @@
 
                 <Button v-if="canManageSignatories" label="Add assignment" class="rounded mt-3" size="small"
                     severity="secondary" outlined @click="mappingsForm.push({ office: '', office_head_signatory_id: null })"><template #icon><AppIcon name="Plus" /></template></Button>
+
+    <!-- Document defaults subsection (fallback for every office): the fallback signatory block per
+                     document type. Generation first uses an office assignment
+                     when one matches the document's office, then the Part A
+                     head matching that office (for employees, the office of
+                     assignment when set, else the office); the default here
+                     applies only when neither matches. There are no
+                     per-report signatory pickers anymore. -->
+                <div class="mt-8 border-t border-surface-200 dark:border-surface-800 pt-6">
+                    <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                        <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
+                            Document defaults
+                        </p>
+                        <Button v-if="canManageSignatories" :label="saveDefaultsAction.label" class="rounded" size="small"
+                            :loading="saveDefaultsAction.loading" :disabled="saveDefaultsAction.disabled"
+                            :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
+                    </div>
+                    <p class="text-sm text-surface-400 mb-4">
+                        These defaults are the fallback for each document type: a new document first uses an
+                        office assignment when one matches its office, then the office head matching its office
+                        (for employees, the office of assignment when set), and only falls back to the default
+                        here when neither matches. Change them here instead of per document.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div v-for="docType in defaultTypes" :key="docType.key"
+                            class="rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
+                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100 mb-3">
+                                {{ docType.label }}
+                            </p>
+
+                            <p v-if="!savedDefaults[docType.key]"
+                                class="text-xs text-surface-400 mb-3">
+                                No default saved yet. Reports will use the first office head until a default is saved.
+                            </p>
+                            <p v-else-if="savedDefaults[docType.key]?.office_head_signatory_id && !officeHeads.some((h) => h.id === savedDefaults[docType.key].office_head_signatory_id)"
+                                class="text-xs text-amber-700 dark:text-amber-200 mb-3">
+                                The saved default's office head no longer exists. Choose another office head below and save.
+                            </p>
+
+                            <div class="space-y-4">
+                                <div class="ios-form-group">
+                                    <label class="ios-label">Default office head</label>
+                                    <Select v-model="defaultsForm[docType.key].office_head_signatory_id"
+                                        :options="officeHeads" optionLabel="name" optionValue="id"
+                                        placeholder="Select office head" class="w-full" showClear
+                                        :disabled="!canManageSignatories"
+                                        @change="onDefaultHeadChange(docType.key)" />
+                                </div>
+
+                                <template v-if="defaultsForm[docType.key].office_head_signatory_id">
+                                    <div>
+                                        <p class="ios-label mb-2">Titles / Designations</p>
+                                        <div class="space-y-2">
+                                            <div v-for="(title, idx) in defaultsForm[docType.key].orderedTitles" :key="title"
+                                                class="flex items-center gap-2 rounded-2xl border border-surface-200 dark:border-surface-700 px-3 py-2">
+                                                <Checkbox :modelValue="defaultsForm[docType.key].selectedTitles.includes(title)"
+                                                    :binary="true" size="small" severity="success"
+                                                    :disabled="!canManageSignatories"
+                                                    @update:modelValue="(value) => setDefaultTitleSelected(docType.key, title, value)" />
+                                                <span class="min-w-0 flex-1 text-sm text-surface-800 dark:text-surface-100">{{ title }}</span>
+                                                <Button severity="secondary" text rounded size="small"
+                                                    :disabled="!canManageSignatories || idx === 0"
+                                                    @click="moveDefaultTitle(docType.key, idx, -1)"><template #icon><AppIcon name="ChevronUp" /></template></Button>
+                                                <Button severity="secondary" text rounded size="small"
+                                                    :disabled="!canManageSignatories || idx === defaultsForm[docType.key].orderedTitles.length - 1"
+                                                    @click="moveDefaultTitle(docType.key, idx, 1)"><template #icon><AppIcon name="ChevronDown" /></template></Button>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-surface-400 mt-2">
+                                            Check the titles to print, and use the arrows to set their order.
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div>
+                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline</p>
+                                                <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory name.</p>
+                                            </div>
+                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_name_underline"
+                                                :disabled="!canManageSignatories" />
+                                        </div>
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div>
+                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show designation</p>
+                                                <p class="text-xs text-surface-500 mt-1">Print the titles above under the name.</p>
+                                            </div>
+                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_designation"
+                                                :disabled="!canManageSignatories" />
+                                        </div>
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div>
+                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show office</p>
+                                                <p class="text-xs text-surface-500 mt-1">Print the office under the name.</p>
+                                            </div>
+                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_office"
+                                                :disabled="!canManageSignatories" />
+                                        </div>
+                                        <div class="ios-form-group">
+                                            <label class="ios-label">Information order</label>
+                                            <Select v-model="defaultsForm[docType.key].signatory_info_order"
+                                                :options="infoOrderOptions" optionLabel="label" optionValue="value"
+                                                class="w-full" :disabled="!canManageSignatories" />
+                                        </div>
+                                    </div>
+
+                                    <div class="rounded-2xl bg-surface-50 dark:bg-surface-800 p-3 space-y-1 text-sm">
+                                        <p class="font-medium text-surface-800 dark:text-surface-100"
+                                            :style="defaultsForm[docType.key].signatory_name_underline
+                                                ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                                : ''">
+                                            {{ defaultHeadFor(docType.key)?.name || 'No signatory selected' }}
+                                        </p>
+                                        <p v-for="line in defaultPreviewLines(docType.key)" :key="line" class="text-surface-500">{{ line }}</p>
+                                        <p v-if="!defaultPreviewLines(docType.key).length" class="text-surface-400">
+                                            Only the signatory name will be printed.
+                                        </p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Office Heads (multiple) -->
+<!-- Office Heads (multiple) -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
