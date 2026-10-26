@@ -288,7 +288,7 @@
      prop, dialog/drawer close buttons, datepicker nav buttons).
    - Motion (squishy press, springy release): transform scale only,
      so no layout property animates and nothing reflows. Press is a
-     fast 100ms squish to 0.95; release and hover use a 400ms spring
+     180ms squish to 0.95; release uses a 650ms spring
      with overshoot (cubic-bezier 0.34, 1.56, 0.64, 1). The existing
      ripple is untouched and keeps working inside the button.
    - Excluded: legacy .ios-nav-btn buttons (they rely on
@@ -309,16 +309,16 @@
 .p-button,
 button:not(.ios-nav-btn) {
 	transition:
-		transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		transform 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
 		translate 200ms ease,
 		background-color 200ms ease,
 		color 200ms ease,
 		border-color 200ms ease,
 		box-shadow 200ms ease,
 		outline-color 200ms ease,
-		padding-left 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
-		padding-right 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
-		border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+		padding-left 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		padding-right 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		border-radius 650ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .p-button:hover,
 button:not(.ios-nav-btn):hover {
@@ -332,7 +332,7 @@ button:not(.ios-nav-btn):hover {
 .p-button:active,
 button:not(.ios-nav-btn):active {
 	transform: scale(0.95);
-	transition-duration: 100ms, 200ms, 200ms, 200ms, 200ms, 200ms, 200ms, 350ms, 350ms, 350ms;
+	transition-duration: 180ms, 200ms, 200ms, 200ms, 200ms, 200ms, 200ms, 650ms, 650ms, 650ms;
 	transition-timing-function: ease-out, ease, ease, ease, ease, ease, ease, cubic-bezier(0.34, 1.56, 0.64, 1), cubic-bezier(0.34, 1.56, 0.64, 1), cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 /* Disabled and loading buttons stay still. */
@@ -398,8 +398,8 @@ button.morph-success {
 .ios-nav-action {
 	transition:
 		opacity 0.15s,
-		padding 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
-		border-radius 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		padding 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
+		border-radius 650ms cubic-bezier(0.34, 1.56, 0.64, 1),
 		background-color 200ms ease;
 }
 .ios-nav-action.morph-processing,
