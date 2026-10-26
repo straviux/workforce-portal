@@ -322,7 +322,12 @@ button:not(.ios-nav-btn) {
 }
 .p-button:hover,
 button:not(.ios-nav-btn):hover {
-	transform: scale(1.02);
+	/* No scale on hover: hover growth shifted buttons visually in
+	   dense rows and toolbars app-wide, which read as misalignment
+	   plus glitch. Hover keeps color/shadow fades only. Playfulness
+	   lives where the user asked for it: the press squish and the
+	   processing morph. */
+	transform: none;
 }
 .p-button:active,
 button:not(.ios-nav-btn):active {
