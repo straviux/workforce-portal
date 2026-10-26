@@ -59,26 +59,20 @@
 
             <Column field="name" header="Name" style="min-width:200px;">
                 <template #body="{ data }">
-                    <span class="font-medium">{{ data.full_name }}</span>
+                    <div class="flex flex-col gap-1">
+                        <span class="font-medium">{{ data.full_name }}</span>
+                        <Tag :value="formatType(data.employee_type)" severity="secondary" class="w-fit" />
+                    </div>
                 </template>
             </Column>
 
-            <Column field="employee_type" header="Type" style="min-width:160px;">
+            <Column field="office" header="Office / Designation" style="min-width:200px;">
                 <template #body="{ data }">
-                    <Tag :value="formatType(data.employee_type)" severity="secondary" />
-                </template>
-            </Column>
-
-            <Column field="office" header="Office" style="min-width:160px;">
-                <template #body="{ data }">
-                    {{ data.office || '—' }}
-                </template>
-            </Column>
-
-            <Column field="designation" header="Designation" style="min-width:180px;">
-                <template #body="{ data }">
-                    <span v-if="data.employee_type === 'contract_of_service'">{{ data.designation || '—' }}</span>
-                    <span v-else class="text-surface-300">—</span>
+                    <div class="flex flex-col">
+                        <span>{{ data.office || '—' }}</span>
+                        <span v-if="data.employee_type === 'contract_of_service' && data.designation"
+                            class="text-sm text-surface-500">{{ data.designation }}</span>
+                    </div>
                 </template>
             </Column>
 
