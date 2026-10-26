@@ -391,17 +391,17 @@ const editingReportId = ref(null);
 // resolves the saved report's signature block from this default, so the
 // workspace never sends signatory fields of its own.
 const centralDtrDefault = ref(null);
-const centralOfficeMappings = ref([]);
-const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true, props.subject?.office_of_assignment || props.subject?.office || null, centralOfficeMappings.value));
+const centralOffices = ref([]);
+const centralSignatoryDisplay = computed(() => resolveDefaultDisplay(centralDtrDefault.value, officeHeads.value, true, props.subject?.office_of_assignment || props.subject?.office || null, centralOffices.value));
 
 async function loadCentralDtrDefault() {
     try {
         const defaults = await fetchSignatoryDefaults();
         centralDtrDefault.value = defaults.dtr;
-        centralOfficeMappings.value = defaults.office_mappings;
+        centralOffices.value = defaults.offices;
     } catch {
         centralDtrDefault.value = null;
-        centralOfficeMappings.value = [];
+        centralOffices.value = [];
     }
 }
 const isHydratingReport = ref(false);

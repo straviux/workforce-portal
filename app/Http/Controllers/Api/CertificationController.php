@@ -149,9 +149,10 @@ class CertificationController extends Controller
     private function payloadWithSignatorySnapshot(array $validated): array
     {
         // Client-supplied signatory fields are ignored: the snapshot comes
-        // from the Part A office head matching the certification's office,
-        // falling back to the centrally configured certification preset (or
-        // the first Part A office head when no preset exists).
+        // from the Offices module (the office's assigned head, else its
+        // main office's head), falling back to the centrally configured
+        // certification preset (or the first Part A office head when no
+        // preset exists).
         $signatory = SignatoryDocumentDefault::resolveSnapshot('certification', trim((string) ($validated['office'] ?? '')) ?: null);
 
         if ($signatory === null) {

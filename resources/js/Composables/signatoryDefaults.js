@@ -6,17 +6,21 @@
  * signature block server-side from these defaults. This file is the single
  * client-side reader for that contract:
  *
- *   GET /api/signatory-defaults -> { defaults: { swa, dtr, certification, fund } }
+ *   GET /api/signatory-defaults -> { defaults: { swa, dtr, certification, fund }, offices }
  *   each default D (or null) = {
  *     document_type, office_head_signatory_id,
  *     office_head: { id, name, office, titles } | null,
  *     signatory_titles, signatory_name_underline,
  *     signatory_show_designation, signatory_show_office, signatory_info_order,
  *   }
+ *   offices = main offices with their assignments (specific
+ *   offices/programs), each carrying its assigned head id, from the
+ *   Offices module.
  *
  * Display resolution (resolveDefaultDisplay):
- * - An explicit office assignment for the document's office wins first,
- *   then a Part A head whose office matches it, mirroring the backend.
+ * - The document office's head in the Offices module wins first: the
+ *   assignment's own head, else its main office's head, mirroring the
+ *   backend.
  * - A saved default whose office head still exists wins, with the live
  *   office-head row (name/office) taking precedence over the snapshot copy.
  * - A saved default whose office head is gone is STALE: it resolves to no
@@ -72,12 +76,13 @@ export function normalizeSignatoryDefault(raw) {
     };
 }
 
-export function normalizeOfficeMapping(raw) {
+export function normalizeOffice(raw) {
     if (!raw) return null;
 
     return {
         id: raw.id ?? null,
-        office: String(raw.office ?? '').trim() || null,
+        name: String(raw.name ?? '').trim() || null,
+        parent_id: raw.parent_id ?? null,
         office_head_signatory_id: raw.office_head_signatory_id ?? null,
         office_head: raw.office_head
             ? {
@@ -87,6 +92,7 @@ export function normalizeOfficeMapping(raw) {
                 titles: toTitleList(raw.office_head.titles ?? raw.office_head.title),
             }
             : null,
+        children: (raw.children ?? []).map(normalizeOffice).filter(Boolean),
     };
 }
 
@@ -99,9 +105,23 @@ export async function fetchSignatoryDefaults() {
         dtr: normalizeSignatoryDefault(defaults.dtr),
         certification: normalizeSignatoryDefault(defaults.certification),
         fund: normalizeSignatoryDefault(defaults.fund),
-        office_mappings: (data?.office_mappings ?? []).map(normalizeOfficeMapping).filter(Boolean),
-        office_suggestions: (data?.office_suggestions ?? []).map((office) => String(office ?? '').trim()).filter(Boolean),
+        offices: (data?.offices ?? []).map(normalizeOffice).filter(Boolean),
     };
+}
+
+/** Flatten the office tree for name lookup: each assignment keeps its main office's head id as the fallback. */
+function flattenOffices(offices) {
+    const flat = [];
+
+    for (const main of offices ?? []) {
+        flat.push({ name: main?.name ?? null, headId: main?.office_head_signatory_id ?? null, parentHeadId: null });
+
+        for (const child of main?.children ?? []) {
+            flat.push({ name: child?.name ?? null, headId: child?.office_head_signatory_id ?? null, parentHeadId: main?.office_head_signatory_id ?? null });
+        }
+    }
+
+    return flat;
 }
 
 /**
@@ -109,15 +129,14 @@ export async function fetchSignatoryDefaults() {
  * underline value used only for the unsaved-default fallback (SWA/DTR
  * previously defaulted to underlined, certifications to not underlined);
  * a saved default always supplies its own flag. `office`, when given,
- * resolves a Part A office head first (case-insensitive, trimmed),
- * mirroring the backend: an explicit office assignment wins, then a
- * head whose office matches, and the saved default stays as the
- * fallback. The saved title subset only applies when the resolved head
+ * resolves the Offices-module head first (the assignment's own head,
+ * else its main office's head, case-insensitive, trimmed), mirroring
+ * the backend. The saved title subset only applies when the resolved head
  * is the saved head.
  * Returns null, or { head, titles, underline, showDesignation, showOffice,
  * infoOrder, saved, stale }.
  */
-export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, office = null, mappings = []) {
+export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, office = null, offices = []) {
     const heads = (officeHeads ?? []).map((head) => ({
         ...head,
         name: String(head?.name ?? '').trim(),
@@ -128,24 +147,11 @@ export function resolveDefaultDisplay(def, officeHeads, fallbackUnderline, offic
     if (!heads.length) return null;
 
     const wanted = String(office ?? '').trim().toLowerCase();
-    const mapping = wanted
-        ? (mappings ?? []).find((entry) => String(entry?.office ?? '').trim().toLowerCase() === wanted) ?? null
+    const entry = wanted
+        ? flattenOffices(offices).find((item) => String(item?.name ?? '').trim().toLowerCase() === wanted) ?? null
         : null;
-    const mappedHead = mapping
-        ? heads.find((head) => head.id === mapping.office_head_signatory_id)
-            ?? (mapping.office_head
-                ? {
-                    id: mapping.office_head.id ?? null,
-                    name: String(mapping.office_head.name ?? '').trim(),
-                    office: String(mapping.office_head.office ?? '').trim() || null,
-                    titles: toTitleList(mapping.office_head.titles ?? mapping.office_head.title),
-                }
-                : null)
-        : null;
-    const officeMatch = wanted
-        ? heads.find((head) => (head.office ?? '').toLowerCase() === wanted) ?? null
-        : null;
-    const resolved = mappedHead ?? officeMatch;
+    const officeHeadId = entry ? (entry.headId ?? entry.parentHeadId) : null;
+    const resolved = officeHeadId ? heads.find((head) => head.id === officeHeadId) ?? null : null;
 
     if (resolved) {
         const useSavedTitles = def

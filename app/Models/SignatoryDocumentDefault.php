@@ -68,10 +68,10 @@ class SignatoryDocumentDefault extends Model
 
     /**
      * The full GET/PUT response payload: every document type present,
-     * null where no default row exists yet, plus the explicit office
-     * assignments and the office names available to assign (distinct
-     * offices from employees, signatory heads, certifications and fund
-     * vouchers, excluding offices that already have an assignment).
+     * null where no default row exists yet, plus the office tree
+     * (main offices with their assignments) that previews resolve
+     * against. The office suggestions list is gone: offices are real
+     * records now, managed in the Offices module.
      */
     public static function apiPayload(): array
     {
@@ -87,35 +87,9 @@ class SignatoryDocumentDefault extends Model
             $defaults[$type] = $rows->has($type) ? $rows->get($type)->toApiArray() : null;
         }
 
-        $mappings = SignatoryOfficeMapping::query()
-            ->with('officeHeadSignatory')
-            ->orderBy('office')
-            ->get()
-            ->map(fn (SignatoryOfficeMapping $mapping) => $mapping->toApiArray())
-            ->all();
-
-        $mappedOffices = collect($mappings)
-            ->map(fn (array $mapping) => mb_strtolower(trim($mapping['office'])))
-            ->all();
-
-        $offices = collect()
-            ->merge(Employee::query()->pluck('office'))
-            ->merge(Employee::query()->pluck('office_of_assignment'))
-            ->merge(Signatory::query()->where('part', 'A')->pluck('office'))
-            ->merge(Certification::query()->pluck('office'))
-            ->merge(EmployeeFundTransaction::query()->pluck('office'))
-            ->map(fn ($office) => trim((string) $office))
-            ->filter()
-            ->unique(fn (string $office) => mb_strtolower($office))
-            ->reject(fn (string $office) => in_array(mb_strtolower($office), $mappedOffices, true))
-            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
-            ->values()
-            ->all();
-
         return [
             'defaults' => $defaults,
-            'office_mappings' => $mappings,
-            'office_suggestions' => $offices,
+            'offices' => Office::tree(),
         ];
     }
 
@@ -137,14 +111,6 @@ class SignatoryDocumentDefault extends Model
         return $office === '' ? null : $office;
     }
 
-    private static function officesMatch(?string $a, ?string $b): bool
-    {
-        $a = trim((string) $a);
-        $b = trim((string) $b);
-
-        return $a !== '' && $b !== '' && mb_strtolower($a) === mb_strtolower($b);
-    }
-
     /**
      * Resolve a document type to the 8 shared snapshot columns
      * (HasSignatorySnapshot), frozen into the document at creation time.
@@ -152,13 +118,14 @@ class SignatoryDocumentDefault extends Model
      * Name, office and titles come from the live Signatory row at
      * generation time, never from client input. The office head is
      * picked in this order:
-     * 1. The explicitly assigned head for $office (admin mapping in
-     *    Settings), when one exists and its head still exists.
-     * 2. The first Part A office head whose office matches $office
-     *    (case-insensitive, trimmed).
-     * 3. The configured default head for the type.
-     * 4. The first Part A office head (fallback when no default row
+     * 1. The head of the document's office in the Offices module: the
+     *    assignment's own head, else its main office's head.
+     * 2. The configured default head for the type.
+     * 3. The first Part A office head (fallback when no default row
      *    exists, or when the configured head was removed).
+     * An office name with no record in the Offices module skips
+     * straight to the default: the old office-name string match
+     * against Part A heads is gone, offices are real records now.
      * - Titles are the configured subset intersected with the head's
      *   current titles when the configured head is the resolved head;
      *   otherwise (no configured subset, or a different head resolved)
@@ -179,17 +146,7 @@ class SignatoryDocumentDefault extends Model
 
         $office = trim((string) $office);
 
-        $head = null;
-
-        if ($office !== '') {
-            $head = SignatoryOfficeMapping::mappedHeadForOffice($office);
-
-            $head ??= Signatory::query()
-                ->where('part', 'A')
-                ->orderBy('id')
-                ->get()
-                ->first(fn (Signatory $candidate) => self::officesMatch($candidate->office, $office));
-        }
+        $head = $office !== '' ? Office::headForOffice($office) : null;
 
         $head ??= $default?->officeHeadSignatory
             ?? Signatory::query()->where('part', 'A')->orderBy('id')->first();

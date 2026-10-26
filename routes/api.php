@@ -6,13 +6,13 @@ use App\Http\Controllers\Api\DtrController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeeFundTransactionController;
 use App\Http\Controllers\Api\EmployeeUserMatchController;
+use App\Http\Controllers\Api\OfficeController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ResponsibilityCenterController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SignatoryController;
 use App\Http\Controllers\Api\SignatoryDefaultController;
-use App\Http\Controllers\Api\SignatoryOfficeMappingController;
 use App\Http\Controllers\Api\SwaController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -174,9 +174,15 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/signatory-defaults', [SignatoryDefaultController::class, 'update'])
         ->middleware('check.permission:signatories.manage');
 
-    // Signatory office assignments (explicit head per office)
-    Route::put('/signatory-office-mappings', [SignatoryOfficeMappingController::class, 'update'])
-        ->middleware('check.permission:signatories.manage');
+    // Offices (main offices with their assignments; assignments live here now, not in Settings)
+    Route::get('/offices', [OfficeController::class, 'index'])
+        ->middleware('check.permission:offices.view');
+    Route::post('/offices', [OfficeController::class, 'store'])
+        ->middleware('check.permission:offices.manage');
+    Route::put('/offices/{office}', [OfficeController::class, 'update'])
+        ->middleware('check.permission:offices.manage');
+    Route::delete('/offices/{office}', [OfficeController::class, 'destroy'])
+        ->middleware('check.permission:offices.delete');
 
     // Users
     Route::get('/users', [UserController::class, 'index'])

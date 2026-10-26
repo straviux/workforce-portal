@@ -28,171 +28,130 @@
                 <p class="text-sm text-emerald-900 dark:text-emerald-100">Signatory configuration complete. Fund documents can be printed.</p>
             </div>
 
-            <!-- Office assignments: explicit head per office -->
+            <!-- Document defaults: the fallback signatory block per
+                 document type. Generation first uses the assigned head
+                 of the document's office (or its main office, managed in
+                 the Offices module); the default here applies only when
+                 neither is set. There are no per-report signatory
+                 pickers anymore. -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
-                        Office assignments
+                        Document defaults
                     </p>
-                    <Button v-if="canManageSignatories" :label="saveMappingsAction.label" class="rounded" size="small"
-                        :loading="saveMappingsAction.loading" :disabled="saveMappingsAction.disabled"
-                        :class="saveMappingsAction.morphClass" @click="saveMappings"><template #icon><AppIcon v-if="saveMappingsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
+                    <Button v-if="canManageSignatories" :label="saveDefaultsAction.label" class="rounded" size="small"
+                        :loading="saveDefaultsAction.loading" :disabled="saveDefaultsAction.disabled"
+                        :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
                 </div>
                 <p class="text-sm text-surface-400 mb-4">
-                    Assign a specific office head per office. When a document's office matches an assignment
-                    here, that head is used, ahead of the office-name match and the document default.
+                    These defaults are the fallback for each document type: a new document first uses the
+                    assigned head of its office (or its main office, managed in the Offices module),
+                    and only falls back to the default here when neither is set. Change them here
+                    instead of per document.
                 </p>
 
-                <div v-if="mappingsForm.length" class="space-y-3">
-                    <div v-for="(row, idx) in mappingsForm" :key="idx"
-                        class="flex items-end gap-3 rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
-                        <div class="ios-form-group flex-1 min-w-0">
-                            <label class="ios-label">Office</label>
-                            <Select v-model="row.office" :options="officeSuggestions" editable
-                                placeholder="Select or type an office" class="w-full"
-                                :disabled="!canManageSignatories" />
-                        </div>
-                        <div class="ios-form-group flex-1 min-w-0">
-                            <label class="ios-label">Office head</label>
-                            <Select v-model="row.office_head_signatory_id" :options="officeHeads"
-                                optionLabel="name" optionValue="id" placeholder="Select office head" class="w-full"
-                                showClear :disabled="!canManageSignatories" />
-                        </div>
-                        <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
-                            @click="mappingsForm.splice(idx, 1)"><template #icon><AppIcon name="Trash2" /></template></Button>
-                    </div>
-                </div>
-                <p v-else class="text-sm text-surface-400 mb-3">No office assignments yet.</p>
-
-                <Button v-if="canManageSignatories" label="Add assignment" class="rounded mt-3" size="small"
-                    severity="secondary" outlined @click="mappingsForm.push({ office: '', office_head_signatory_id: null })"><template #icon><AppIcon name="Plus" /></template></Button>
-
-    <!-- Document defaults subsection (fallback for every office): the fallback signatory block per
-                     document type. Generation first uses an office assignment
-                     when one matches the document's office, then the Part A
-                     head matching that office (for employees, the office of
-                     assignment when set, else the office); the default here
-                     applies only when neither matches. There are no
-                     per-report signatory pickers anymore. -->
-                <div class="mt-8 border-t border-surface-200 dark:border-surface-800 pt-6">
-                    <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
-                        <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
-                            Document defaults
+                <div class="space-y-4">
+                    <div v-for="docType in defaultTypes" :key="docType.key"
+                        class="rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
+                        <p class="text-sm font-medium text-surface-800 dark:text-surface-100 mb-3">
+                            {{ docType.label }}
                         </p>
-                        <Button v-if="canManageSignatories" :label="saveDefaultsAction.label" class="rounded" size="small"
-                            :loading="saveDefaultsAction.loading" :disabled="saveDefaultsAction.disabled"
-                            :class="saveDefaultsAction.morphClass" @click="saveDefaults"><template #icon><AppIcon v-if="saveDefaultsAction.state === 'success'" name="Check" /><AppIcon v-else name="Save" /></template></Button>
-                    </div>
-                    <p class="text-sm text-surface-400 mb-4">
-                        These defaults are the fallback for each document type: a new document first uses an
-                        office assignment when one matches its office, then the office head matching its office
-                        (for employees, the office of assignment when set), and only falls back to the default
-                        here when neither matches. Change them here instead of per document.
-                    </p>
 
-                    <div class="space-y-4">
-                        <div v-for="docType in defaultTypes" :key="docType.key"
-                            class="rounded-2xl border border-surface-200 dark:border-surface-800 p-4">
-                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100 mb-3">
-                                {{ docType.label }}
-                            </p>
+                        <p v-if="!savedDefaults[docType.key]"
+                            class="text-xs text-surface-400 mb-3">
+                            No default saved yet. Reports will use the first office head until a default is saved.
+                        </p>
+                        <p v-else-if="savedDefaults[docType.key]?.office_head_signatory_id && !officeHeads.some((h) => h.id === savedDefaults[docType.key].office_head_signatory_id)"
+                            class="text-xs text-amber-700 dark:text-amber-200 mb-3">
+                            The saved default's office head no longer exists. Choose another office head below and save.
+                        </p>
 
-                            <p v-if="!savedDefaults[docType.key]"
-                                class="text-xs text-surface-400 mb-3">
-                                No default saved yet. Reports will use the first office head until a default is saved.
-                            </p>
-                            <p v-else-if="savedDefaults[docType.key]?.office_head_signatory_id && !officeHeads.some((h) => h.id === savedDefaults[docType.key].office_head_signatory_id)"
-                                class="text-xs text-amber-700 dark:text-amber-200 mb-3">
-                                The saved default's office head no longer exists. Choose another office head below and save.
-                            </p>
+                        <div class="space-y-4">
+                            <div class="ios-form-group">
+                                <label class="ios-label">Default office head</label>
+                                <Select v-model="defaultsForm[docType.key].office_head_signatory_id"
+                                    :options="officeHeads" optionLabel="name" optionValue="id"
+                                    placeholder="Select office head" class="w-full" showClear
+                                    :disabled="!canManageSignatories"
+                                    @change="onDefaultHeadChange(docType.key)" />
+                            </div>
 
-                            <div class="space-y-4">
-                                <div class="ios-form-group">
-                                    <label class="ios-label">Default office head</label>
-                                    <Select v-model="defaultsForm[docType.key].office_head_signatory_id"
-                                        :options="officeHeads" optionLabel="name" optionValue="id"
-                                        placeholder="Select office head" class="w-full" showClear
-                                        :disabled="!canManageSignatories"
-                                        @change="onDefaultHeadChange(docType.key)" />
+                            <template v-if="defaultsForm[docType.key].office_head_signatory_id">
+                                <div>
+                                    <p class="ios-label mb-2">Titles / Designations</p>
+                                    <div class="space-y-2">
+                                        <div v-for="(title, idx) in defaultsForm[docType.key].orderedTitles" :key="title"
+                                            class="flex items-center gap-2 rounded-2xl border border-surface-200 dark:border-surface-700 px-3 py-2">
+                                            <Checkbox :modelValue="defaultsForm[docType.key].selectedTitles.includes(title)"
+                                                :binary="true" size="small" severity="success"
+                                                :disabled="!canManageSignatories"
+                                                @update:modelValue="(value) => setDefaultTitleSelected(docType.key, title, value)" />
+                                            <span class="min-w-0 flex-1 text-sm text-surface-800 dark:text-surface-100">{{ title }}</span>
+                                            <Button severity="secondary" text rounded size="small"
+                                                :disabled="!canManageSignatories || idx === 0"
+                                                @click="moveDefaultTitle(docType.key, idx, -1)"><template #icon><AppIcon name="ChevronUp" /></template></Button>
+                                            <Button severity="secondary" text rounded size="small"
+                                                :disabled="!canManageSignatories || idx === defaultsForm[docType.key].orderedTitles.length - 1"
+                                                @click="moveDefaultTitle(docType.key, idx, 1)"><template #icon><AppIcon name="ChevronDown" /></template></Button>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-surface-400 mt-2">
+                                        Check the titles to print, and use the arrows to set their order.
+                                    </p>
                                 </div>
 
-                                <template v-if="defaultsForm[docType.key].office_head_signatory_id">
-                                    <div>
-                                        <p class="ios-label mb-2">Titles / Designations</p>
-                                        <div class="space-y-2">
-                                            <div v-for="(title, idx) in defaultsForm[docType.key].orderedTitles" :key="title"
-                                                class="flex items-center gap-2 rounded-2xl border border-surface-200 dark:border-surface-700 px-3 py-2">
-                                                <Checkbox :modelValue="defaultsForm[docType.key].selectedTitles.includes(title)"
-                                                    :binary="true" size="small" severity="success"
-                                                    :disabled="!canManageSignatories"
-                                                    @update:modelValue="(value) => setDefaultTitleSelected(docType.key, title, value)" />
-                                                <span class="min-w-0 flex-1 text-sm text-surface-800 dark:text-surface-100">{{ title }}</span>
-                                                <Button severity="secondary" text rounded size="small"
-                                                    :disabled="!canManageSignatories || idx === 0"
-                                                    @click="moveDefaultTitle(docType.key, idx, -1)"><template #icon><AppIcon name="ChevronUp" /></template></Button>
-                                                <Button severity="secondary" text rounded size="small"
-                                                    :disabled="!canManageSignatories || idx === defaultsForm[docType.key].orderedTitles.length - 1"
-                                                    @click="moveDefaultTitle(docType.key, idx, 1)"><template #icon><AppIcon name="ChevronDown" /></template></Button>
-                                            </div>
+                                <div class="space-y-3">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline</p>
+                                            <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory name.</p>
                                         </div>
-                                        <p class="text-xs text-surface-400 mt-2">
-                                            Check the titles to print, and use the arrows to set their order.
-                                        </p>
+                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_name_underline"
+                                            :disabled="!canManageSignatories" />
                                     </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show designation</p>
+                                            <p class="text-xs text-surface-500 mt-1">Print the titles above under the name.</p>
+                                        </div>
+                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_designation"
+                                            :disabled="!canManageSignatories" />
+                                    </div>
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show office</p>
+                                            <p class="text-xs text-surface-500 mt-1">Print the office under the name.</p>
+                                        </div>
+                                        <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_office"
+                                            :disabled="!canManageSignatories" />
+                                    </div>
+                                    <div class="ios-form-group">
+                                        <label class="ios-label">Information order</label>
+                                        <Select v-model="defaultsForm[docType.key].signatory_info_order"
+                                            :options="infoOrderOptions" optionLabel="label" optionValue="value"
+                                            class="w-full" :disabled="!canManageSignatories" />
+                                    </div>
+                                </div>
 
-                                    <div class="space-y-3">
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Underline</p>
-                                                <p class="text-xs text-surface-500 mt-1">Show an underline below the signatory name.</p>
-                                            </div>
-                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_name_underline"
-                                                :disabled="!canManageSignatories" />
-                                        </div>
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show designation</p>
-                                                <p class="text-xs text-surface-500 mt-1">Print the titles above under the name.</p>
-                                            </div>
-                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_designation"
-                                                :disabled="!canManageSignatories" />
-                                        </div>
-                                        <div class="flex items-start justify-between gap-4">
-                                            <div>
-                                                <p class="text-sm font-medium text-surface-800 dark:text-surface-100">Show office</p>
-                                                <p class="text-xs text-surface-500 mt-1">Print the office under the name.</p>
-                                            </div>
-                                            <ToggleSwitch v-model="defaultsForm[docType.key].signatory_show_office"
-                                                :disabled="!canManageSignatories" />
-                                        </div>
-                                        <div class="ios-form-group">
-                                            <label class="ios-label">Information order</label>
-                                            <Select v-model="defaultsForm[docType.key].signatory_info_order"
-                                                :options="infoOrderOptions" optionLabel="label" optionValue="value"
-                                                class="w-full" :disabled="!canManageSignatories" />
-                                        </div>
-                                    </div>
-
-                                    <div class="rounded-2xl bg-surface-50 dark:bg-surface-800 p-3 space-y-1 text-sm">
-                                        <p class="font-medium text-surface-800 dark:text-surface-100"
-                                            :style="defaultsForm[docType.key].signatory_name_underline
-                                                ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
-                                                : ''">
-                                            {{ defaultHeadFor(docType.key)?.name || 'No signatory selected' }}
-                                        </p>
-                                        <p v-for="line in defaultPreviewLines(docType.key)" :key="line" class="text-surface-500">{{ line }}</p>
-                                        <p v-if="!defaultPreviewLines(docType.key).length" class="text-surface-400">
-                                            Only the signatory name will be printed.
-                                        </p>
-                                    </div>
-                                </template>
-                            </div>
+                                <div class="rounded-2xl bg-surface-50 dark:bg-surface-800 p-3 space-y-1 text-sm">
+                                    <p class="font-medium text-surface-800 dark:text-surface-100"
+                                        :style="defaultsForm[docType.key].signatory_name_underline
+                                            ? 'display:inline-block;padding-bottom:2px;border-bottom:1px solid currentColor;'
+                                            : ''">
+                                        {{ defaultHeadFor(docType.key)?.name || 'No signatory selected' }}
+                                    </p>
+                                    <p v-for="line in defaultPreviewLines(docType.key)" :key="line" class="text-surface-500">{{ line }}</p>
+                                    <p v-if="!defaultPreviewLines(docType.key).length" class="text-surface-400">
+                                        Only the signatory name will be printed.
+                                    </p>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
             </div>
 
-<!-- Office Heads (multiple) -->
+            <!-- Office Heads (multiple) -->
             <div class="ios-card p-6">
                 <div class="flex items-center justify-between mb-4">
                     <p class="text-xs font-semibold text-surface-500 uppercase tracking-wide">
@@ -526,56 +485,6 @@ const saveDefaultsAction = useActionButton({
     successLabel: 'Saved',
 });
 
-// ── Office assignments (explicit head per office) ──
-const mappingsForm = ref([]);
-const officeSuggestions = ref([]);
-const saveMappingsAction = useActionButton({
-    idleLabel: 'Save assignments',
-    processingLabel: 'Saving...',
-    successLabel: 'Saved',
-});
-
-function applyMappingsToForm(defaults) {
-    mappingsForm.value = (defaults.office_mappings ?? []).map((mapping) => ({
-        office: mapping.office ?? '',
-        office_head_signatory_id: mapping.office_head_signatory_id ?? null,
-    }));
-    officeSuggestions.value = defaults.office_suggestions ?? [];
-}
-
-async function saveMappings() {
-    const rows = mappingsForm.value.map((row) => ({
-        office: String(row.office ?? '').trim(),
-        office_head_signatory_id: row.office_head_signatory_id ?? null,
-    }));
-
-    if (rows.some((row) => !row.office || !row.office_head_signatory_id)) {
-        toast.add({ severity: 'warn', summary: 'Incomplete assignment', detail: 'Every assignment needs an office and an office head, or remove the row.', life: 3500 });
-        return;
-    }
-
-    const seen = new Set();
-    for (const row of rows) {
-        const key = row.office.toLowerCase();
-        if (seen.has(key)) {
-            toast.add({ severity: 'warn', summary: 'Duplicate office', detail: `Two assignments point at ${row.office}. Keep one.`, life: 3500 });
-            return;
-        }
-        seen.add(key);
-    }
-
-    try {
-        await saveMappingsAction.run(async () => {
-            await axios.put('/api/signatory-office-mappings', { mappings: rows });
-            toast.add({ severity: 'success', summary: 'Saved', detail: 'Office assignments saved.', life: 3000 });
-            await loadDefaults(true);
-        });
-    } catch (err) {
-        const msg = err.response?.data?.message ?? 'Could not save office assignments.';
-        toast.add({ severity: 'error', summary: 'Error', detail: msg, life: 3500 });
-    }
-}
-
 function emptyDefaultForm(underline = false) {
     return {
         office_head_signatory_id: null,
@@ -693,7 +602,6 @@ async function loadDefaults(silent = false) {
         for (const docType of defaultTypes) {
             applyDefaultToForm(docType.key, defaults[docType.key]);
         }
-        applyMappingsToForm(defaults);
     } catch {
         if (!silent) {
             toast.add({ severity: 'error', summary: 'Error', detail: 'Could not load document defaults.', life: 3000 });

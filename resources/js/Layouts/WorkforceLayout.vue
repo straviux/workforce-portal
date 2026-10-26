@@ -192,6 +192,11 @@ onMounted(async () => {
                         <AppIcon name="Clock" :size="16" class="mr-3" />
                         <span class="text-sm font-medium">DTR</span>
                     </SidebarLink>
+                    <SidebarLink v-if="hasPermission('offices.view')" :href="route('offices.index')"
+                        :active="isActive('offices')">
+                        <AppIcon name="Building2" :size="16" class="mr-3" />
+                        <span class="text-sm font-medium">Offices</span>
+                    </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"
                         :active="isActive('settings.signatories')">
                         <AppIcon name="SquarePen" :size="16" class="mr-3" />
@@ -255,6 +260,12 @@ onMounted(async () => {
                     <SidebarLink v-if="hasPermission('dtr.view')" :href="route('dtr.index')" :active="isActive('dtr')">
                         <span class="w-full flex justify-center">
                             <AppIcon name="Clock" :size="20" />
+                        </span>
+                    </SidebarLink>
+                    <SidebarLink v-if="hasPermission('offices.view')" :href="route('offices.index')"
+                        :active="isActive('offices')">
+                        <span class="w-full flex justify-center">
+                            <AppIcon name="Building2" :size="20" />
                         </span>
                     </SidebarLink>
                     <SidebarLink v-if="hasPermission('signatories.view')" :href="route('settings.signatories')"

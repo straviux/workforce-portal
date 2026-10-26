@@ -53,6 +53,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('check.permission:dtr.view')
         ->name('dtr.index');
 
+    Route::get('/offices', fn () => inertia('Offices/index'))
+        ->middleware('check.permission:offices.view')
+        ->name('offices.index');
+
     Route::get('/settings/signatories', fn () => inertia('Settings/Signatories'))
         ->middleware('check.permission:signatories.view')
         ->name('settings.signatories');
