@@ -182,7 +182,7 @@ import TrackingHistoryModal from './Modal/TrackingHistoryModal.vue';
 import { renderVueTemplate, usePdfPrint } from '@/composables/usePdfPrint';
 import { useActionButton } from '@/Composables/useActionButton';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
-import { fetchOffices } from '@/Composables/officeSignatory';
+import { fetchOffices, normalizeTitleEntries, titleTexts } from '@/Composables/officeSignatory';
 import ObrTemplate from './Pdf/ObrTemplate.vue';
 import CwaTemplate from './Pdf/CwaTemplate.vue';
 import PayrollTemplate from './Pdf/PayrollTemplate.vue';
@@ -651,7 +651,7 @@ async function printPdf(type) {
 
         const partA = signatories.filter((s) => s.part === 'A');
         if (partA.length > 0) {
-            const centralPartA = buildCentralOfficePartA(partA, voucher.office, offices);
+            const centralPartA = buildCentralOfficePartA(partA, voucher.office, offices, type);
             if (!centralPartA) {
                 toast.add({ severity: 'error', summary: 'Cannot print', detail: 'No office head is available for this voucher.', life: 5000 });
                 return;
@@ -671,7 +671,7 @@ async function printPdf(type) {
 
 
 
-function buildCentralOfficePartA(partAOfficeHeads, voucherOffice = null, offices = []) {
+function buildCentralOfficePartA(partAOfficeHeads, voucherOffice = null, offices = [], docType = null) {
     const partA = Array.isArray(partAOfficeHeads) ? partAOfficeHeads : [];
 
     // The voucher office's head from the Offices module (the
@@ -702,7 +702,7 @@ function buildCentralOfficePartA(partAOfficeHeads, voucherOffice = null, offices
 
     const snapshot = {
         office_head: chosen,
-        signatory_titles: null,
+        signatory_titles: titleTexts(normalizeTitleEntries(chosen.title ?? chosen.titles), docType),
         signatory_show_designation: true,
         signatory_show_office: true,
         signatory_info_order: 'designation_first',
@@ -740,7 +740,7 @@ function buildPrintSignatoryDetailLines(snapshot) {
 
 function normalizeSignatoryTitles(titles) {
     const titleList = Array.isArray(titles)
-        ? titles
+        ? titles.map((title) => (typeof title === 'object' && title !== null ? normalizeText(title.text) : normalizeText(title)))
         : normalizeText(titles)
             ? [normalizeText(titles)]
             : [];

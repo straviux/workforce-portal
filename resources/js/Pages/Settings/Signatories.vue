@@ -45,8 +45,8 @@
                             <p class="text-sm font-medium text-surface-800 dark:text-surface-100">{{ oh.name }}</p>
                             <p v-if="oh.office" class="text-xs text-surface-500">{{ oh.office }}</p>
                             <div v-if="oh.titles?.length" class="mt-0.5">
-                                <span v-for="(t, i) in oh.titles" :key="i" class="block text-xs text-surface-400">{{ t
-                                    }}</span>
+                                <span v-for="(t, i) in oh.titles" :key="i" class="block text-xs text-surface-400">{{ t.text }}
+                                    <span v-if="t.scopes?.length" class="text-surface-300">· {{ t.scopes.map(titleScopeLabel).join(', ') }}</span></span>
                             </div>
                         </div>
                         <Button v-if="canManageSignatories" severity="secondary" text rounded size="small"
@@ -108,15 +108,24 @@
                 </div>
                 <div class="ios-form-group">
                     <label class="ios-label">Titles / Designations</label>
-                    <div class="space-y-2">
-                        <div v-for="(t, i) in ohForm.titles" :key="i" class="flex gap-2 items-center">
-                            <InputText v-model="ohForm.titles[i]" placeholder="e.g. Political Affairs Officer III"
-                                class="flex-1" size="small" />
-                            <Button severity="danger" text rounded size="small"
-                                :disabled="ohForm.titles.length === 1" @click="ohForm.titles.splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
+                    <div class="space-y-3">
+                        <div v-for="(t, i) in ohForm.titles" :key="i" class="space-y-1.5">
+                            <div class="flex gap-2 items-center">
+                                <InputText v-model="ohForm.titles[i].text" placeholder="e.g. Political Affairs Officer III"
+                                    class="flex-1" size="small" />
+                                <Button severity="danger" text rounded size="small"
+                                    :disabled="ohForm.titles.length === 1" @click="ohForm.titles.splice(i, 1)"><template #icon><AppIcon name="X" /></template></Button>
+                            </div>
+                            <div class="flex flex-wrap gap-x-3 gap-y-1 pl-1">
+                                <label v-for="scope in TITLE_SCOPES" :key="scope.value"
+                                    class="flex items-center gap-1 text-xs text-surface-500">
+                                    <Checkbox v-model="ohForm.titles[i].scopes" :inputId="`oh-scope-${i}-${scope.value}`" :value="scope.value" />
+                                    {{ scope.label }}
+                                </label>
+                            </div>
                         </div>
                         <Button label="Add title" text size="small" class="rounded !pl-0"
-                            @click="ohForm.titles.push('')"><template #icon><AppIcon name="Plus" /></template></Button>
+                            @click="ohForm.titles.push({ text: '', scopes: [...ALL_TITLE_SCOPES] })"><template #icon><AppIcon name="Plus" /></template></Button>
                     </div>
                 </div>
             </div>
@@ -182,6 +191,7 @@ import ContextMenu from 'primevue/contextmenu';
 import axios from 'axios';
 import WorkforceLayout from '@/Layouts/WorkforceLayout.vue';
 import { signatoryConfigurationStatus } from '@/Composables/signatorySnapshot';
+import { ALL_TITLE_SCOPES, TITLE_SCOPES, normalizeTitleEntries, titleScopeLabel } from '@/Composables/officeSignatory';
 import { useActionButton } from '@/Composables/useActionButton';
 
 const toast = useToast();
@@ -232,7 +242,7 @@ function toTitles(title) {
 
 // ── Office Head modal state ──
 const ohModal = reactive({ show: false, editId: null });
-const ohForm = reactive({ name: '', office: '', titles: [''] });
+const ohForm = reactive({ name: '', office: '', titles: [{ text: '', scopes: [...ALL_TITLE_SCOPES] }] });
 // The footer button's verb flips with the mode, so each mode gets its
 // own morph action and the live one is the mode open at click time
 // (the mode never changes mid-flight, and the modal only closes after
@@ -253,7 +263,7 @@ function openAddOh() {
     ohModal.editId = null;
     ohForm.name = '';
     ohForm.office = '';
-    ohForm.titles = [''];
+    ohForm.titles = [{ text: '', scopes: [...ALL_TITLE_SCOPES] }];
     ohModal.show = true;
 }
 
@@ -261,26 +271,38 @@ function openEditOh(oh) {
     ohModal.editId = oh.id;
     ohForm.name = oh.name;
     ohForm.office = oh.office ?? '';
-    ohForm.titles = [...oh.titles];
+    // Deep copy: editing must not mutate the list rows before saving.
+    ohForm.titles = oh.titles.length
+        ? oh.titles.map((t) => ({ text: t.text ?? '', scopes: [...(t.scopes ?? ALL_TITLE_SCOPES)] }))
+        : [{ text: '', scopes: [...ALL_TITLE_SCOPES] }];
     ohModal.show = true;
 }
 
 async function submitOhModal() {
+    const titles = ohForm.titles
+        .map((t) => ({ text: String(t.text ?? '').trim(), scopes: [...(t.scopes ?? [])] }))
+        .filter((t) => t.text);
+
+    if (titles.some((t) => !t.scopes.length)) {
+        toast.add({ severity: 'warn', summary: 'Title without a place', detail: 'Tick at least one document for every title.', life: 3500 });
+        return;
+    }
+
     const payload = {
         name: ohForm.name,
         office: ohForm.office,
-        title: ohForm.titles.filter((t) => t.trim()),
+        title: titles,
     };
     try {
         await ohModalAction.value.run(async () => {
             if (ohModal.editId) {
                 const res = await axios.patch(`/api/signatories/office-heads/${ohModal.editId}`, payload);
                 const idx = officeHeads.value.findIndex((r) => r.id === ohModal.editId);
-                if (idx !== -1) officeHeads.value[idx] = { ...res.data.data, titles: toTitles(res.data.data.title) };
+                if (idx !== -1) officeHeads.value[idx] = { ...res.data.data, titles: normalizeTitleEntries(res.data.data.title) };
                 toast.add({ severity: 'success', summary: 'Saved', detail: 'Office head updated.', life: 3000 });
             } else {
                 const res = await axios.post('/api/signatories/office-heads', payload);
-                officeHeads.value.push({ ...res.data.data, titles: toTitles(res.data.data.title) });
+                officeHeads.value.push({ ...res.data.data, titles: normalizeTitleEntries(res.data.data.title) });
                 toast.add({ severity: 'success', summary: 'Added', detail: 'Office head added.', life: 3000 });
             }
         });
@@ -364,7 +386,7 @@ async function load(silent = false) {
         configuration.value = res.data.configuration ?? signatoryConfigurationStatus(data);
         officeHeads.value = data
             .filter((r) => r.part === 'A')
-            .map((r) => ({ ...r, titles: toTitles(r.title) }));
+            .map((r) => ({ ...r, titles: normalizeTitleEntries(r.title) }));
         bcdForm.value = ['B', 'C', 'D'].map((part) => {
             const found = data.find((r) => r.part === part);
             return {

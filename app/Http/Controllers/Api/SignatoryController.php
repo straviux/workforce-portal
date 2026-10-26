@@ -10,6 +10,7 @@ use App\Models\SwaReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SignatoryController extends Controller
 {
@@ -65,7 +66,8 @@ class SignatoryController extends Controller
     }
 
     /**
-     * Add a new Part A (Office Head) entry.
+     * Add a new Part A (Office Head) entry. Titles are { text, scopes }
+     * objects: each title ticks the documents it renders in.
      */
     public function storeOfficeHead(Request $request): JsonResponse
     {
@@ -73,14 +75,17 @@ class SignatoryController extends Controller
             'name'    => 'required|string|max:255',
             'office'  => 'nullable|string|max:255',
             'title'   => 'nullable|array',
-            'title.*' => 'string|max:255',
+            'title.*' => 'array',
+            'title.*.text' => 'required|string|max:255',
+            'title.*.scopes' => 'required|array|min:1',
+            'title.*.scopes.*' => Rule::in(Signatory::TITLE_SCOPES),
         ]);
 
         $signatory = Signatory::create([
             'part'   => 'A',
             'name'   => $validated['name'],
             'office' => $validated['office'] ?? null,
-            'title'  => $validated['title'] ?? null,
+            'title'  => self::normalizeTitles($validated['title'] ?? null),
         ]);
 
         return response()->json(['data' => $signatory], 201);
@@ -97,16 +102,46 @@ class SignatoryController extends Controller
             'name'    => 'required|string|max:255',
             'office'  => 'nullable|string|max:255',
             'title'   => 'nullable|array',
-            'title.*' => 'string|max:255',
+            'title.*' => 'array',
+            'title.*.text' => 'required|string|max:255',
+            'title.*.scopes' => 'required|array|min:1',
+            'title.*.scopes.*' => Rule::in(Signatory::TITLE_SCOPES),
         ]);
 
         $signatory->update([
             'name'   => $validated['name'],
             'office' => $validated['office'] ?? null,
-            'title'  => $validated['title'] ?? null,
+            'title'  => self::normalizeTitles($validated['title'] ?? null),
         ]);
 
         return response()->json(['data' => $signatory]);
+    }
+
+    /** Trim texts, drop blank titles, keep scopes in canonical order. */
+    private static function normalizeTitles(?array $titles): ?array
+    {
+        if ($titles === null) {
+            return null;
+        }
+
+        $normalized = [];
+
+        foreach ($titles as $title) {
+            $text = trim((string) ($title['text'] ?? ''));
+
+            if ($text === '') {
+                continue;
+            }
+
+            $scopes = array_values(array_intersect(
+                $title['scopes'] ?? [],
+                Signatory::TITLE_SCOPES
+            ));
+
+            $normalized[] = ['text' => $text, 'scopes' => $scopes];
+        }
+
+        return $normalized;
     }
 
     /**

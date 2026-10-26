@@ -22,13 +22,57 @@
  */
 import axios from 'axios';
 
-export function toTitleList(value) {
-    if (Array.isArray(value)) {
-        return value.map((title) => String(title ?? '').trim()).filter(Boolean);
-    }
+/** Document scopes a Part A title can render in, in display order. */
+export const TITLE_SCOPES = [
+    { value: 'swa', label: 'SWA' },
+    { value: 'dtr', label: 'DTR' },
+    { value: 'certification', label: 'Certification' },
+    { value: 'cwa', label: 'CWA' },
+    { value: 'payroll', label: 'Payroll' },
+];
 
-    const text = String(value ?? '').trim();
-    return text ? [text] : [];
+export const ALL_TITLE_SCOPES = TITLE_SCOPES.map((scope) => scope.value);
+
+export function titleScopeLabel(value) {
+    return TITLE_SCOPES.find((scope) => scope.value === value)?.label ?? value;
+}
+
+export function toTitleList(value) {
+    return titleTexts(normalizeTitleEntries(value));
+}
+
+/** Normalize stored titles to [{ text, scopes }]. Plain strings render everywhere. */
+export function normalizeTitleEntries(value) {
+    const list = Array.isArray(value) ? value : (value ? [value] : []);
+
+    return list
+        .map((title) => {
+            if (typeof title === 'string') {
+                return { text: title.trim(), scopes: [...ALL_TITLE_SCOPES] };
+            }
+
+            if (title && typeof title === 'object') {
+                const scopes = Array.isArray(title.scopes) && title.scopes.length
+                    ? title.scopes.filter((scope) => ALL_TITLE_SCOPES.includes(scope))
+                    : [...ALL_TITLE_SCOPES];
+
+                return { text: String(title.text ?? '').trim(), scopes };
+            }
+
+            return null;
+        })
+        .filter((entry) => entry && entry.text);
+}
+
+/** Plain texts from title entries, filtered to a scope (null = all). */
+export function titleTexts(entries, scope = null) {
+    const list = normalizeTitleEntries(entries);
+
+    return list
+        .filter((entry) => scope === null
+            || !ALL_TITLE_SCOPES.includes(scope)
+            || entry.scopes.includes(scope))
+        .map((entry) => entry.text);
 }
 
 export function normalizeOffice(raw) {
@@ -45,6 +89,7 @@ export function normalizeOffice(raw) {
                 name: String(raw.office_head.name ?? '').trim(),
                 office: String(raw.office_head.office ?? '').trim() || null,
                 titles: toTitleList(raw.office_head.titles ?? raw.office_head.title),
+                titleEntries: normalizeTitleEntries(raw.office_head.titles ?? raw.office_head.title),
             }
             : null,
         children: (raw.children ?? []).map(normalizeOffice).filter(Boolean),
@@ -86,16 +131,18 @@ function flattenOffices(offices) {
 }
 
 /**
- * Resolve one document office's display block.
+ * Resolve one document office's display block for a document scope
+ * ('swa', 'dtr', 'certification'; null = all titles).
  * Returns null, or { head, titles, underline, showDesignation, showOffice,
  * infoOrder }.
  */
-export function resolveOfficeDisplay(officeHeads, offices, office = null) {
+export function resolveOfficeDisplay(officeHeads, offices, office = null, scope = null) {
     const heads = (officeHeads ?? []).map((head) => ({
         ...head,
         name: String(head?.name ?? '').trim(),
         office: String(head?.office ?? '').trim() || null,
         titles: toTitleList(head?.titles ?? head?.title),
+        titleEntries: normalizeTitleEntries(head?.titles ?? head?.title),
     })).filter((head) => head.id != null);
 
     if (!heads.length) return null;
@@ -114,10 +161,11 @@ export function resolveOfficeDisplay(officeHeads, offices, office = null) {
         : null;
 
     const head = resolved ?? heads[0];
+    const entries = head.titleEntries ?? normalizeTitleEntries(head.titles);
 
     return {
         head,
-        titles: [...head.titles],
+        titles: titleTexts(entries, scope),
         underline: false,
         showDesignation: true,
         showOffice: true,

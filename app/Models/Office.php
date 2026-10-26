@@ -116,15 +116,16 @@ class Office extends Model
      *    assignment's own head, else its main office's head.
      * 2. The first Part A office head (fallback when the office is
      *    unknown or carries no head).
-     * Titles are always all of the resolved head's current titles, and
-     * the display flags are fixed (no underline, show designation and
-     * office, designation first): per-document-type defaults were
-     * deleted, so there is nothing left to configure per type.
+     * Titles are the resolved head's titles for $scope (a document
+     * type); with no scope, all of its titles. The display flags are
+     * fixed (no underline, show designation and office, designation
+     * first): per-document-type defaults were deleted, so there is
+     * nothing left to configure per type.
      *
      * Returns null when no Part A office head exists at all; callers must
      * refuse generation in that case (there is no signatory to freeze).
      */
-    public static function resolveSnapshot(?string $office = null): ?array
+    public static function resolveSnapshot(?string $office = null, ?string $scope = null): ?array
     {
         $office = trim((string) $office);
 
@@ -135,17 +136,11 @@ class Office extends Model
             return null;
         }
 
-        $titles = collect($head->title ?? [])
-            ->map(fn ($title) => trim((string) $title))
-            ->filter()
-            ->values()
-            ->all();
-
         return [
             'office_head_signatory_id' => $head->id,
             'signatory_name' => $head->name,
             'signatory_office' => $head->office,
-            'signatory_titles' => $titles,
+            'signatory_titles' => $head->titlesForScope($scope),
             'signatory_name_underline' => false,
             'signatory_show_designation' => true,
             'signatory_show_office' => true,

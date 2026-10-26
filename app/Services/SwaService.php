@@ -258,7 +258,7 @@ class SwaService
         // from the Offices module (the subject office's assigned head,
         // else its main office's head), falling back to the first Part A
         // office head.
-        $signatory = Office::resolveSnapshot(Office::effectiveOffice($subject));
+        $signatory = Office::resolveSnapshot(Office::effectiveOffice($subject), 'swa');
 
         if ($signatory === null) {
             throw ValidationException::withMessages([
@@ -354,7 +354,7 @@ class SwaService
         // from the Offices module (the subject office's assigned head,
         // else its main office's head), falling back to the first Part A
         // office head.
-        $signatory = Office::resolveSnapshot($report->subject ? Office::effectiveOffice($report->subject) : null);
+        $signatory = Office::resolveSnapshot($report->subject ? Office::effectiveOffice($report->subject) : null, 'swa');
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

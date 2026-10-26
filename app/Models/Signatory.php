@@ -20,6 +20,52 @@ class Signatory extends Model
     ];
 
     /**
+     * Document scopes a Part A title can render in. A title ticks all
+     * scopes that apply; fund titles split by document (CWA vs Payroll)
+     * because the Part A block prints in both.
+     */
+    public const TITLE_SCOPES = ['swa', 'dtr', 'certification', 'cwa', 'payroll'];
+
+    public const TITLE_SCOPE_LABELS = [
+        'swa' => 'SWA',
+        'dtr' => 'DTR',
+        'certification' => 'Certification',
+        'cwa' => 'CWA',
+        'payroll' => 'Payroll',
+    ];
+
+    /**
+     * This head's titles as plain texts for a document scope, or all of
+     * them when no scope is given (admin views, or parts whose titles
+     * are not scoped). Part A titles are stored as { text, scopes }
+     * objects; legacy plain-string titles render everywhere, and an
+     * unknown scope renders everything rather than nothing.
+     */
+    public function titlesForScope(?string $scope = null): array
+    {
+        $entries = collect($this->title ?? [])
+            ->map(function ($title) {
+                if (is_string($title)) {
+                    return ['text' => trim($title), 'scopes' => self::TITLE_SCOPES];
+                }
+
+                return [
+                    'text' => trim((string) ($title['text'] ?? '')),
+                    'scopes' => is_array($title['scopes'] ?? null) && $title['scopes'] !== []
+                        ? array_values(array_intersect($title['scopes'], self::TITLE_SCOPES))
+                        : self::TITLE_SCOPES,
+                ];
+            })
+            ->filter(fn (array $entry) => $entry['text'] !== '');
+
+        if ($scope !== null && in_array($scope, self::TITLE_SCOPES, true)) {
+            $entries = $entries->filter(fn (array $entry) => in_array($scope, $entry['scopes'], true));
+        }
+
+        return $entries->map(fn (array $entry) => $entry['text'])->values()->all();
+    }
+
+    /**
      * Descriptions for each part. Single source of truth for part labels:
      * the Settings UI and fund-print flows consume these via the
      * signatories API response instead of hardcoding their own copies.

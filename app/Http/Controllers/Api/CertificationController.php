@@ -152,7 +152,7 @@ class CertificationController extends Controller
         // from the Offices module (the office's assigned head, else its
         // main office's head), falling back to the first Part A office
         // head.
-        $signatory = Office::resolveSnapshot(trim((string) ($validated['office'] ?? '')) ?: null);
+        $signatory = Office::resolveSnapshot(trim((string) ($validated['office'] ?? '')) ?: null, 'certification');
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

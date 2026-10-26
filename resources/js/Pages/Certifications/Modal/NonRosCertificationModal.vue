@@ -177,7 +177,7 @@ const form = reactive(defaultForm());
 // fields of its own.
 const centralOffices = ref([]);
 const centralOfficesLoaded = ref(false);
-const centralDisplay = computed(() => resolveOfficeDisplay(props.officeHeads, centralOffices.value, form.office));
+const centralDisplay = computed(() => resolveOfficeDisplay(props.officeHeads, centralOffices.value, form.office, 'certification'));
 
 async function loadCentralOffices() {
     centralOfficesLoaded.value = false;
@@ -342,7 +342,7 @@ function officeHeadTitlesForId(officeHeadId) {
     const titles = Array.isArray(officeHead?.titles) ? officeHead.titles : [];
 
     return titles
-        .map((title) => (typeof title === 'string' ? title.trim() : ''))
+        .map((title) => (typeof title === 'string' ? title.trim() : String(title?.text ?? '').trim()))
         .filter(Boolean);
 }
 

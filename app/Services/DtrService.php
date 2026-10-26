@@ -340,7 +340,7 @@ class DtrService
      */
     private function resolveSignatory(array $validated, ?Model $subject = null): array
     {
-        $signatory = Office::resolveSnapshot($subject ? Office::effectiveOffice($subject) : null);
+        $signatory = Office::resolveSnapshot($subject ? Office::effectiveOffice($subject) : null, 'dtr');
 
         if ($signatory === null) {
             throw ValidationException::withMessages([

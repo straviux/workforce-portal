@@ -381,7 +381,7 @@ const editingReportId = ref(null);
 // the saved report's signature block from the Offices module, so the
 // workspace never sends signatory fields of its own.
 const centralOffices = ref([]);
-const centralSignatoryDisplay = computed(() => resolveOfficeDisplay(officeHeads.value, centralOffices.value, props.subject?.office_of_assignment || props.subject?.office || null));
+const centralSignatoryDisplay = computed(() => resolveOfficeDisplay(officeHeads.value, centralOffices.value, props.subject?.office_of_assignment || props.subject?.office || null, 'dtr'));
 
 async function loadCentralOffices() {
     try {
